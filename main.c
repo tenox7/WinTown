@@ -599,6 +599,8 @@ void initializeGraphics(HWND hwnd)
     
     FillRect(hdcBuffer, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
     
+    /* Always load the classic tileset by default */
+    strcpy(currentTileset, "classic");
     wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
     loadTileset(tilePath);
     
