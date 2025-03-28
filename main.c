@@ -279,17 +279,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     /* Clear city filename */
     cityFileName[0] = '\0';
     
-    /* Check color depth information but don't display it */
+    /* Initialize map with dirt for testing */
     {
-        HDC hdc;
-        int colorDepth;
-        
-        hdc = GetDC(hwndMain);
-        colorDepth = GetDeviceCaps(hdc, BITSPIXEL);
-        
-        /* No popup message - just check internally */
-        
-        ReleaseDC(hwndMain, hdc);
+        int x, y;
+        for (y = 0; y < WORLD_Y; y++)
+        {
+            for (x = 0; x < WORLD_X; x++)
+            {
+                Map[y][x] = TILE_DIRT;
+            }
+        }
     }
     
     /* Show the window */
@@ -345,10 +344,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         /* Get menu text directly - compatible with Windows NT 4.0 */
                         GetMenuString(hTilesetMenu, LOWORD(wParam), tilesetName, MAX_PATH - 1, MF_BYCOMMAND);
                         
-                        /* Apply the selected tileset */
+                        /* Apply the selected tileset - if successful, update menu */
                         if (changeTileset(hwnd, tilesetName))
                         {
-                            /* Update the checked radio item */
+                            /* Update checked menu item */
                             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1, 
                                             index, MF_BYPOSITION);
                         }
@@ -572,48 +571,44 @@ void swapShorts(short *buf, int len)
     }
 }
 
-/* Create a 256-color system palette */
+/* Create a default 16-color palette - only used if no tileset is loaded */
 HPALETTE createSystemPalette(void)
 {
     LOGPALETTE *pLogPal;
     HPALETTE hPal;
     int i;
+    PALETTEENTRY colorTable[16] = {
+        {0, 0, 0, 0},          /* 0: Black */
+        {128, 0, 0, 0},        /* 1: Dark Red */
+        {0, 128, 0, 0},        /* 2: Dark Green */
+        {128, 128, 0, 0},      /* 3: Dark Yellow */
+        {0, 0, 128, 0},        /* 4: Dark Blue */
+        {128, 0, 128, 0},      /* 5: Dark Magenta */
+        {0, 128, 128, 0},      /* 6: Dark Cyan */
+        {192, 192, 192, 0},    /* 7: Light Gray */
+        {128, 128, 128, 0},    /* 8: Dark Gray */
+        {255, 0, 0, 0},        /* 9: Red */
+        {0, 255, 0, 0},        /* 10: Green */
+        {255, 255, 0, 0},      /* 11: Yellow */
+        {0, 0, 255, 0},        /* 12: Blue */
+        {255, 0, 255, 0},      /* 13: Magenta */
+        {0, 255, 255, 0},      /* 14: Cyan */
+        {255, 255, 255, 0}     /* 15: White */
+    };
     
-    /* Allocate memory for palette */
-    pLogPal = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + 255 * sizeof(PALETTEENTRY));
+    /* Allocate memory for palette (16 colors for 4-bit default) */
+    pLogPal = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + 15 * sizeof(PALETTEENTRY));
     if (!pLogPal)
         return NULL;
     
     /* Initialize palette structure */
     pLogPal->palVersion = 0x300; /* Windows 3.0 */
-    pLogPal->palNumEntries = 256; /* 256 colors */
+    pLogPal->palNumEntries = 16; /* 16 colors (4-bit) */
     
-    /* Create entries for standard colors (20 static system colors) */
-    for (i = 0; i < 10; i++)
+    /* Copy the 16-color standard Windows palette */
+    for (i = 0; i < 16; i++)
     {
-        pLogPal->palPalEntry[i].peRed = 0;
-        pLogPal->palPalEntry[i].peGreen = 0;
-        pLogPal->palPalEntry[i].peBlue = 0;
-        pLogPal->palPalEntry[i].peFlags = PC_EXPLICIT;
-    }
-    
-    /* Fill the rest with a uniform spread of colors */
-    for (i = 10; i < 246; i++)
-    {
-        /* Create a nice distribution of RGB colors */
-        pLogPal->palPalEntry[i].peRed = (BYTE)((i % 6) * 51);
-        pLogPal->palPalEntry[i].peGreen = (BYTE)(((i / 6) % 6) * 51);
-        pLogPal->palPalEntry[i].peBlue = (BYTE)(((i / 36) % 6) * 51);
-        pLogPal->palPalEntry[i].peFlags = PC_NOCOLLAPSE;
-    }
-    
-    /* Last 10 entries for system colors */
-    for (i = 246; i < 256; i++)
-    {
-        pLogPal->palPalEntry[i].peRed = 0;
-        pLogPal->palPalEntry[i].peGreen = 0;
-        pLogPal->palPalEntry[i].peBlue = 0;
-        pLogPal->palPalEntry[i].peFlags = PC_EXPLICIT;
+        pLogPal->palPalEntry[i] = colorTable[i];
     }
     
     /* Create the palette */
@@ -640,7 +635,7 @@ void initializeGraphics(HWND hwnd)
     /* Get a DC for the window */
     hdc = GetDC(hwnd);
     
-    /* Create a 256-color palette if it doesn't exist */
+    /* Create a default 16-color palette if no tileset is loaded yet */
     if (hPalette == NULL)
     {
         hPalette = createSystemPalette();
@@ -668,7 +663,7 @@ void initializeGraphics(HWND hwnd)
     cxClient = rect.right - rect.left;
     cyClient = rect.bottom - rect.top;
     
-    /* Setup for a 256-color DIB section */
+    /* Setup for a DIB section, either 8-bit or 4-bit based on current palette */
     width = cxClient;
     height = cyClient;
     
@@ -681,7 +676,7 @@ void initializeGraphics(HWND hwnd)
     bi.biBitCount = 8;     /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
     
-    /* Create a 256-color DIB section */
+    /* Create DIB section with appropriate color depth */
     hbmBuffer = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
     hbmOld = SelectObject(hdcBuffer, hbmBuffer);
     
@@ -700,179 +695,109 @@ void initializeGraphics(HWND hwnd)
     ReleaseDC(hwnd, hdc);
 }
 
+/* Load bitmap with simple palette */
+HBITMAP loadBitmapFile(const char* filename)
+{
+    HBITMAP hBitmap;
+    
+    /* Just use LoadImage for simplicity */
+    hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
+                        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+                        
+    return hBitmap;
+}
+
 /* Load the tileset image */
 int loadTileset(const char* filename)
 {
     HDC hdc;
-    HBITMAP hbm;
-    BITMAP bm;
-    char debugMsg[256];
-    BITMAPINFO bmi;
-    LPVOID bits;
-    HDC hdcSrc;
-    HDC hdcDst;
-    HBITMAP hbmNew;
     
-    /* Load the bitmap file */
-    hbm = loadBitmapFile(filename);
+    /* First clean up any existing resources */
+    if (hdcTiles)
+    {
+        DeleteDC(hdcTiles);
+        hdcTiles = NULL;
+    }
     
-    if (hbm == NULL)
+    if (hbmTiles)
+    {
+        DeleteObject(hbmTiles);
+        hbmTiles = NULL;
+    }
+    
+    /* Load the bitmap file directly */
+    hbmTiles = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
+                         LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    
+    if (hbmTiles == NULL)
     {
         /* Failed to load bitmap - return silently */
         return 0;
     }
     
-    /* Get bitmap information to verify size and format */
-    if (GetObject(hbm, sizeof(BITMAP), &bm))
-    {
-        /* Verify the bitmap dimensions silently */
-        
-        /* Check if dimensions are correct - but don't show message */
-        if (bm.bmWidth != TILES_IN_ROW * TILE_SIZE || bm.bmHeight != TILES_IN_ROW * TILE_SIZE)
-        {
-            /* Dimension mismatch, but continue anyway */
-        }
-        
-        /* Create a 256-color DIB bitmap for the tileset if needed */
-        if (bm.bmBitsPixel < 8)
-        {
-            /* Convert silently */
-            
-            /* Setup a 256 color DIB */
-            ZeroMemory(&bmi, sizeof(BITMAPINFO));
-            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-            bmi.bmiHeader.biWidth = bm.bmWidth;
-            bmi.bmiHeader.biHeight = -bm.bmHeight; /* Negative for top-down DIB */
-            bmi.bmiHeader.biPlanes = 1;
-            bmi.bmiHeader.biBitCount = 8; /* 8-bit for 256 colors */
-            bmi.bmiHeader.biCompression = BI_RGB;
-            
-            /* Create DC for conversion */
-            hdc = GetDC(hwndMain);
-            hdcSrc = CreateCompatibleDC(hdc);
-            SelectObject(hdcSrc, hbm);
-            
-            /* Create a new DIB Section */
-            hbmNew = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
-            
-            if (hbmNew)
-            {
-                /* Setup destination DC */
-                hdcDst = CreateCompatibleDC(hdc);
-                SelectObject(hdcDst, hbmNew);
-                
-                /* Copy and convert the bitmap */
-                BitBlt(hdcDst, 0, 0, bm.bmWidth, bm.bmHeight, hdcSrc, 0, 0, SRCCOPY);
-                
-                /* Clean up conversion resources */
-                DeleteDC(hdcDst);
-                DeleteDC(hdcSrc);
-                DeleteObject(hbm);
-                
-                /* Use the new bitmap */
-                hbm = hbmNew;
-            }
-            else
-            {
-                /* Cleanup on failure */
-                DeleteDC(hdcSrc);
-            }
-            
-            ReleaseDC(hwndMain, hdc);
-        }
-    }
-    
-    /* Setup the device context for the tileset */
+    /* Create a device context for the tileset */
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
     
-    /* Apply the palette to the memory DC if available */
-    if (hPalette)
-    {
-        SelectPalette(hdcTiles, hPalette, FALSE);
-        RealizePalette(hdcTiles);
-    }
-    
-    /* Store the bitmap for future use */
-    hbmTiles = hbm;
+    /* Select the tileset into the DC */
     SelectObject(hdcTiles, hbmTiles);
     
-    /* Release the device context */
     ReleaseDC(hwndMain, hdc);
     return 1;
 }
 
-/* Load a bitmap file and convert to 256 colors */
-HBITMAP loadBitmapFile(const char* filename)
+/* Change the current tileset */
+int changeTileset(HWND hwnd, const char* tilesetName)
 {
-    HBITMAP hBitmap = NULL;
-    HBITMAP hBitmapDIB = NULL;
-    HDC hdc = NULL;
-    HDC hdcMem = NULL;
-    HDC hdcDIB = NULL;
-    BITMAP bm;
-    BITMAPINFOHEADER bi;
-    LPVOID bits;
-    char errorMsg[256];
-    DWORD errorCode;
+    char tilesetPath[MAX_PATH];
+    char windowTitle[MAX_PATH];
+    HDC hdc;
     
-    /* First load the bitmap normally */
-    hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    /* Form the full path to the tileset */
+    wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
     
-    if (!hBitmap)
+    /* First clean up any existing resources */
+    if (hdcTiles)
     {
-        /* Get the error code but don't display it */
-        errorCode = GetLastError();
-        return NULL;
+        DeleteDC(hdcTiles);
+        hdcTiles = NULL;
     }
     
-    /* Get the original bitmap dimensions */
-    GetObject(hBitmap, sizeof(BITMAP), &bm);
+    if (hbmTiles)
+    {
+        DeleteObject(hbmTiles);
+        hbmTiles = NULL;
+    }
     
-    /* Setup for creating a 256-color version */
+    /* Load the bitmap file directly */
+    hbmTiles = LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, 
+                       LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    
+    if (hbmTiles == NULL)
+    {
+        /* Failed to load bitmap - return silently */
+        return 0;
+    }
+    
+    /* Create a device context for the tileset */
     hdc = GetDC(hwndMain);
-    hdcMem = CreateCompatibleDC(hdc);
-    hdcDIB = CreateCompatibleDC(hdc);
+    hdcTiles = CreateCompatibleDC(hdc);
     
-    /* Select the original bitmap into a DC */
-    SelectObject(hdcMem, hBitmap);
+    /* Select the tileset into the DC */
+    SelectObject(hdcTiles, hbmTiles);
     
-    /* Initialize BITMAPINFOHEADER for 256 colors */
-    ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
-    bi.biSize = sizeof(BITMAPINFOHEADER);
-    bi.biWidth = bm.bmWidth;
-    bi.biHeight = -bm.bmHeight; /* Negative for top-down DIB */
-    bi.biPlanes = 1;
-    bi.biBitCount = 8; /* 8 bits = 256 colors */
-    bi.biCompression = BI_RGB;
+    /* Update current tileset name */
+    strcpy(currentTileset, tilesetName);
     
-    /* Create a 256-color DIB section */
-    hBitmapDIB = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
+    /* Update window title */
+    wsprintf(windowTitle, "MicropolisNT - Tileset: %s", tilesetName);
+    SetWindowText(hwnd, windowTitle);
     
-    if (hBitmapDIB)
-    {
-        /* Copy the bitmap to our 256-color DIB */
-        SelectObject(hdcDIB, hBitmapDIB);
-        
-        /* Use better color conversion */
-        SetStretchBltMode(hdcDIB, COLORONCOLOR);
-        
-        /* Copy and convert the bitmap */
-        BitBlt(hdcDIB, 0, 0, bm.bmWidth, bm.bmHeight, hdcMem, 0, 0, SRCCOPY);
-        
-        /* Clean up original bitmap */
-        DeleteObject(hBitmap);
-        
-        /* Use the 256-color DIB */
-        hBitmap = hBitmapDIB;
-    }
+    /* Force a redraw to display the new tileset */
+    InvalidateRect(hwnd, NULL, TRUE);
     
-    /* Clean up */
-    DeleteDC(hdcMem);
-    DeleteDC(hdcDIB);
     ReleaseDC(hwndMain, hdc);
-    
-    return hBitmap;
+    return 1;
 }
 
 /* Clean up graphics resources */
@@ -1184,14 +1109,11 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
     rect.bottom = y + TILE_SIZE;
     
     /* Use the tileset for all tiles */
-    if (hdcTiles)
+    if (hdcTiles && hbmTiles)
     {
         /* Calculate source coordinates in the tileset */
         srcX = (tileIndex % TILES_IN_ROW) * TILE_SIZE; 
         srcY = (tileIndex / TILES_IN_ROW) * TILE_SIZE;
-        
-        /* Set stretch mode for better image quality */
-        SetStretchBltMode(hdc, COLORONCOLOR);
         
         /* Copy tile from tileset to screen */
         BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE,
@@ -1442,43 +1364,5 @@ void populateTilesetMenu(HMENU hSubMenu)
     {
         /* Add a message indicating no tilesets found */
         AppendMenu(hSubMenu, MF_GRAYED, 0, "No tilesets found");
-    }
-}
-
-/* Change the current tileset */
-int changeTileset(HWND hwnd, const char* tilesetName)
-{
-    char tilesetPath[MAX_PATH];
-    char windowTitle[MAX_PATH];
-    
-    /* Form the full path to the tileset */
-    wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
-    
-    /* Free existing tileset resources */
-    if (hbmTiles)
-    {
-        DeleteObject(hbmTiles);
-        hbmTiles = NULL;
-    }
-    
-    /* Load the new tileset */
-    if (loadTileset(tilesetPath))
-    {
-        /* Update current tileset name */
-        strcpy(currentTileset, tilesetName);
-        
-        /* Update window title */
-        wsprintf(windowTitle, "MicropolisNT - Tileset: %s", tilesetName);
-        SetWindowText(hwnd, windowTitle);
-        
-        /* Force redraw */
-        InvalidateRect(hwnd, NULL, FALSE);
-        
-        return 1;
-    }
-    else
-    {
-        /* Failed to load tileset - silently return failure */
-        return 0;
     }
 }
