@@ -1,6 +1,4 @@
-/* main.c
- *
- * Main entry point for MicropolisNT (Windows NT version)
+/* Main entry point for MicropolisNT (Windows NT version)
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
@@ -9,14 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* Menu resource identifiers */
 #define IDM_FILE_OPEN       1001
 #define IDM_FILE_EXIT       1002
 #define IDM_TILESET_BASE    2000
 #define IDM_TILESET_MAX     2100
 
-/* Add this define for LR_LOADFROMFILE | LR_CREATEDIBSECTION */
+/* Define needed for older Windows SDK compatibility */
 #ifndef LR_CREATEDIBSECTION
 #define LR_CREATEDIBSECTION 0x2000
 #endif
@@ -29,8 +25,6 @@
 #define LR_DEFAULTSIZE 0x0040
 #endif
 
-
-/* Ensure we have the constants needed for image loading */
 #ifndef LR_LOADFROMFILE
 #define LR_LOADFROMFILE 0x0010
 #endif
@@ -39,19 +33,14 @@
 #define IMAGE_BITMAP 0
 #endif
 
-/* World dimensions from the original Micropolis */
+/* Original Micropolis constants */
 #define WORLD_X 120
 #define WORLD_Y 100
-#define TILE_SIZE 16  /* Tile size in pixels */
-
-/* History lengths */
+#define TILE_SIZE 16
 #define HISTLEN 480
 #define MISCHISTLEN 240
 
-/* Map data */
 static short Map[WORLD_Y][WORLD_X];
-
-/* History data */
 static short ResHis[HISTLEN/2];
 static short ComHis[HISTLEN/2];
 static short IndHis[HISTLEN/2];
@@ -60,41 +49,29 @@ static short PollutionHis[HISTLEN/2];
 static short MoneyHis[HISTLEN/2];
 static short MiscHis[MISCHISTLEN/2];
 
-/* Handle to the main application window */
 static HWND hwndMain = NULL;
-
-/* GDI resources */
 static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
-static HBITMAP hbmTiles = NULL;  /* Tileset bitmap */
-static HDC hdcTiles = NULL;      /* Memory DC for tileset */
-static HPALETTE hPalette = NULL; /* Palette for 256 color support */
+static HBITMAP hbmTiles = NULL;
+static HDC hdcTiles = NULL;
+static HPALETTE hPalette = NULL;
 
-/* Size of client area */
 static int cxClient = 0;
 static int cyClient = 0;
-
-/* Viewport position */
 static int xOffset = 0;
 static int yOffset = 0;
 
-/* Mouse state variables */
 static BOOL isMouseDown = FALSE;
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
-/* City filename */
 static char cityFileName[MAX_PATH];
-
-/* Menu handles */
 static HMENU hMenu = NULL;
 static HMENU hFileMenu = NULL;
 static HMENU hTilesetMenu = NULL;
-
-/* Currently active tileset */
 static char currentTileset[MAX_PATH] = "classic";
 
-/* Tile type masks from the original Micropolis */
+/* Micropolis tile flags */
 #define BIT_MASK        0x03ff  /* Mask for the low 10 bits = 1023 decimal */
 #define LOMASK          BIT_MASK
 #define ANIMBIT         0x0800  /* bit 11, tile is animated */
@@ -104,7 +81,7 @@ static char currentTileset[MAX_PATH] = "classic";
 #define ZONEBIT         0x0400  /* bit 10, tile is the center of a zone */
 #define POWERBIT        0x8000  /* bit 15, tile has power */
 
-/* Tile types - from MicropolisJS */
+/* Tile type constants */
 #define TILE_DIRT            0
 #define TILE_RIVER           2
 #define TILE_REDGE           3
@@ -202,11 +179,8 @@ static char currentTileset[MAX_PATH] = "classic";
 
 #define TILE_TOTAL_COUNT    960
 
-/* Tileset information */
-#define TILES_IN_ROW        32  /* Number of tiles in a row in the tileset image */
-#define TILES_PER_ROW       32  /* For backwards compatibility */
-
-/* Function prototypes */
+#define TILES_IN_ROW        32
+#define TILES_PER_ROW       32
 LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
 void initializeGraphics(HWND hwnd);
 void cleanupGraphics(void);
@@ -224,15 +198,12 @@ HPALETTE createSystemPalette(void);
 HMENU createMainMenu(void);
 void populateTilesetMenu(HMENU hSubMenu);
 int changeTileset(HWND hwnd, const char* tilesetName);
-
-/* Entry point for the application */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, 
                    LPSTR lpCmdLine, int nCmdShow)
 {
     WNDCLASSEX wc;
     MSG msg;
     
-    /* Register the window class with palette support */
     wc.cbSize        = sizeof(WNDCLASSEX);
     wc.style         = CS_HREDRAW | CS_VREDRAW | CS_BYTEALIGNWINDOW;
     wc.lpfnWndProc   = wndProc;
@@ -253,10 +224,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         return 0;
     }
     
-    /* Create the main menu */
     hMenu = createMainMenu();
     
-    /* Create the main window with class style for palette support */
     hwndMain = CreateWindowEx(
         WS_EX_CLIENTEDGE,
         "MicropolisNT",
@@ -273,13 +242,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         return 0;
     }
     
-    /* Initialize graphics */
     initializeGraphics(hwndMain);
-    
-    /* Clear city filename */
     cityFileName[0] = '\0';
     
-    /* Initialize map with dirt for testing */
     {
         int x, y;
         for (y = 0; y < WORLD_Y; y++)
@@ -291,36 +256,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         }
     }
     
-    /* Show the window */
     ShowWindow(hwndMain, nCmdShow);
     UpdateWindow(hwndMain);
     
-    /* Main message loop */
     while(GetMessage(&msg, NULL, 0, 0) > 0)
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
     
-    /* Clean up */
     cleanupGraphics();
     
     return msg.wParam;
 }
 
 
-/* Window procedure */
 LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch(msg)
     {
         case WM_CREATE:
-            /* Update Tileset menu to check current tileset */
             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1, 0, MF_BYPOSITION);
             return 0;
         
         case WM_COMMAND:
-            /* Handle menu commands */
             switch(LOWORD(wParam))
             {
                 case IDM_FILE_OPEN:
@@ -332,22 +291,18 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     return 0;
                     
                 default:
-                    /* Check if it's a tileset selection */
                     if (LOWORD(wParam) >= IDM_TILESET_BASE && LOWORD(wParam) < IDM_TILESET_MAX)
                     {
                         int index;
                         char tilesetName[MAX_PATH];
                         
-                        /* Get the menu item index */
                         index = LOWORD(wParam) - IDM_TILESET_BASE;
                         
-                        /* Get menu text directly - compatible with Windows NT 4.0 */
+                        /* Compatible with Windows NT 4.0 */
                         GetMenuString(hTilesetMenu, LOWORD(wParam), tilesetName, MAX_PATH - 1, MF_BYCOMMAND);
                         
-                        /* Apply the selected tileset - if successful, update menu */
                         if (changeTileset(hwnd, tilesetName))
                         {
-                            /* Update checked menu item */
                             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1, 
                                             index, MF_BYPOSITION);
                         }
@@ -392,19 +347,15 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             
             hdc = BeginPaint(hwnd, &ps);
             
-            /* Ensure the palette is selected into the DC */
             if (hPalette)
             {
                 SelectPalette(hdc, hPalette, FALSE);
                 RealizePalette(hdc);
             }
             
-            /* Draw the city onto the buffer */
             if (hbmBuffer)
             {
                 drawCity(hdcBuffer);
-                
-                /* Copy from buffer to screen */
                 BitBlt(hdc, 0, 0, cxClient, cyClient, 
                        hdcBuffer, 0, 0, SRCCOPY);
             }
@@ -415,17 +366,13 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_LBUTTONDOWN:
         {
-            /* Start panning on mouse down */
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
             
-            /* Capture mouse */
             isMouseDown = TRUE;
             lastMouseX = xPos;
             lastMouseY = yPos;
             SetCapture(hwnd);
-            
-            /* Set cursor to indicate grabbing */
             SetCursor(LoadCursor(NULL, IDC_SIZEALL));
             
             return 0;
@@ -433,7 +380,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_MOUSEMOVE:
         {
-            /* Handle panning when mouse is down */
             if (isMouseDown)
             {
                 int xPos = LOWORD(lParam);
@@ -441,22 +387,18 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 int dx = lastMouseX - xPos;
                 int dy = lastMouseY - yPos;
                 
-                /* Update last position */
                 lastMouseX = xPos;
                 lastMouseY = yPos;
                 
-                /* Pan the view */
                 if (dx != 0 || dy != 0)
                 {
                     scrollView(dx, dy);
                 }
                 
-                /* Keep showing the appropriate cursor */
                 SetCursor(LoadCursor(NULL, IDC_SIZEALL));
             }
             else
             {
-                /* Show arrow cursor when hovering over the map to indicate it can be panned */
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
             }
             return 0;
@@ -464,7 +406,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_LBUTTONUP:
         {
-            /* End panning */
             isMouseDown = FALSE;
             ReleaseCapture();
             SetCursor(LoadCursor(NULL, IDC_ARROW));
@@ -473,7 +414,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_SETCURSOR:
         {
-            /* Handle cursor appearance based on current state */
             if (LOWORD(lParam) == HTCLIENT)
             {
                 if (isMouseDown)
@@ -489,16 +429,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             cxClient = LOWORD(lParam);
             cyClient = HIWORD(lParam);
-            
-            /* Resize the buffer */
             resizeBuffer(cxClient, cyClient);
-            
             return 0;
         }
         
         case WM_KEYDOWN:
         {
-            /* Handle keyboard navigation */
             switch(wParam)
             {
                 case VK_LEFT:
@@ -517,21 +453,21 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     scrollView(0, TILE_SIZE);
                     break;
                     
-                case 'O': /* Open file */
+                case 'O':
                     if (GetKeyState(VK_CONTROL) < 0)
                     {
                         openCityDialog(hwnd);
                     }
                     break;
                     
-                case 'Q': /* Quit */
+                case 'Q':
                     if (GetKeyState(VK_CONTROL) < 0)
                     {
                         PostMessage(hwnd, WM_CLOSE, 0, 0);
                     }
                     break;
                     
-                case 'I': /* Show bitmap info */
+                case 'I':
                     if (hbmTiles)
                     {
                         BITMAP bm;
@@ -559,68 +495,58 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
 }
 
-/* Swap bytes in short array (for endian conversion) */
 void swapShorts(short *buf, int len)
 {
     int i;
     
-    /* Flip bytes in each short */
     for (i = 0; i < len; i++)
     {
         buf[i] = ((buf[i] & 0xFF) << 8) | ((buf[i] & 0xFF00) >> 8);
     }
 }
 
-/* Create a default 16-color palette - only used if no tileset is loaded */
 HPALETTE createSystemPalette(void)
 {
     LOGPALETTE *pLogPal;
     HPALETTE hPal;
     int i;
     PALETTEENTRY colorTable[16] = {
-        {0, 0, 0, 0},          /* 0: Black */
-        {128, 0, 0, 0},        /* 1: Dark Red */
-        {0, 128, 0, 0},        /* 2: Dark Green */
-        {128, 128, 0, 0},      /* 3: Dark Yellow */
-        {0, 0, 128, 0},        /* 4: Dark Blue */
-        {128, 0, 128, 0},      /* 5: Dark Magenta */
-        {0, 128, 128, 0},      /* 6: Dark Cyan */
-        {192, 192, 192, 0},    /* 7: Light Gray */
-        {128, 128, 128, 0},    /* 8: Dark Gray */
-        {255, 0, 0, 0},        /* 9: Red */
-        {0, 255, 0, 0},        /* 10: Green */
-        {255, 255, 0, 0},      /* 11: Yellow */
-        {0, 0, 255, 0},        /* 12: Blue */
-        {255, 0, 255, 0},      /* 13: Magenta */
-        {0, 255, 255, 0},      /* 14: Cyan */
-        {255, 255, 255, 0}     /* 15: White */
+        {0, 0, 0, 0},          /* Black */
+        {128, 0, 0, 0},        /* Dark Red */
+        {0, 128, 0, 0},        /* Dark Green */
+        {128, 128, 0, 0},      /* Dark Yellow */
+        {0, 0, 128, 0},        /* Dark Blue */
+        {128, 0, 128, 0},      /* Dark Magenta */
+        {0, 128, 128, 0},      /* Dark Cyan */
+        {192, 192, 192, 0},    /* Light Gray */
+        {128, 128, 128, 0},    /* Dark Gray */
+        {255, 0, 0, 0},        /* Red */
+        {0, 255, 0, 0},        /* Green */
+        {255, 255, 0, 0},      /* Yellow */
+        {0, 0, 255, 0},        /* Blue */
+        {255, 0, 255, 0},      /* Magenta */
+        {0, 255, 255, 0},      /* Cyan */
+        {255, 255, 255, 0}     /* White */
     };
     
-    /* Allocate memory for palette (16 colors for 4-bit default) */
     pLogPal = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + 15 * sizeof(PALETTEENTRY));
     if (!pLogPal)
         return NULL;
     
-    /* Initialize palette structure */
     pLogPal->palVersion = 0x300; /* Windows 3.0 */
     pLogPal->palNumEntries = 16; /* 16 colors (4-bit) */
     
-    /* Copy the 16-color standard Windows palette */
     for (i = 0; i < 16; i++)
     {
         pLogPal->palPalEntry[i] = colorTable[i];
     }
     
-    /* Create the palette */
     hPal = CreatePalette(pLogPal);
-    
-    /* Free allocated memory */
     free(pLogPal);
     
     return hPal;
 }
 
-/* Initialize graphics resources */
 void initializeGraphics(HWND hwnd)
 {
     HDC hdc;
@@ -632,15 +558,12 @@ void initializeGraphics(HWND hwnd)
     LPVOID bits;
     HBITMAP hbmOld;
     
-    /* Get a DC for the window */
     hdc = GetDC(hwnd);
     
-    /* Create a default 16-color palette if no tileset is loaded yet */
     if (hPalette == NULL)
     {
         hPalette = createSystemPalette();
         
-        /* Apply the palette to the window */
         if (hPalette)
         {
             SelectPalette(hdc, hPalette, FALSE);
@@ -648,26 +571,21 @@ void initializeGraphics(HWND hwnd)
         }
     }
     
-    /* Create a compatible DC for double buffering */
     hdcBuffer = CreateCompatibleDC(hdc);
     
-    /* Apply the palette to the memory DC */
     if (hPalette)
     {
         SelectPalette(hdcBuffer, hPalette, FALSE);
         RealizePalette(hdcBuffer);
     }
     
-    /* Get client area dimensions */
     GetClientRect(hwnd, &rect);
     cxClient = rect.right - rect.left;
     cyClient = rect.bottom - rect.top;
     
-    /* Setup for a DIB section, either 8-bit or 4-bit based on current palette */
     width = cxClient;
     height = cyClient;
     
-    /* Initialize BITMAPINFOHEADER structure */
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = width;
@@ -676,43 +594,31 @@ void initializeGraphics(HWND hwnd)
     bi.biBitCount = 8;     /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
     
-    /* Create DIB section with appropriate color depth */
     hbmBuffer = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
     hbmOld = SelectObject(hdcBuffer, hbmBuffer);
     
-    /* Initialize with black background */
     FillRect(hdcBuffer, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
     
-    /* Load the default tileset */
     wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
+    loadTileset(tilePath);
     
-    if (!loadTileset(tilePath))
-    {
-        /* Just fall back to simple color tiles silently */
-    }
-    
-    /* Release the window DC */
     ReleaseDC(hwnd, hdc);
 }
 
-/* Load bitmap with simple palette */
 HBITMAP loadBitmapFile(const char* filename)
 {
     HBITMAP hBitmap;
     
-    /* Just use LoadImage for simplicity */
     hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
                         LR_LOADFROMFILE | LR_CREATEDIBSECTION);
                         
     return hBitmap;
 }
 
-/* Load the tileset image */
 int loadTileset(const char* filename)
 {
     HDC hdc;
     
-    /* First clean up any existing resources */
     if (hdcTiles)
     {
         DeleteDC(hdcTiles);
@@ -725,38 +631,31 @@ int loadTileset(const char* filename)
         hbmTiles = NULL;
     }
     
-    /* Load the bitmap file directly */
     hbmTiles = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
                          LR_LOADFROMFILE | LR_CREATEDIBSECTION);
     
     if (hbmTiles == NULL)
     {
-        /* Failed to load bitmap - return silently */
         return 0;
     }
     
-    /* Create a device context for the tileset */
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
     
-    /* Select the tileset into the DC */
     SelectObject(hdcTiles, hbmTiles);
     
     ReleaseDC(hwndMain, hdc);
     return 1;
 }
 
-/* Change the current tileset */
 int changeTileset(HWND hwnd, const char* tilesetName)
 {
     char tilesetPath[MAX_PATH];
     char windowTitle[MAX_PATH];
     HDC hdc;
     
-    /* Form the full path to the tileset */
     wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
     
-    /* First clean up any existing resources */
     if (hdcTiles)
     {
         DeleteDC(hdcTiles);
@@ -769,38 +668,30 @@ int changeTileset(HWND hwnd, const char* tilesetName)
         hbmTiles = NULL;
     }
     
-    /* Load the bitmap file directly */
     hbmTiles = LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, 
                        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
     
     if (hbmTiles == NULL)
     {
-        /* Failed to load bitmap - return silently */
         return 0;
     }
     
-    /* Create a device context for the tileset */
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
     
-    /* Select the tileset into the DC */
     SelectObject(hdcTiles, hbmTiles);
     
-    /* Update current tileset name */
     strcpy(currentTileset, tilesetName);
     
-    /* Update window title */
     wsprintf(windowTitle, "MicropolisNT - Tileset: %s", tilesetName);
     SetWindowText(hwnd, windowTitle);
     
-    /* Force a redraw to display the new tileset */
     InvalidateRect(hwnd, NULL, TRUE);
     
     ReleaseDC(hwndMain, hdc);
     return 1;
 }
 
-/* Clean up graphics resources */
 void cleanupGraphics(void)
 {
     if (hbmBuffer)
@@ -834,7 +725,6 @@ void cleanupGraphics(void)
     }
 }
 
-/* Resize the buffer bitmap */
 void resizeBuffer(int cx, int cy)
 {
     HDC hdc;
@@ -846,10 +736,8 @@ void resizeBuffer(int cx, int cy)
     if (cx <= 0 || cy <= 0)
         return;
     
-    /* Get a DC for the window */
     hdc = GetDC(hwndMain);
     
-    /* Initialize BITMAPINFOHEADER structure for 256 colors */
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = cx;
@@ -858,38 +746,30 @@ void resizeBuffer(int cx, int cy)
     bi.biBitCount = 8; /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
     
-    /* Create a 256-color DIB section */
     hbmNew = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
     
-    /* Select it into the buffer DC */
     if (hbmBuffer)
         DeleteObject(hbmBuffer);
     
     hbmBuffer = hbmNew;
     SelectObject(hdcBuffer, hbmBuffer);
     
-    /* Initialize with black background */
     rcBuffer.left = 0;
     rcBuffer.top = 0;
     rcBuffer.right = cx;
     rcBuffer.bottom = cy;
     FillRect(hdcBuffer, &rcBuffer, (HBRUSH)GetStockObject(BLACK_BRUSH));
     
-    /* Release the window DC */
     ReleaseDC(hwndMain, hdc);
     
-    /* Force a redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
 }
 
-/* Scroll the view */
 void scrollView(int dx, int dy)
 {
-    /* Adjust offsets */
     xOffset += dx;
     yOffset += dy;
     
-    /* Constrain to map bounds */
     if (xOffset < 0)
         xOffset = 0;
     if (yOffset < 0)
@@ -900,21 +780,17 @@ void scrollView(int dx, int dy)
     if (yOffset > WORLD_Y * TILE_SIZE - cyClient)
         yOffset = WORLD_Y * TILE_SIZE - cyClient;
     
-    /* Force a redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
 }
 
-/* Load city data from a file */
 int loadCity(char *filename)
 {
     FILE *f;
     DWORD size;
     size_t readResult;
     
-    /* Store the new city name */
     lstrcpy(cityFileName, filename);
     
-    /* Open the city file */
     f = fopen(filename, "rb");
     if (f == NULL)
     {
@@ -922,7 +798,6 @@ int loadCity(char *filename)
         return 0;
     }
     
-    /* Check file size */
     fseek(f, 0L, SEEK_END);
     size = ftell(f);
     fseek(f, 0L, SEEK_SET);
@@ -935,61 +810,44 @@ int loadCity(char *filename)
         return 0;
     }
     
-    /* Read all history data first, then the map */
-    
-    /* ResHis: Residential history */
     readResult = fread(ResHis, sizeof(short), HISTLEN/2, f);
     if (readResult != HISTLEN/2) goto read_error;
     swapShorts(ResHis, HISTLEN/2);
     
-    /* ComHis: Commercial history */
     readResult = fread(ComHis, sizeof(short), HISTLEN/2, f);
     if (readResult != HISTLEN/2) goto read_error;
     swapShorts(ComHis, HISTLEN/2);
     
-    /* IndHis: Industrial history */
     readResult = fread(IndHis, sizeof(short), HISTLEN/2, f);
     if (readResult != HISTLEN/2) goto read_error;
     swapShorts(IndHis, HISTLEN/2);
     
-    /* CrimeHis: Crime history */
     readResult = fread(CrimeHis, sizeof(short), HISTLEN/2, f);
     if (readResult != HISTLEN/2) goto read_error;
     swapShorts(CrimeHis, HISTLEN/2);
     
-    /* PollutionHis: Pollution history */
     readResult = fread(PollutionHis, sizeof(short), HISTLEN/2, f);
     if (readResult != HISTLEN/2) goto read_error;
     swapShorts(PollutionHis, HISTLEN/2);
     
-    /* MoneyHis: Money history */
     readResult = fread(MoneyHis, sizeof(short), HISTLEN/2, f);
     if (readResult != HISTLEN/2) goto read_error;
     swapShorts(MoneyHis, HISTLEN/2);
     
-    /* MiscHis: Miscellaneous history */
     readResult = fread(MiscHis, sizeof(short), MISCHISTLEN/2, f);
     if (readResult != MISCHISTLEN/2) goto read_error;
     swapShorts(MiscHis, MISCHISTLEN/2);
     
-    /* Map data */
-    /* 
-     * IMPORTANT: The original Micropolis map is stored in row-major order
-     * but transposed compared to our Map[y][x] array convention.
-     * We need to read it carefully to ensure correct orientation.
-     */
+    /* Original Micropolis stores map transposed compared to our array convention */
     {
-        short tmpMap[WORLD_X][WORLD_Y]; /* Temporary array with transposed dimensions */
+        short tmpMap[WORLD_X][WORLD_Y];
         int x, y;
         
-        /* Read the map data in the original format */
         readResult = fread(&tmpMap[0][0], sizeof(short), WORLD_X * WORLD_Y, f);
         if (readResult != WORLD_X * WORLD_Y) goto read_error;
         
-        /* Swap bytes in map data (original Micropolis stores data in big-endian format) */
         swapShorts((short*)tmpMap, WORLD_X * WORLD_Y);
         
-        /* Now correctly transpose the data to our Map array */
         for (x = 0; x < WORLD_X; x++) {
             for (y = 0; y < WORLD_Y; y++) {
                 Map[y][x] = tmpMap[x][y];
@@ -999,13 +857,11 @@ int loadCity(char *filename)
     
     fclose(f);
     
-    /* Reset view position */
     xOffset = (WORLD_X * TILE_SIZE - cxClient) / 2;
     yOffset = (WORLD_Y * TILE_SIZE - cyClient) / 2;
     if (xOffset < 0) xOffset = 0;
     if (yOffset < 0) yOffset = 0;
     
-    /* Force a redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
     
     return 1;
@@ -1016,61 +872,46 @@ read_error:
     return 0;
 }
 
-/* Determine the base tile type from a tile value */
 int getBaseFromTile(short tile)
 {
-    /* Get the base tile value (lower 10 bits) */
     tile &= LOMASK;
     
-    /* Water */
     if (tile >= TILE_WATER_LOW && tile <= TILE_WATER_HIGH)
         return TILE_RIVER;
     
-    /* Trees */
     if (tile >= TILE_WOODS_LOW && tile <= TILE_WOODS_HIGH)
         return TILE_TREEBASE;
     
-    /* Roads */
     if (tile >= TILE_ROADBASE && tile <= TILE_LASTROAD)
         return TILE_ROADBASE;
     
-    /* Power lines */
     if (tile >= TILE_POWERBASE && tile <= TILE_LASTPOWER)
         return TILE_POWERBASE;
     
-    /* Rails */
     if (tile >= TILE_RAILBASE && tile <= TILE_LASTRAIL)
         return TILE_RAILBASE;
     
-    /* Residential zones */
     if (tile >= TILE_RESBASE && tile <= TILE_LASTRES)
         return TILE_RESBASE;
     
-    /* Commercial zones */
     if (tile >= TILE_COMBASE && tile <= TILE_LASTCOM)
         return TILE_COMBASE;
     
-    /* Industrial zones */
     if (tile >= TILE_INDBASE && tile <= TILE_LASTIND)
         return TILE_INDBASE;
     
-    /* Fire */
     if (tile >= TILE_FIREBASE && tile <= TILE_LASTFIRE)
         return TILE_FIREBASE;
     
-    /* Flood */
     if (tile >= TILE_FLOOD && tile <= TILE_LASTFLOOD)
         return TILE_FLOOD;
     
-    /* Rubble */
     if (tile >= TILE_RUBBLE && tile <= TILE_LASTRUBBLE)
         return TILE_RUBBLE;
     
-    /* Dirt (default) */
     return TILE_DIRT;
 }
 
-/* Draw a single tile */
 void drawTile(HDC hdc, int x, int y, short tileValue)
 {
     RECT rect;
@@ -1081,10 +922,8 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
     int srcX;
     int srcY;
     
-    /* Check for special cases */
     if (tileValue < 0)
     {
-        /* Invalid tile - paint black */
         rect.left = x;
         rect.top = y;
         rect.right = x + TILE_SIZE;
@@ -1093,35 +932,28 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
         return;
     }
     
-    /* Get the base tile value (mask off the flags) */
     tileIndex = tileValue & BIT_MASK;
     
-    /* Safety check - ensure tile index is within bounds */
     if (tileIndex >= TILE_TOTAL_COUNT)
     {
-        tileIndex = 0; /* Use dirt tile for invalid indexes */
+        tileIndex = 0;
     }
     
-    /* Create tile rectangle */
     rect.left = x;
     rect.top = y;
     rect.right = x + TILE_SIZE;
     rect.bottom = y + TILE_SIZE;
     
-    /* Use the tileset for all tiles */
     if (hdcTiles && hbmTiles)
     {
-        /* Calculate source coordinates in the tileset */
         srcX = (tileIndex % TILES_IN_ROW) * TILE_SIZE; 
         srcY = (tileIndex / TILES_IN_ROW) * TILE_SIZE;
         
-        /* Copy tile from tileset to screen */
         BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE,
                hdcTiles, srcX, srcY, SRCCOPY);
     }
     else
     {
-        /* Fallback: Use simple colors if no tileset */
         switch (getBaseFromTile(tileValue))
         {
             case TILE_RIVER:
@@ -1163,35 +995,28 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
                 break;
         }
         
-        /* Create a brush with the appropriate color */
         hBrush = CreateSolidBrush(color);
         hOldBrush = SelectObject(hdc, hBrush);
         
-        /* Draw the tile */
         FillRect(hdc, &rect, hBrush);
         
-        /* Cleanup */
         SelectObject(hdc, hOldBrush);
         DeleteObject(hBrush);
     }
     
-    /* For zone center tiles, add a white outline */
     if (tileValue & ZONEBIT)
     {
         FrameRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
     }
     
-    /* Power failure blinking - draw yellow outline */
     if ((tileValue & ZONEBIT) && !(tileValue & POWERBIT))
     {
-        /* Draw a yellow outline */
         hBrush = CreateSolidBrush(RGB(255, 255, 0));
         FrameRect(hdc, &rect, hBrush);
         DeleteObject(hBrush);
     }
 }
 
-/* Draw the city map */
 void drawCity(HDC hdc)
 {
     int x;
@@ -1209,26 +1034,22 @@ void drawCity(HDC hdc)
     char nameBuffer[MAX_PATH];
     char *dot;
     
-    /* Calculate the range of tiles to draw */
     startX = xOffset / TILE_SIZE;
     startY = yOffset / TILE_SIZE;
     endX = startX + (cxClient / TILE_SIZE) + 1;
     endY = startY + (cyClient / TILE_SIZE) + 1;
     
-    /* Constrain to map boundaries */
     if (startX < 0) startX = 0;
     if (startY < 0) startY = 0;
     if (endX > WORLD_X) endX = WORLD_X;
     if (endY > WORLD_Y) endY = WORLD_Y;
     
-    /* Clear the background - using neutral black */
     rcClient.left = 0;
     rcClient.top = 0;
     rcClient.right = cxClient;
     rcClient.bottom = cyClient;
     FillRect(hdc, &rcClient, (HBRUSH)GetStockObject(BLACK_BRUSH));
     
-    /* Draw visible tiles */
     for (y = startY; y < endY; y++)
     {
         for (x = startX; x < endX; x++)
@@ -1240,42 +1061,35 @@ void drawCity(HDC hdc)
         }
     }
     
-    /* Draw city name if available */
     if (cityFileName[0] != '\0')
     {
         baseName = cityFileName;
         lastSlash = strrchr(cityFileName, '\\');
         lastFwdSlash = strrchr(cityFileName, '/');
         
-        /* Get the filename without path */
         if (lastSlash && lastSlash > baseName)
             baseName = lastSlash + 1;
         if (lastFwdSlash && lastFwdSlash > baseName)
             baseName = lastFwdSlash + 1;
         
-        /* Remove extension if present */
         lstrcpy(nameBuffer, baseName);
         dot = strrchr(nameBuffer, '.');
         if (dot)
             *dot = '\0';
         
-        /* Draw the name in the top-left corner */
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(255, 255, 255));
         TextOut(hdc, 10, 10, nameBuffer, lstrlen(nameBuffer));
     }
 }
 
-/* Open a city file dialog */
 void openCityDialog(HWND hwnd)
 {
     OPENFILENAME ofn;
     char szFileName[MAX_PATH];
     
-    /* Initialize filename buffer */
     szFileName[0] = '\0';
     
-    /* Initialize OPENFILENAME structure */
     ZeroMemory(&ofn, sizeof(ofn));
     
     ofn.lStructSize = sizeof(ofn);
@@ -1288,37 +1102,30 @@ void openCityDialog(HWND hwnd)
     
     if(GetOpenFileName(&ofn))
     {
-        /* Load the selected city file */
         loadCity(szFileName);
     }
 }
 
-/* Create the main menu */
 HMENU createMainMenu(void)
 {
     HMENU hMainMenu;
     
-    /* Create the menu bar */
     hMainMenu = CreateMenu();
     
-    /* Create the File menu */
     hFileMenu = CreatePopupMenu();
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_OPEN, "&Open City...");
     AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_EXIT, "E&xit");
     
-    /* Create the Tileset menu */
     hTilesetMenu = CreatePopupMenu();
     populateTilesetMenu(hTilesetMenu);
     
-    /* Add menus to the menu bar */
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     
     return hMainMenu;
 }
 
-/* Populate the tileset menu with available tilesets */
 void populateTilesetMenu(HMENU hSubMenu)
 {
     WIN32_FIND_DATA findData;
@@ -1329,31 +1136,25 @@ void populateTilesetMenu(HMENU hSubMenu)
     int menuId = IDM_TILESET_BASE;
     UINT menuFlags;
     
-    /* Setup search path for BMP files in tilesets folder */
     strcpy(searchPath, "tilesets\\*.bmp");
     
-    /* Find the first file */
     hFind = FindFirstFile(searchPath, &findData);
     
     if (hFind != INVALID_HANDLE_VALUE)
     {
         do {
-            /* Skip . and .. */
             if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0)
                 continue;
                 
-            /* Extract the base name (without extension) */
             strcpy(fileName, findData.cFileName);
             dot = strrchr(fileName, '.');
             if (dot != NULL)
                 *dot = '\0';
                 
-            /* Set menu flags - checked if this is current tileset */
             menuFlags = MF_STRING;
             if (strcmp(fileName, currentTileset) == 0)
                 menuFlags |= MF_CHECKED;
                 
-            /* Add menu item */
             AppendMenu(hSubMenu, menuFlags, menuId++, fileName);
             
         } while (FindNextFile(hFind, &findData) && menuId < IDM_TILESET_MAX);
@@ -1362,7 +1163,6 @@ void populateTilesetMenu(HMENU hSubMenu)
     }
     else
     {
-        /* Add a message indicating no tilesets found */
         AppendMenu(hSubMenu, MF_GRAYED, 0, "No tilesets found");
     }
 }
