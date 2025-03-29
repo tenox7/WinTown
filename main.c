@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "simulation.h"
+#include "tools.h"
 
 #define IDM_FILE_OPEN       1001
 #define IDM_FILE_EXIT       1002
@@ -28,6 +29,25 @@
 #define IDM_SCENARIO_DETROIT       4006
 #define IDM_SCENARIO_BOSTON        4007
 #define IDM_SCENARIO_RIO           4008
+
+/* Tool menu IDs */
+#define IDM_TOOL_BASE             5000
+#define IDM_TOOL_BULLDOZER        5001
+#define IDM_TOOL_ROAD             5002
+#define IDM_TOOL_RAIL             5003
+#define IDM_TOOL_WIRE             5004
+#define IDM_TOOL_PARK             5005
+#define IDM_TOOL_RESIDENTIAL      5006
+#define IDM_TOOL_COMMERCIAL       5007
+#define IDM_TOOL_INDUSTRIAL       5008
+#define IDM_TOOL_FIRESTATION      5009
+#define IDM_TOOL_POLICESTATION    5010
+#define IDM_TOOL_STADIUM          5011
+#define IDM_TOOL_SEAPORT          5012
+#define IDM_TOOL_POWERPLANT       5013
+#define IDM_TOOL_NUCLEAR          5014
+#define IDM_TOOL_AIRPORT          5015
+#define IDM_TOOL_QUERY            5016
 
 /* Define needed for older Windows SDK compatibility */
 #ifndef LR_CREATEDIBSECTION
@@ -74,7 +94,8 @@ static int cyClient = 0;
 static int xOffset = 0;
 static int yOffset = 0;
 
-static BOOL isMouseDown = FALSE;
+static BOOL isMouseDown = FALSE;        /* Used for map dragging */
+static BOOL isToolActive = FALSE;      /* Set when a tool is selected and active */
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
@@ -84,6 +105,7 @@ static HMENU hFileMenu = NULL;
 static HMENU hTilesetMenu = NULL;
 static HMENU hSimMenu = NULL;
 static HMENU hScenarioMenu = NULL;
+static HMENU hToolMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 
 /* External reference to scenario variables (defined in scenarios.c) */
@@ -396,6 +418,135 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 case IDM_SCENARIO_RIO:
                     loadScenario(8);
                     return 0;
+                
+                /* Tool menu items */
+                case IDM_TOOL_BULLDOZER:
+                    SelectTool(bulldozerState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_BULLDOZER, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_ROAD:
+                    SelectTool(roadState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_ROAD, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_RAIL:
+                    SelectTool(railState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_RAIL, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_WIRE:
+                    SelectTool(wireState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_WIRE, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_PARK:
+                    SelectTool(parkState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_PARK, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_RESIDENTIAL:
+                    SelectTool(residentialState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_RESIDENTIAL, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_COMMERCIAL:
+                    SelectTool(commercialState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_COMMERCIAL, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_INDUSTRIAL:
+                    SelectTool(industrialState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_INDUSTRIAL, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_FIRESTATION:
+                    SelectTool(fireState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_FIRESTATION, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_POLICESTATION:
+                    SelectTool(policeState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_POLICESTATION, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_STADIUM:
+                    SelectTool(stadiumState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_STADIUM, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_SEAPORT:
+                    SelectTool(seaportState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_SEAPORT, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_POWERPLANT:
+                    SelectTool(powerState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_POWERPLANT, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_NUCLEAR:
+                    SelectTool(nuclearState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_NUCLEAR, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_AIRPORT:
+                    SelectTool(airportState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_AIRPORT, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
+                    
+                case IDM_TOOL_QUERY:
+                    SelectTool(queryState);
+                    isToolActive = TRUE;
+                    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                      IDM_TOOL_QUERY, MF_BYCOMMAND);
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    return 0;
                     
                 default:
                     if (LOWORD(wParam) >= IDM_TILESET_BASE && LOWORD(wParam) < IDM_TILESET_MAX)
@@ -505,11 +656,34 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
             
-            isMouseDown = TRUE;
-            lastMouseX = xPos;
-            lastMouseY = yPos;
-            SetCapture(hwnd);
-            SetCursor(LoadCursor(NULL, IDC_SIZEALL));
+            if (isToolActive)
+            {
+                /* Apply the tool at this position */
+                int result = HandleToolMouse(xPos, yPos, xOffset, yOffset);
+                
+                /* Display result if needed */
+                if (result == TOOLRESULT_NO_MONEY)
+                {
+                    MessageBox(hwnd, "Not enough money!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
+                }
+                else if (result == TOOLRESULT_NEED_BULLDOZE)
+                {
+                    MessageBox(hwnd, "You need to bulldoze this area first!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
+                }
+                else if (result == TOOLRESULT_FAILED)
+                {
+                    MessageBox(hwnd, "Can't build there!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
+                }
+            }
+            else
+            {
+                /* Regular map dragging */
+                isMouseDown = TRUE;
+                lastMouseX = xPos;
+                lastMouseY = yPos;
+                SetCapture(hwnd);
+                SetCursor(LoadCursor(NULL, IDC_SIZEALL));
+            }
             
             return 0;
         }
@@ -533,6 +707,11 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 
                 SetCursor(LoadCursor(NULL, IDC_SIZEALL));
             }
+            else if (isToolActive)
+            {
+                /* Show cross cursor when tool is active */
+                SetCursor(LoadCursor(NULL, IDC_CROSS));
+            }
             else
             {
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
@@ -544,7 +723,30 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             isMouseDown = FALSE;
             ReleaseCapture();
-            SetCursor(LoadCursor(NULL, IDC_ARROW));
+            
+            if (isToolActive)
+            {
+                SetCursor(LoadCursor(NULL, IDC_CROSS));
+            }
+            else
+            {
+                SetCursor(LoadCursor(NULL, IDC_ARROW));
+            }
+            return 0;
+        }
+        
+        case WM_RBUTTONDOWN:
+        {
+            /* Right click cancels the current tool */
+            if (isToolActive)
+            {
+                isToolActive = FALSE;
+                SetCursor(LoadCursor(NULL, IDC_ARROW));
+                
+                /* Clear tool selection in menu */
+                CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
+                                 0, MF_BYCOMMAND);
+            }
             return 0;
         }
         
@@ -554,6 +756,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 if (isMouseDown)
                     SetCursor(LoadCursor(NULL, IDC_SIZEALL));
+                else if (isToolActive)
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
                 else
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                 return TRUE;
@@ -1382,10 +1586,7 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
         DeleteObject(hBrush);
     }
     
-    if (tileValue & ZONEBIT)
-    {
-        FrameRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-    }
+    /* Removed white frame for all zones to improve visual appearance */
     
     if ((tileValue & ZONEBIT) && !(tileValue & POWERBIT))
     {
@@ -1393,14 +1594,18 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
         hBrush = CreateSolidBrush(RGB(255, 255, 0));
         FrameRect(hdc, &rect, hBrush);
         DeleteObject(hBrush);
+        
+        /* Draw the lightning bolt power indicator in the center of the tile */
+        if (hdcTiles && hbmTiles)
+        {
+            int srcX = (LIGHTNINGBOLT % TILES_IN_ROW) * TILE_SIZE; 
+            int srcY = (LIGHTNINGBOLT / TILES_IN_ROW) * TILE_SIZE;
+            
+            BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE,
+                   hdcTiles, srcX, srcY, SRCCOPY);
+        }
     }
-    else if ((tileValue & ZONEBIT) && (tileValue & POWERBIT))
-    {
-        /* Powered zones get a green frame */
-        hBrush = CreateSolidBrush(RGB(0, 255, 0));
-        FrameRect(hdc, &rect, hBrush);
-        DeleteObject(hBrush);
-    }
+    /* Removed green frame for powered zones to improve visual appearance */
     
     /* Commented out power indicator dots for cleaner display 
     else if ((tileValue & CONDBIT) && (tileValue & POWERBIT))
@@ -1601,6 +1806,79 @@ void drawCity(HDC hdc)
             TextOut(hdc, 10, 110, buffer, lstrlen(buffer));
         }
         
+        /* Show current tool information if a tool is active */
+        if (isToolActive)
+        {
+            const char *toolName;
+            int toolCost;
+            
+            /* Get the tool name */
+            switch (GetCurrentTool())
+            {
+                case bulldozerState:
+                    toolName = "Bulldozer";
+                    break;
+                case roadState:
+                    toolName = "Road";
+                    break;
+                case railState:
+                    toolName = "Rail";
+                    break;
+                case wireState:
+                    toolName = "Wire";
+                    break;
+                case parkState:
+                    toolName = "Park";
+                    break;
+                case residentialState:
+                    toolName = "Residential Zone";
+                    break;
+                case commercialState:
+                    toolName = "Commercial Zone";
+                    break;
+                case industrialState:
+                    toolName = "Industrial Zone";
+                    break;
+                case fireState:
+                    toolName = "Fire Station";
+                    break;
+                case policeState:
+                    toolName = "Police Station";
+                    break;
+                case stadiumState:
+                    toolName = "Stadium";
+                    break;
+                case seaportState:
+                    toolName = "Seaport";
+                    break;
+                case powerState:
+                    toolName = "Coal Power Plant";
+                    break;
+                case nuclearState:
+                    toolName = "Nuclear Power Plant";
+                    break;
+                case airportState:
+                    toolName = "Airport";
+                    break;
+                case queryState:
+                    toolName = "Query";
+                    break;
+                default:
+                    toolName = "Unknown Tool";
+                    break;
+            }
+            
+            toolCost = GetToolCost();
+            
+            /* Show the tool name and cost at the bottom of the screen */
+            wsprintf(buffer, "Tool: %s  Cost: $%d", toolName, toolCost);
+            TextOut(hdc, 10, cyClient - 30, buffer, lstrlen(buffer));
+            
+            /* Additional instructions */
+            wsprintf(buffer, "Click to build, right-click to cancel");
+            TextOut(hdc, 10, cyClient - 15, buffer, lstrlen(buffer));
+        }
+        
         /* Constants for RCI display */
         barWidth = 20;
         maxHeight = 50;
@@ -1758,8 +2036,48 @@ HMENU createMainMenu(void)
     AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_DETROIT, "&Detroit (1972): Crime");
     AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_BOSTON, "&Boston (2010): Nuclear Meltdown");
     AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_RIO, "&Rio de Janeiro (2047): Coastal Flooding");
+
+    /* Create tools menu */
+    hToolMenu = CreatePopupMenu();
+    
+    /* Transportation Tools */
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_BULLDOZER, "&Bulldozer ($1)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_ROAD, "&Road ($10)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_RAIL, "Rail&road ($20)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_WIRE, "&Wire ($5)");
+    AppendMenu(hToolMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Zone Tools */
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_RESIDENTIAL, "&Residential Zone ($100)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_COMMERCIAL, "&Commercial Zone ($100)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_INDUSTRIAL, "&Industrial Zone ($100)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_PARK, "Par&k ($10)");
+    AppendMenu(hToolMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Public Services */
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_POLICESTATION, "Police &Station ($500)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_FIRESTATION, "&Fire Station ($500)");
+    AppendMenu(hToolMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Special Buildings */
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_STADIUM, "S&tadium ($5000)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_SEAPORT, "Sea&port ($3000)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_AIRPORT, "&Airport ($10000)");
+    AppendMenu(hToolMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Power */
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_POWERPLANT, "&Coal Power Plant ($3000)");
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_NUCLEAR, "&Nuclear Power Plant ($5000)");
+    AppendMenu(hToolMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Query */
+    AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_QUERY, "&Query");
+    
+    /* Default tool is bulldozer */
+    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_BULLDOZER, MF_BYCOMMAND);
     
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hToolMenu, "&Build");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");

@@ -84,6 +84,7 @@ typedef long QUAD;
 #define COMBASE         423     /* Start of commercial zones */
 #define LASTCOM         611     /* End of commercial zones */
 #define INDBASE         612     /* Start of industrial zones */
+#define LIGHTNINGBOLT   827     /* No-power indicator */
 
 /* Game simulation rate constants */
 #define SPEEDCYCLE      1024  /* The number of cycles before the speed counter loops from 0-1023 */
