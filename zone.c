@@ -175,30 +175,43 @@ static int ZoneRandom(int range)
     return rand() % range;
 }
 
-/* Main zone processing function */
+/* Main zone processing function - based on original Micropolis code */
 void DoZone(int Xloc, int Yloc, int pos)
 {
+    /* First check if this is a zone center */
+    if (!(Map[Yloc][Xloc] & ZONEBIT)) {
+        return;
+    }
+    
+    /* Set global position variables for this zone */
+    SMapX = Xloc;
+    SMapY = Yloc;
+    
     /* Do special processing based on zone type */
     if (pos >= RESBASE) {
         if (pos < COMBASE) {
+            /* Residential zone */
+            SetZPower(Xloc, Yloc);
             DoResidential(Xloc, Yloc);
             return;
         }
     
         if (pos < INDBASE) {
+            /* Commercial zone */
+            SetZPower(Xloc, Yloc);
             DoCommercial(Xloc, Yloc);
             return;
         }
     
         if (pos < PORTBASE) {
+            /* Industrial zone */
+            SetZPower(Xloc, Yloc);
             DoIndustrial(Xloc, Yloc);
             return;
         }
     }
     
-    if (pos < PORTBASE)
-        return;
-        
+    /* Handle special zones */
     if (pos < HOSPITALBASE || pos > FOOTBALLBASE) {
         switch (pos) {
             case POWERPLANT:
@@ -450,12 +463,14 @@ static void DoResidential(int x, int y)
     short zone;
     short tpop;
     int pop;
+    int zonePowered;
     
     zone = Map[y][x];
     if (!(zone & ZONEBIT))
         return;
         
-    SetZPower(x, y);
+    /* Check if zone has power */
+    zonePowered = (zone & POWERBIT) != 0;
     
     tpop = RZPop;
     
@@ -474,7 +489,7 @@ static void DoResidential(int x, int y)
         }
     }
     
-    /* Process residential zone less often (every 8th cycle) */
+    /* Process growth or decline based on power status */
     if ((CityTime & 7) == 0) {
         int value;
         
@@ -482,6 +497,12 @@ static void DoResidential(int x, int y)
         
         if (value < 0) {
             DoResOut(tpop, value, x, y);
+            return;
+        }
+        
+        /* No growth in unpowered zones */
+        if (!zonePowered) {
+            DoResOut(tpop, -500, x, y);
             return;
         }
         
@@ -494,6 +515,7 @@ static void DoResidential(int x, int y)
         }
     }
     
+    /* Reset population counter periodically */
     if ((CityTime & 7) == 0) {
         RZPop = 0;
     }
@@ -923,29 +945,63 @@ static int DoFreePop(int x, int y)
     return count;
 }
 
-/* Set zone power status */
+/* Set zone power status - simplified for reliability */
 static void SetZPower(int x, int y)
 {
-    int powered;
     short z;
+    int powered;
+    int dx, dy;
     
-    powered = 0;
-    
-    /* Check if this zone center needs power */
+    /* First check if this is a power plant - they're always powered */
     z = Map[y][x] & LOMASK;
     
-    if (z < PORTBASE)
+    if (z == NUCLEAR || z == POWERPLANT) {
+        /* Power plants are always powered */
+        Map[y][x] |= POWERBIT;
+        PwrdZCnt++;
         return;
-    
-    /* Check if there's power nearby */
-    if (GetPValue(x, y)) {
-        powered = POWERBIT;
-    } else {
-        powered = 0;
     }
     
-    /* Set power bit appropriately */
-    Map[y][x] = (Map[y][x] & (~POWERBIT)) | powered;
+    /* Check if already powered according to PowerMap */
+    if (PowerMap[y][x] == 1) {
+        Map[y][x] |= POWERBIT;
+        powered = 1;
+    } 
+    /* If not already powered, check surrounding tiles */
+    else {
+        powered = 0;
+        
+        /* Check all 8 surrounding tiles for power */
+        for (dy = -1; dy <= 1 && !powered; dy++) {
+            for (dx = -1; dx <= 1 && !powered; dx++) {
+                int nx = x + dx;
+                int ny = y + dy;
+                
+                /* Skip the center tile */
+                if (dx == 0 && dy == 0) {
+                    continue;
+                }
+                
+                /* Check if neighbor is in bounds */
+                if (nx >= 0 && nx < WORLD_X && ny >= 0 && ny < WORLD_Y) {
+                    /* If a neighboring tile has power, this zone gets power */
+                    if (Map[ny][nx] & POWERBIT) {
+                        powered = 1;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        /* Update the power bit based on our check */
+        if (powered) {
+            Map[y][x] |= POWERBIT;
+            PowerMap[y][x] = 1;
+        } else {
+            Map[y][x] &= ~POWERBIT;
+            PowerMap[y][x] = 0;
+        }
+    }
     
     /* Update power count */
     if (powered) {

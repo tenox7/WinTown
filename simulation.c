@@ -261,6 +261,10 @@ void Simulate(int mod16)
                 SetValves(RValve, CValve, IValve);
                 ValveFlag = 0;
             }
+            
+            /* DIRECT FIX: Run the power scan at the start of each major cycle
+               to ensure power distribution happens frequently enough */
+            DoPowerScan();
             break;
             
         case 1:

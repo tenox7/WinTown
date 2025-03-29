@@ -2036,14 +2036,15 @@ int PlaceZone(int mapX, int mapY, int baseValue, int totalCost)
     /* Charge for the zone */
     Spend(totalCost - bulldozeCost);
     
-    /* Place the 3x3 zone */
+    /* Place the 3x3 zone with proper power conductivity for ALL tiles */
     for (dy = -1; dy <= 1; dy++) {
         for (dx = -1; dx <= 1; dx++) {
-            /* Center tile gets ZONEBIT */
             if (dx == 0 && dy == 0) {
-                Map[mapY][mapX] = baseValue + 4 | ZONEBIT | BULLBIT;
+                /* Center tile gets ZONEBIT, CONDBIT, and BULLBIT */
+                Map[mapY][mapX] = baseValue + 4 | ZONEBIT | BULLBIT | CONDBIT;
             } else {
-                Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT;
+                /* All other tiles in the zone get CONDBIT too for proper power distribution */
+                Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT | CONDBIT;
             }
             index++;
         }
