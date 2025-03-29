@@ -185,7 +185,9 @@ static char currentTileset[MAX_PATH] = "classic";
 #define TILE_NUCLEAR        816
 #define TILE_LASTNUCLEAR    826
 
+#ifndef TILE_TOTAL_COUNT
 #define TILE_TOTAL_COUNT    960
+#endif
 
 #define TILES_IN_ROW        32
 #define TILES_PER_ROW       32
@@ -414,6 +416,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             
             hdc = BeginPaint(hwnd, &ps);
             
+            /* Select and realize palette for proper 8-bit color rendering */
             if (hPalette)
             {
                 SelectPalette(hdc, hPalette, FALSE);
@@ -422,7 +425,17 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             
             if (hbmBuffer)
             {
+                /* Draw everything to our offscreen buffer with the correct palette */
+                if (hPalette)
+                {
+                    SelectPalette(hdcBuffer, hPalette, FALSE);
+                    RealizePalette(hdcBuffer);
+                }
+                
+                /* Draw the city to our buffer */
                 drawCity(hdcBuffer);
+                
+                /* Copy the buffer to the screen */
                 BitBlt(hdc, 0, 0, cxClient, cyClient, 
                        hdcBuffer, 0, 0, SRCCOPY);
             }
@@ -577,36 +590,70 @@ HPALETTE createSystemPalette(void)
 {
     LOGPALETTE *pLogPal;
     HPALETTE hPal;
-    int i;
-    PALETTEENTRY colorTable[16] = {
-        {0, 0, 0, 0},          /* Black */
-        {128, 0, 0, 0},        /* Dark Red */
-        {0, 128, 0, 0},        /* Dark Green */
-        {128, 128, 0, 0},      /* Dark Yellow */
-        {0, 0, 128, 0},        /* Dark Blue */
-        {128, 0, 128, 0},      /* Dark Magenta */
-        {0, 128, 128, 0},      /* Dark Cyan */
-        {192, 192, 192, 0},    /* Light Gray */
-        {128, 128, 128, 0},    /* Dark Gray */
-        {255, 0, 0, 0},        /* Red */
-        {0, 255, 0, 0},        /* Green */
-        {255, 255, 0, 0},      /* Yellow */
-        {0, 0, 255, 0},        /* Blue */
-        {255, 0, 255, 0},      /* Magenta */
-        {0, 255, 255, 0},      /* Cyan */
-        {255, 255, 255, 0}     /* White */
-    };
+    int i, r, g, b;
+    int gray;
+    PALETTEENTRY sysColors[16];
     
-    pLogPal = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + 15 * sizeof(PALETTEENTRY));
+    /* Setup the standard 16 colors */
+    sysColors[0].peRed = 0;    sysColors[0].peGreen = 0;    sysColors[0].peBlue = 0;    sysColors[0].peFlags = 0;      /* Black */
+    sysColors[1].peRed = 128;  sysColors[1].peGreen = 0;    sysColors[1].peBlue = 0;    sysColors[1].peFlags = 0;      /* Dark Red */
+    sysColors[2].peRed = 0;    sysColors[2].peGreen = 128;  sysColors[2].peBlue = 0;    sysColors[2].peFlags = 0;      /* Dark Green */
+    sysColors[3].peRed = 128;  sysColors[3].peGreen = 128;  sysColors[3].peBlue = 0;    sysColors[3].peFlags = 0;      /* Dark Yellow */
+    sysColors[4].peRed = 0;    sysColors[4].peGreen = 0;    sysColors[4].peBlue = 128;  sysColors[4].peFlags = 0;      /* Dark Blue */
+    sysColors[5].peRed = 128;  sysColors[5].peGreen = 0;    sysColors[5].peBlue = 128;  sysColors[5].peFlags = 0;      /* Dark Magenta */
+    sysColors[6].peRed = 0;    sysColors[6].peGreen = 128;  sysColors[6].peBlue = 128;  sysColors[6].peFlags = 0;      /* Dark Cyan */
+    sysColors[7].peRed = 192;  sysColors[7].peGreen = 192;  sysColors[7].peBlue = 192;  sysColors[7].peFlags = 0;      /* Light Gray */
+    sysColors[8].peRed = 128;  sysColors[8].peGreen = 128;  sysColors[8].peBlue = 128;  sysColors[8].peFlags = 0;      /* Dark Gray */
+    sysColors[9].peRed = 255;  sysColors[9].peGreen = 0;    sysColors[9].peBlue = 0;    sysColors[9].peFlags = 0;      /* Red */
+    sysColors[10].peRed = 0;   sysColors[10].peGreen = 255; sysColors[10].peBlue = 0;   sysColors[10].peFlags = 0;     /* Green */
+    sysColors[11].peRed = 255; sysColors[11].peGreen = 255; sysColors[11].peBlue = 0;   sysColors[11].peFlags = 0;     /* Yellow */
+    sysColors[12].peRed = 0;   sysColors[12].peGreen = 0;   sysColors[12].peBlue = 255; sysColors[12].peFlags = 0;     /* Blue */
+    sysColors[13].peRed = 255; sysColors[13].peGreen = 0;   sysColors[13].peBlue = 255; sysColors[13].peFlags = 0;     /* Magenta */
+    sysColors[14].peRed = 0;   sysColors[14].peGreen = 255; sysColors[14].peBlue = 255; sysColors[14].peFlags = 0;     /* Cyan */
+    sysColors[15].peRed = 255; sysColors[15].peGreen = 255; sysColors[15].peBlue = 255; sysColors[15].peFlags = 0;     /* White */
+    
+    /* Allocate memory for 256 color entries */
+    pLogPal = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + 255 * sizeof(PALETTEENTRY));
     if (!pLogPal)
         return NULL;
     
     pLogPal->palVersion = 0x300; /* Windows 3.0 */
-    pLogPal->palNumEntries = 16; /* 16 colors (4-bit) */
+    pLogPal->palNumEntries = 256; /* 256 colors (8-bit) */
     
+    /* Copy system colors */
     for (i = 0; i < 16; i++)
     {
-        pLogPal->palPalEntry[i] = colorTable[i];
+        pLogPal->palPalEntry[i] = sysColors[i];
+    }
+    
+    /* Create a 6x6x6 color cube for the next 216 entries (6 levels each for R, G, B) */
+    /* This is similar to the "Web Safe" palette */
+    i = 16; /* Start after system colors */
+    for (r = 0; r < 6; r++)
+    {
+        for (g = 0; g < 6; g++)
+        {
+            for (b = 0; b < 6; b++)
+            {
+                pLogPal->palPalEntry[i].peRed = r * 51;    /* 51 is 255/5 */
+                pLogPal->palPalEntry[i].peGreen = g * 51;
+                pLogPal->palPalEntry[i].peBlue = b * 51;
+                pLogPal->palPalEntry[i].peFlags = 0;
+                i++;
+            }
+        }
+    }
+    
+    /* Fill the remaining entries with grayscale values */
+    for (; i < 256; i++)
+    {
+        gray = (i - 232) * 10 + 8; /* 24 grayscale entries, from light gray to near-white */
+        if (gray > 255) gray = 255;
+        
+        pLogPal->palPalEntry[i].peRed = gray;
+        pLogPal->palPalEntry[i].peGreen = gray;
+        pLogPal->palPalEntry[i].peBlue = gray;
+        pLogPal->palPalEntry[i].peFlags = 0;
     }
     
     hPal = CreatePalette(pLogPal);
@@ -625,9 +672,12 @@ void initializeGraphics(HWND hwnd)
     BITMAPINFOHEADER bi;
     LPVOID bits;
     HBITMAP hbmOld;
+    char errorMsg[256];
+    DWORD error;
     
     hdc = GetDC(hwnd);
     
+    /* Create our 256-color palette */
     if (hPalette == NULL)
     {
         hPalette = createSystemPalette();
@@ -636,6 +686,10 @@ void initializeGraphics(HWND hwnd)
         {
             SelectPalette(hdc, hPalette, FALSE);
             RealizePalette(hdc);
+        }
+        else
+        {
+            OutputDebugString("Failed to create palette!");
         }
     }
     
@@ -654,6 +708,7 @@ void initializeGraphics(HWND hwnd)
     width = cxClient;
     height = cyClient;
     
+    /* Setup 8-bit DIB section for our drawing buffer */
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = width;
@@ -663,14 +718,31 @@ void initializeGraphics(HWND hwnd)
     bi.biCompression = BI_RGB;
     
     hbmBuffer = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
+    
+    if (hbmBuffer == NULL)
+    {
+        error = GetLastError();
+        
+        wsprintf(errorMsg, "Failed to create buffer DIB Section: Error %d", error);
+        OutputDebugString(errorMsg);
+        ReleaseDC(hwnd, hdc);
+        return;
+    }
+    
     hbmOld = SelectObject(hdcBuffer, hbmBuffer);
     
+    /* Fill with black background */
     FillRect(hdcBuffer, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
     
     /* Always load the classic tileset by default */
     strcpy(currentTileset, "classic");
     wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
-    loadTileset(tilePath);
+    
+    /* Load the tileset with our 8-bit palette */
+    if (!loadTileset(tilePath))
+    {
+        OutputDebugString("Failed to load default tileset!");
+    }
     
     ReleaseDC(hwnd, hdc);
 }
@@ -678,9 +750,23 @@ void initializeGraphics(HWND hwnd)
 HBITMAP loadBitmapFile(const char* filename)
 {
     HBITMAP hBitmap;
+    DWORD error;
+    char errorMsg[256];
     
+    /* LR_CREATEDIBSECTION creates a DIB section bitmap that can be
+       selected into a memory DC. Using this flag makes the bitmap 
+       compatible with our 8-bit/256 color rendering. */
     hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
                         LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    
+    if (hBitmap == NULL)
+    {
+        /* Debug output to help diagnose bitmap loading errors */
+        error = GetLastError();
+        
+        wsprintf(errorMsg, "Failed to load bitmap: %s, Error: %d", filename, error);
+        OutputDebugString(errorMsg);
+    }
                         
     return hBitmap;
 }
@@ -688,6 +774,10 @@ HBITMAP loadBitmapFile(const char* filename)
 int loadTileset(const char* filename)
 {
     HDC hdc;
+    char errorMsg[256];
+    DWORD error;
+    BITMAP bm;
+    char debugMsg[256];
     
     if (hdcTiles)
     {
@@ -706,11 +796,39 @@ int loadTileset(const char* filename)
     
     if (hbmTiles == NULL)
     {
+        /* Output debug message */
+        error = GetLastError();
+        
+        wsprintf(errorMsg, "Failed to load tileset: %s, Error: %d", filename, error);
+        OutputDebugString(errorMsg);
         return 0;
+    }
+    
+    /* Verify that the bitmap was loaded properly */
+    if (GetObject(hbmTiles, sizeof(BITMAP), &bm))
+    {
+        wsprintf(debugMsg, "Tileset Info: %dx%d, %d bits/pixel",
+                 bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
+        OutputDebugString(debugMsg);
+        
+        /* Warn if the bitmap is not 8-bit */
+        if (bm.bmBitsPixel != 8)
+        {
+            wsprintf(debugMsg, "WARNING: Tileset is not 8-bit color (%d bits)",
+                     bm.bmBitsPixel);
+            OutputDebugString(debugMsg);
+        }
     }
     
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
+    
+    /* Apply our palette to the tileset */
+    if (hPalette)
+    {
+        SelectPalette(hdcTiles, hPalette, FALSE);
+        RealizePalette(hdcTiles);
+    }
     
     SelectObject(hdcTiles, hbmTiles);
     
@@ -723,6 +841,10 @@ int changeTileset(HWND hwnd, const char* tilesetName)
     char tilesetPath[MAX_PATH];
     char windowTitle[MAX_PATH];
     HDC hdc;
+    char errorMsg[256];
+    DWORD error;
+    BITMAP bm;
+    char debugMsg[256];
     
     wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
     
@@ -743,11 +865,31 @@ int changeTileset(HWND hwnd, const char* tilesetName)
     
     if (hbmTiles == NULL)
     {
+        /* Output debug message */
+        error = GetLastError();
+        
+        wsprintf(errorMsg, "Failed to change tileset: %s, Error: %d", tilesetPath, error);
+        OutputDebugString(errorMsg);
         return 0;
+    }
+    
+    /* Verify that the bitmap was loaded properly */
+    if (GetObject(hbmTiles, sizeof(BITMAP), &bm))
+    {
+        wsprintf(debugMsg, "Changed Tileset Info: %dx%d, %d bits/pixel",
+                 bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
+        OutputDebugString(debugMsg);
     }
     
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
+    
+    /* Apply our palette to the tileset */
+    if (hPalette)
+    {
+        SelectPalette(hdcTiles, hPalette, FALSE);
+        RealizePalette(hdcTiles);
+    }
     
     SelectObject(hdcTiles, hbmTiles);
     
@@ -756,6 +898,7 @@ int changeTileset(HWND hwnd, const char* tilesetName)
     wsprintf(windowTitle, "MicropolisNT - Tileset: %s", tilesetName);
     SetWindowText(hwnd, windowTitle);
     
+    /* Force a full redraw */
     InvalidateRect(hwnd, NULL, TRUE);
     
     ReleaseDC(hwndMain, hdc);
@@ -802,11 +945,20 @@ void resizeBuffer(int cx, int cy)
     RECT rcBuffer;
     BITMAPINFOHEADER bi;
     LPVOID bits;
+    char errorMsg[256];
+    DWORD error;
     
     if (cx <= 0 || cy <= 0)
         return;
     
     hdc = GetDC(hwndMain);
+    
+    /* Make sure our palette is selected into the DC */
+    if (hPalette) 
+    {
+        SelectPalette(hdc, hPalette, FALSE);
+        RealizePalette(hdc);
+    }
     
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
@@ -816,13 +968,32 @@ void resizeBuffer(int cx, int cy)
     bi.biBitCount = 8; /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
     
+    /* Create DIB section with our palette */
     hbmNew = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
+    
+    if (hbmNew == NULL)
+    {
+        /* Debug output for DIB creation failure */
+        error = GetLastError();
+        
+        wsprintf(errorMsg, "Failed to create DIB Section: Error %d", error);
+        OutputDebugString(errorMsg);
+        ReleaseDC(hwndMain, hdc);
+        return;
+    }
     
     if (hbmBuffer)
         DeleteObject(hbmBuffer);
     
     hbmBuffer = hbmNew;
     SelectObject(hdcBuffer, hbmBuffer);
+    
+    /* Apply the palette to our buffer */
+    if (hPalette)
+    {
+        SelectPalette(hdcBuffer, hPalette, FALSE);
+        RealizePalette(hdcBuffer);
+    }
     
     rcBuffer.left = 0;
     rcBuffer.top = 0;
