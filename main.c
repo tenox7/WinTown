@@ -7,10 +7,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "simulation.h"
+
 #define IDM_FILE_OPEN       1001
 #define IDM_FILE_EXIT       1002
 #define IDM_TILESET_BASE    2000
 #define IDM_TILESET_MAX     2100
+#define IDM_SIM_PAUSE       3001
+#define IDM_SIM_SLOW        3002
+#define IDM_SIM_MEDIUM      3003
+#define IDM_SIM_FAST        3004
 
 /* Define needed for older Windows SDK compatibility */
 #ifndef LR_CREATEDIBSECTION
@@ -33,21 +39,17 @@
 #define IMAGE_BITMAP 0
 #endif
 
-/* Original Micropolis constants */
-#define WORLD_X 120
-#define WORLD_Y 100
 #define TILE_SIZE 16
-#define HISTLEN 480
-#define MISCHISTLEN 240
 
-static short Map[WORLD_Y][WORLD_X];
-static short ResHis[HISTLEN/2];
-static short ComHis[HISTLEN/2];
-static short IndHis[HISTLEN/2];
-static short CrimeHis[HISTLEN/2];
-static short PollutionHis[HISTLEN/2];
-static short MoneyHis[HISTLEN/2];
-static short MiscHis[MISCHISTLEN/2];
+/* Main map and history arrays - now defined in simulation.h/c */
+short Map[WORLD_Y][WORLD_X];
+short ResHis[HISTLEN/2];
+short ComHis[HISTLEN/2];
+short IndHis[HISTLEN/2];
+short CrimeHis[HISTLEN/2];
+short PollutionHis[HISTLEN/2];
+short MoneyHis[HISTLEN/2];
+short MiscHis[MISCHISTLEN/2];
 
 static HWND hwndMain = NULL;
 static HBITMAP hbmBuffer = NULL;
@@ -69,17 +71,12 @@ static char cityFileName[MAX_PATH];
 static HMENU hMenu = NULL;
 static HMENU hFileMenu = NULL;
 static HMENU hTilesetMenu = NULL;
+static HMENU hSimMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 
-/* Micropolis tile flags */
-#define BIT_MASK        0x03ff  /* Mask for the low 10 bits = 1023 decimal */
-#define LOMASK          BIT_MASK
-#define ANIMBIT         0x0800  /* bit 11, tile is animated */
-#define BURNBIT         0x2000  /* bit 13, tile can be lit */
-#define BULLBIT         0x1000  /* bit 12, tile is bulldozable */
-#define CONDBIT         0x4000  /* bit 14, tile can conduct electricity */
-#define ZONEBIT         0x0400  /* bit 10, tile is the center of a zone */
-#define POWERBIT        0x8000  /* bit 15, tile has power */
+/* Micropolis tile flags - These must match simulation.h */
+/* Using LOMASK from simulation.h */
+/* Use the constants from simulation.h for consistency */
 
 /* Tile type constants */
 #define TILE_DIRT            0
@@ -144,6 +141,17 @@ static char currentTileset[MAX_PATH] = "classic";
 #define TILE_COMBASE       423
 #define TILE_COMCLR        427
 #define TILE_LASTCOM       611
+
+/* Tileset constants - commented out because they're defined elsewhere 
+   If you need to modify these, update the definitions where they are first defined
+#define TILE_TOTAL_COUNT   1024  Maximum number of tiles in the tileset 
+#define TILES_IN_ROW       32    Number of tiles per row in the tileset bitmap */
+#ifndef TILE_TOTAL_COUNT
+#define TILE_TOTAL_COUNT   1024 /* Maximum number of tiles in the tileset */
+#endif
+#ifndef TILES_IN_ROW
+#define TILES_IN_ROW       32   /* Number of tiles per row in the tileset bitmap */
+#endif
 
 #define TILE_INDBASE       612
 #define TILE_INDCLR        616
@@ -256,6 +264,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         }
     }
     
+    /* Initialize simulation */
+    DoSimInit();
+    
+    /* Start simulation at medium speed */
+    SetSimulationSpeed(hwndMain, SPEED_MEDIUM);
+    
+    /* Set some initial demand values so we can see activity */
+    RValve = 500;
+    CValve = 300; 
+    IValve = 100;
+    
     ShowWindow(hwndMain, nCmdShow);
     UpdateWindow(hwndMain);
     
@@ -271,12 +290,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 
 
+/* These constants should match those in simulation.c */
+#define SIM_TIMER_ID 1
+#define SIM_TIMER_INTERVAL 50
+
+/* Update menu when simulation speed changes */
+void UpdateSimulationMenu(HWND hwnd, int speed)
+{
+    /* Update menu checkmarks */
+    CheckMenuRadioItem(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, 
+                      IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
+}
+
 LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch(msg)
     {
         case WM_CREATE:
             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1, 0, MF_BYPOSITION);
+            /* Initialize simulation */
+            DoSimInit();
             return 0;
         
         case WM_COMMAND:
@@ -288,6 +321,22 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     
                 case IDM_FILE_EXIT:
                     PostMessage(hwnd, WM_CLOSE, 0, 0);
+                    return 0;
+                    
+                case IDM_SIM_PAUSE:
+                    SetSimulationSpeed(hwnd, SPEED_PAUSED);
+                    return 0;
+                    
+                case IDM_SIM_SLOW:
+                    SetSimulationSpeed(hwnd, SPEED_SLOW);
+                    return 0;
+                    
+                case IDM_SIM_MEDIUM:
+                    SetSimulationSpeed(hwnd, SPEED_MEDIUM);
+                    return 0;
+                    
+                case IDM_SIM_FAST:
+                    SetSimulationSpeed(hwnd, SPEED_FAST);
                     return 0;
                     
                 default:
@@ -308,6 +357,24 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         }
                         return 0;
                     }
+            }
+            break;
+            
+        case WM_TIMER:
+            if (wParam == SIM_TIMER_ID) {
+                BOOL needRedraw;
+                
+                /* Run the simulation frame */
+                SimFrame();
+                
+                /* Always redraw to handle animations, but skip if paused */
+                needRedraw = TRUE;
+                
+                /* Update the display */
+                if (needRedraw) {
+                    InvalidateRect(hwnd, NULL, FALSE);
+                }
+                return 0;
             }
             break;
             
@@ -486,6 +553,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         
         case WM_DESTROY:
+            CleanupSimTimer(hwnd);
             cleanupGraphics();
             PostQuitMessage(0);
             return 0;
@@ -864,6 +932,36 @@ int loadCity(char *filename)
     if (xOffset < 0) xOffset = 0;
     if (yOffset < 0) yOffset = 0;
     
+    /* Initialize the simulation with the new city data */
+    DoSimInit();
+    
+    /* Unpause simulation at medium speed */
+    SetSimulationSpeed(hwndMain, SPEED_MEDIUM);
+    
+    /* Update the window title with city name */
+    {
+        char windowTitle[MAX_PATH];
+        char *baseName;
+        char *dot;
+        
+        baseName = cityFileName;
+        
+        if (strrchr(baseName, '\\'))
+            baseName = strrchr(baseName, '\\') + 1;
+        if (strrchr(baseName, '/'))
+            baseName = strrchr(baseName, '/') + 1;
+            
+        lstrcpy(windowTitle, "MicropolisNT - ");
+        lstrcat(windowTitle, baseName);
+        
+        /* Remove the extension if present */
+        dot = strrchr(windowTitle, '.');
+        if (dot)
+            *dot = '\0';
+            
+        SetWindowText(hwndMain, windowTitle);
+    }
+    
     InvalidateRect(hwndMain, NULL, FALSE);
     
     return 1;
@@ -924,21 +1022,59 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
     int srcX;
     int srcY;
     
-    if (tileValue < 0)
-    {
-        rect.left = x;
-        rect.top = y;
-        rect.right = x + TILE_SIZE;
-        rect.bottom = y + TILE_SIZE;
-        FillRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-        return;
-    }
+    /* Don't treat negative values as special - they are valid tile values with the sign bit set 
+       In the original code, negative values in PowerMap indicated unpowered state,
+       but in our implementation we need to still render the tile */
     
-    tileIndex = tileValue & BIT_MASK;
+    tileIndex = tileValue & LOMASK;
     
     if (tileIndex >= TILE_TOTAL_COUNT)
     {
         tileIndex = 0;
+    }
+    
+    /* Handle animated traffic tiles */
+    if (tileValue & ANIMBIT) {
+        /* Use low 2 bits of Fcycle for animation (0-3) */
+        int frame = (Fcycle & 3);
+        
+        /* Light traffic animation range (80-127) */
+        if (tileIndex >= 80 && tileIndex <= 127) {
+            /* The way traffic works is:
+               - Tiles 80-95 are frame 1 (use when frame=1)
+               - Tiles 96-111 are frame 2 (use when frame=2)
+               - Tiles 112-127 are frame 3 (use when frame=3)
+               - Tiles 128-143 are frame 0 (use when frame=0)
+            */
+            int baseOffset = tileIndex & 0xF;  /* Base road layout (0-15) */
+            
+            /* Get correct frame tiles */
+            switch (frame) {
+                case 0: tileIndex = 128 + baseOffset; break; /* Frame 0 */
+                case 1: tileIndex = 80 + baseOffset; break;  /* Frame 1 */
+                case 2: tileIndex = 96 + baseOffset; break;  /* Frame 2 */
+                case 3: tileIndex = 112 + baseOffset; break; /* Frame 3 */
+            }
+        }
+        
+        /* Heavy traffic animation range (144-207) */
+        if (tileIndex >= 144 && tileIndex <= 207) {
+            /* Heavy traffic works the same way:
+               - Tiles 144-159 are frame 1 (use when frame=1)
+               - Tiles 160-175 are frame 2 (use when frame=2)
+               - Tiles 176-191 are frame 3 (use when frame=3)
+               - Tiles 192-207 are frame 0 (use when frame=0)
+            */
+            int baseOffset = tileIndex & 0xF;  /* Base road layout (0-15) */
+            
+            /* Get correct frame tiles */
+            switch (frame) {
+                case 0: tileIndex = 192 + baseOffset; break; /* Frame 0 */
+                case 1: tileIndex = 144 + baseOffset; break; /* Frame 1 */
+                case 2: tileIndex = 160 + baseOffset; break; /* Frame 2 */
+                case 3: tileIndex = 176 + baseOffset; break; /* Frame 3 */
+            }
+        }
     }
     
     rect.left = x;
@@ -1013,10 +1149,79 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
     
     if ((tileValue & ZONEBIT) && !(tileValue & POWERBIT))
     {
+        /* Unpowered zones get a yellow frame */
         hBrush = CreateSolidBrush(RGB(255, 255, 0));
         FrameRect(hdc, &rect, hBrush);
         DeleteObject(hBrush);
     }
+    else if ((tileValue & ZONEBIT) && (tileValue & POWERBIT))
+    {
+        /* Powered zones get a green frame */
+        hBrush = CreateSolidBrush(RGB(0, 255, 0));
+        FrameRect(hdc, &rect, hBrush);
+        DeleteObject(hBrush);
+    }
+    
+    /* Commented out power indicator dots for cleaner display 
+    else if ((tileValue & CONDBIT) && (tileValue & POWERBIT))
+    {
+        // Power lines and other conductors with power get a cyan dot
+        int dotSize = 4;
+        RECT dotRect;
+        
+        dotRect.left = rect.left + (TILE_SIZE - dotSize) / 2;
+        dotRect.top = rect.top + (TILE_SIZE - dotSize) / 2;
+        dotRect.right = dotRect.left + dotSize;
+        dotRect.bottom = dotRect.top + dotSize;
+        
+        hBrush = CreateSolidBrush(RGB(0, 255, 255));
+        FillRect(hdc, &dotRect, hBrush);
+        DeleteObject(hBrush);
+    }
+    */
+    
+    /* Commented out traffic visualization dots for cleaner display 
+    {
+        int tileBase = tileValue & LOMASK;
+        Byte trafficLevel;
+        
+        if ((tileBase >= ROADBASE && tileBase <= LASTROAD) || 
+            (tileBase >= RAILBASE && tileBase <= LASTRAIL))
+        {
+            // Get the traffic density for this location
+            trafficLevel = TrfDensity[y/2][x/2];
+            
+            // Only display if there's significant traffic
+            if (trafficLevel > 40) {
+                COLORREF trafficColor;
+                RECT trafficRect;
+                int trafficSize;
+                
+                // Scale traffic visualization by density level
+                if (trafficLevel < 100) {
+                    trafficColor = RGB(255, 255, 0); // Yellow for light traffic
+                    trafficSize = 2;
+                } else if (trafficLevel < 200) {
+                    trafficColor = RGB(255, 128, 0); // Orange for medium traffic
+                    trafficSize = 3;
+                } else {
+                    trafficColor = RGB(255, 0, 0);   // Red for heavy traffic
+                    trafficSize = 4;
+                }
+                
+                // Draw traffic indicator
+                trafficRect.left = rect.left + (TILE_SIZE - trafficSize) / 2;
+                trafficRect.top = rect.top + (TILE_SIZE - trafficSize) / 2;
+                trafficRect.right = trafficRect.left + trafficSize;
+                trafficRect.bottom = trafficRect.top + trafficSize;
+                
+                hBrush = CreateSolidBrush(trafficColor);
+                FillRect(hdc, &trafficRect, hBrush);
+                DeleteObject(hBrush);
+            }
+        }
+    }
+    */
 }
 
 void drawCity(HDC hdc)
@@ -1029,29 +1234,61 @@ void drawCity(HDC hdc)
     int startY;
     int endX;
     int endY;
+    int barWidth;
+    int maxHeight;
+    int spacing;
+    int rciStartX;
+    int rciStartY;
+    int rHeight;
+    int cHeight;
+    int iHeight;
+    int localR;
+    int localC;
+    int localI;
+    int cityMonth;
+    int cityYear;
+    int fundValue;
+    int popValue;
     RECT rcClient;
+    RECT rciRect;
+    HBRUSH hResBrush;
+    HBRUSH hComBrush;
+    HBRUSH hIndBrush;
+    HPEN hCenterPen;
+    HPEN hOldPen;
     char *baseName;
     char *lastSlash;
     char *lastFwdSlash;
     char nameBuffer[MAX_PATH];
+    char buffer[256];
     char *dot;
     
+    /* Copy simulation values to local variables for display */
+    cityMonth = CityMonth;
+    cityYear = CityYear;
+    fundValue = (int)TotalFunds;
+    popValue = TotalPop;
+    
+    /* Calculate visible range */
     startX = xOffset / TILE_SIZE;
     startY = yOffset / TILE_SIZE;
     endX = startX + (cxClient / TILE_SIZE) + 1;
     endY = startY + (cyClient / TILE_SIZE) + 1;
     
+    /* Bounds check */
     if (startX < 0) startX = 0;
     if (startY < 0) startY = 0;
     if (endX > WORLD_X) endX = WORLD_X;
     if (endY > WORLD_Y) endY = WORLD_Y;
     
+    /* Clear the background */
     rcClient.left = 0;
     rcClient.top = 0;
     rcClient.right = cxClient;
     rcClient.bottom = cyClient;
     FillRect(hdc, &rcClient, (HBRUSH)GetStockObject(BLACK_BRUSH));
     
+    /* Draw the map tiles */
     for (y = startY; y < endY; y++)
     {
         for (x = startX; x < endX; x++)
@@ -1063,8 +1300,14 @@ void drawCity(HDC hdc)
         }
     }
     
+    /* Setup text drawing */
+    SetBkMode(hdc, TRANSPARENT);
+    SetTextColor(hdc, RGB(255, 255, 255));
+    
+    /* Display city info if a city is loaded */
     if (cityFileName[0] != '\0')
     {
+        /* Extract the city name from the path */
         baseName = cityFileName;
         lastSlash = strrchr(cityFileName, '\\');
         lastFwdSlash = strrchr(cityFileName, '/');
@@ -1079,9 +1322,143 @@ void drawCity(HDC hdc)
         if (dot)
             *dot = '\0';
         
-        SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(255, 255, 255));
+        /* Show city name */
         TextOut(hdc, 10, 10, nameBuffer, lstrlen(nameBuffer));
+        
+        /* Show simulation stats */
+        wsprintf(buffer, "Year: %d  Month: %d  Funds: $%d  Population: %d", 
+                 cityYear, cityMonth + 1, fundValue, popValue);
+        TextOut(hdc, 10, 30, buffer, lstrlen(buffer));
+        
+        /* Show RCI demands as text */
+        wsprintf(buffer, "R:%d C:%d I:%d  Traffic:%d", RValve, CValve, IValve, TrafficAverage);
+        TextOut(hdc, 10, 50, buffer, lstrlen(buffer));
+        
+        /* Show evaluation results */
+        wsprintf(buffer, "Score: %d  Class: %s  Rating: %d%%", 
+                 CityScore, GetCityClassName(), (CityYes > 0) ? (CityYes) : 0);
+        TextOut(hdc, 10, 70, buffer, lstrlen(buffer));
+        
+        /* Show top problems if we have any */
+        if (CityPop > 0) {
+            short problems[4];
+            GetTopProblems(problems);
+            
+            if (problems[0] < 7) {  /* 7 = PROB_NONE */
+                wsprintf(buffer, "Top Problem: %s", GetProblemText(problems[0]));
+                TextOut(hdc, 10, 90, buffer, lstrlen(buffer));
+            }
+        }
+        
+        /* Show budget information */
+        {
+            int taxPercent = TaxRate;
+            QUAD taxIncome = GetTaxIncome();
+            
+            wsprintf(buffer, "Tax: %d%%  Income: $%ld  Fire: %d%%  Police: %d%%  Roads: %d%%", 
+                    taxPercent, taxIncome, 
+                    GetFireEffect(), GetPoliceEffect(), GetRoadEffect());
+            TextOut(hdc, 10, 110, buffer, lstrlen(buffer));
+        }
+        
+        /* Constants for RCI display */
+        barWidth = 20;
+        maxHeight = 50;
+        spacing = 5;
+        rciStartX = 10;
+        rciStartY = 80;
+        
+        /* Copy RCI values to local variables */
+        localR = RValve;
+        localC = CValve;
+        localI = IValve;
+        
+        /* Limit values to range for drawing */
+        if (localR > 2000) localR = 2000;
+        if (localR < -2000) localR = -2000;
+        if (localC > 2000) localC = 2000;
+        if (localC < -2000) localC = -2000;
+        if (localI > 2000) localI = 2000;
+        if (localI < -2000) localI = -2000;
+        
+        /* Create brushes using system palette colors */
+        hResBrush = CreateSolidBrush(RGB(0, 128, 0));    /* Dark Green */
+        hComBrush = CreateSolidBrush(RGB(0, 0, 128));    /* Dark Blue */
+        hIndBrush = CreateSolidBrush(RGB(128, 128, 0));  /* Dark Yellow */
+        
+        /* Error check for failed resource creation */
+        if (!hResBrush || !hComBrush || !hIndBrush)
+        {
+            /* Clean up any resources that were created */
+            if (hResBrush) DeleteObject(hResBrush);
+            if (hComBrush) DeleteObject(hComBrush);
+            if (hIndBrush) DeleteObject(hIndBrush);
+            return;
+        }
+        
+        /* Draw the horizontal center line */
+        hCenterPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
+        if (hCenterPen)
+        {
+            hOldPen = (HPEN)SelectObject(hdc, hCenterPen);
+            MoveToEx(hdc, rciStartX - 5, rciStartY, NULL);
+            LineTo(hdc, rciStartX + barWidth * 3 + spacing * 2 + 5, rciStartY);
+            SelectObject(hdc, hOldPen);
+        }
+        
+        /* Residential demand bar */
+        if (localR >= 0) {
+            rHeight = localR * maxHeight / 2000;
+            rciRect.left = rciStartX;
+            rciRect.right = rciStartX + barWidth;
+            rciRect.bottom = rciStartY;
+            rciRect.top = rciStartY - rHeight;
+        } else {
+            rHeight = -localR * maxHeight / 2000;
+            rciRect.left = rciStartX;
+            rciRect.right = rciStartX + barWidth;
+            rciRect.top = rciStartY;
+            rciRect.bottom = rciStartY + rHeight;
+        }
+        FillRect(hdc, &rciRect, hResBrush);
+        
+        /* Commercial demand bar */
+        if (localC >= 0) {
+            cHeight = localC * maxHeight / 2000;
+            rciRect.left = rciStartX + barWidth + spacing;
+            rciRect.right = rciStartX + barWidth * 2 + spacing;
+            rciRect.bottom = rciStartY;
+            rciRect.top = rciStartY - cHeight;
+        } else {
+            cHeight = -localC * maxHeight / 2000;
+            rciRect.left = rciStartX + barWidth + spacing;
+            rciRect.right = rciStartX + barWidth * 2 + spacing;
+            rciRect.top = rciStartY;
+            rciRect.bottom = rciStartY + cHeight;
+        }
+        FillRect(hdc, &rciRect, hComBrush);
+        
+        /* Industrial demand bar */
+        if (localI >= 0) {
+            iHeight = localI * maxHeight / 2000;
+            rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
+            rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
+            rciRect.bottom = rciStartY;
+            rciRect.top = rciStartY - iHeight;
+        } else {
+            iHeight = -localI * maxHeight / 2000;
+            rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
+            rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
+            rciRect.top = rciStartY;
+            rciRect.bottom = rciStartY + iHeight;
+        }
+        FillRect(hdc, &rciRect, hIndBrush);
+    
+        /* Clean up GDI resources properly */
+        if (hResBrush) DeleteObject(hResBrush);
+        if (hComBrush) DeleteObject(hComBrush);
+        if (hIndBrush) DeleteObject(hIndBrush);
+        if (hCenterPen) DeleteObject(hCenterPen);
     }
 }
 
@@ -1122,8 +1499,18 @@ HMENU createMainMenu(void)
     hTilesetMenu = CreatePopupMenu();
     populateTilesetMenu(hTilesetMenu);
     
+    hSimMenu = CreatePopupMenu();
+    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_PAUSE, "&Pause");
+    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_SLOW, "&Slow");
+    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_MEDIUM, "&Medium");
+    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_FAST, "&Fast");
+    
+    /* Default simulation speed is medium */
+    CheckMenuRadioItem(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_MEDIUM, MF_BYCOMMAND);
+    
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");
     
     return hMainMenu;
 }
