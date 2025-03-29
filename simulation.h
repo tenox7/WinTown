@@ -210,9 +210,9 @@ extern short IValve;     /* Industrial development rate */
 extern int ValveFlag;    /* Set to 1 when valves change */
 
 /* Disasters */
-extern int DisasterEvent; /* Current disaster type (0=none) */
-extern int DisasterWait;  /* Countdown to next random disaster */
-extern int DisasterLevel; /* Disaster level */
+extern short DisasterEvent; /* Current disaster type (0=none) - defined in scenarios.c */
+extern short DisasterWait;  /* Countdown to next disaster - defined in scenarios.c */
+extern int DisasterLevel;   /* Disaster level */
 
 /* Core simulation functions */
 void DoSimInit(void);
@@ -291,5 +291,20 @@ int GetFireEffect(void);       /* Get fire department effectiveness */
 void SetRoadPercent(float percent);      /* Set road funding percentage */
 void SetPolicePercent(float percent);    /* Set police funding percentage */
 void SetFirePercent(float percent);      /* Set fire department funding percentage */
+
+/* Scenario functions (scenarios.c) */
+int loadScenario(int scenarioId);        /* Load a scenario by ID */
+void scenarioDisaster(void);             /* Process scenario disasters */
+
+/* Disaster functions (disasters.c) */
+void doEarthquake(void);                 /* Create an earthquake */
+void makeFlood(void);                    /* Create a flood */
+void makeFire(int x, int y);             /* Start a fire */
+void makeMonster(void);                  /* Create a monster */
+void makeExplosion(int x, int y);        /* Create an explosion */
+void makeMeltdown(void);                 /* Create a nuclear meltdown */
+
+/* File I/O functions (main.c) */
+int loadFile(char *filename);    /* Load city file data */
 
 #endif /* _SIMULATION_H */

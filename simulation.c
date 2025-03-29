@@ -37,6 +37,12 @@ int CityMonth = 0;
 QUAD TotalFunds = 5000;
 int TaxRate = 7;
 
+/* External declarations for scenario variables */
+extern short ScenarioID;
+extern short DisasterEvent;
+extern short DisasterWait;
+extern void scenarioDisaster(void);
+
 /* Counters */
 int Scycle = 0;
 int Fcycle = 0;
@@ -92,8 +98,8 @@ short IValve = 0;
 int ValveFlag = 0;
 
 /* Disasters */
-int DisasterEvent = 0;
-int DisasterWait = 0;
+extern short DisasterEvent;    /* Defined in scenarios.c */
+extern short DisasterWait;     /* Defined in scenarios.c */
 int DisasterLevel = 0;
 
 /* Internal work variables - also used by power.c */
@@ -346,7 +352,8 @@ void Simulate(int mod16)
             
             /* Process disasters */
             if (DisasterEvent) {
-                /* ToDo: ProcessDisaster(); */
+                /* Process scenario-based disasters */
+                scenarioDisaster();
             }
             break;
     }

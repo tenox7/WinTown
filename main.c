@@ -18,6 +18,17 @@
 #define IDM_SIM_MEDIUM      3003
 #define IDM_SIM_FAST        3004
 
+/* Scenario menu IDs */
+#define IDM_SCENARIO_BASE   4000
+#define IDM_SCENARIO_DULLSVILLE    4001
+#define IDM_SCENARIO_SANFRANCISCO  4002
+#define IDM_SCENARIO_HAMBURG       4003
+#define IDM_SCENARIO_BERN          4004
+#define IDM_SCENARIO_TOKYO         4005
+#define IDM_SCENARIO_DETROIT       4006
+#define IDM_SCENARIO_BOSTON        4007
+#define IDM_SCENARIO_RIO           4008
+
 /* Define needed for older Windows SDK compatibility */
 #ifndef LR_CREATEDIBSECTION
 #define LR_CREATEDIBSECTION 0x2000
@@ -51,7 +62,7 @@ short PollutionHis[HISTLEN/2];
 short MoneyHis[HISTLEN/2];
 short MiscHis[MISCHISTLEN/2];
 
-static HWND hwndMain = NULL;
+HWND hwndMain = NULL;  /* Main window handle - used by other modules */
 static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
 static HBITMAP hbmTiles = NULL;
@@ -67,12 +78,20 @@ static BOOL isMouseDown = FALSE;
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
-static char cityFileName[MAX_PATH];
+char cityFileName[MAX_PATH];    /* Current city filename - used by other modules */
 static HMENU hMenu = NULL;
 static HMENU hFileMenu = NULL;
 static HMENU hTilesetMenu = NULL;
 static HMENU hSimMenu = NULL;
+static HMENU hScenarioMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
+
+/* External reference to scenario variables (defined in scenarios.c) */
+extern short ScenarioID;        /* Current scenario ID (0 = none) */
+extern short DisasterEvent;     /* Current disaster type */
+extern short DisasterWait;      /* Countdown to next disaster */
+extern short ScoreType;         /* Score type for scenario */
+extern short ScoreWait;         /* Score wait for scenario */
 
 /* Micropolis tile flags - These must match simulation.h */
 /* Using LOMASK from simulation.h */
@@ -195,6 +214,7 @@ LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
 void initializeGraphics(HWND hwnd);
 void cleanupGraphics(void);
 int loadCity(char *filename);
+int loadFile(char *filename);
 void drawCity(HDC hdc);
 void drawTile(HDC hdc, int x, int y, short tileValue);
 int getBaseFromTile(short tile);
@@ -208,6 +228,9 @@ HPALETTE createSystemPalette(void);
 HMENU createMainMenu(void);
 void populateTilesetMenu(HMENU hSubMenu);
 int changeTileset(HWND hwnd, const char* tilesetName);
+
+/* External functions - defined in simulation.c */
+extern int SimRandom(int range);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, 
                    LPSTR lpCmdLine, int nCmdShow)
 {
@@ -339,6 +362,39 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     
                 case IDM_SIM_FAST:
                     SetSimulationSpeed(hwnd, SPEED_FAST);
+                    return 0;
+                
+                /* Scenario menu items */
+                case IDM_SCENARIO_DULLSVILLE:
+                    loadScenario(1);
+                    return 0;
+                    
+                case IDM_SCENARIO_SANFRANCISCO:
+                    loadScenario(2);
+                    return 0;
+                    
+                case IDM_SCENARIO_HAMBURG:
+                    loadScenario(3);
+                    return 0;
+                    
+                case IDM_SCENARIO_BERN:
+                    loadScenario(4);
+                    return 0;
+                    
+                case IDM_SCENARIO_TOKYO:
+                    loadScenario(5);
+                    return 0;
+                    
+                case IDM_SCENARIO_DETROIT:
+                    loadScenario(6);
+                    return 0;
+                    
+                case IDM_SCENARIO_BOSTON:
+                    loadScenario(7);
+                    return 0;
+                    
+                case IDM_SCENARIO_RIO:
+                    loadScenario(8);
                     return 0;
                     
                 default:
@@ -1024,18 +1080,16 @@ void scrollView(int dx, int dy)
     InvalidateRect(hwndMain, NULL, FALSE);
 }
 
-int loadCity(char *filename)
+/* Internal function to load file data */
+int loadFile(char *filename)
 {
     FILE *f;
     DWORD size;
     size_t readResult;
     
-    lstrcpy(cityFileName, filename);
-    
     f = fopen(filename, "rb");
     if (f == NULL)
     {
-        MessageBox(hwndMain, "Failed to open city file", "Error", MB_ICONERROR | MB_OK);
         return 0;
     }
     
@@ -1047,7 +1101,6 @@ int loadCity(char *filename)
     if (size != 27120)
     {
         fclose(f);
-        MessageBox(hwndMain, "Invalid city file format", "Error", MB_ICONERROR | MB_OK);
         return 0;
     }
     
@@ -1097,6 +1150,27 @@ int loadCity(char *filename)
     }
     
     fclose(f);
+    return 1;
+    
+read_error:
+    fclose(f);
+    return 0;
+}
+
+int loadCity(char *filename)
+{
+    /* Reset scenario ID */
+    ScenarioID = 0;
+    DisasterEvent = 0;
+    DisasterWait = 0;
+    
+    lstrcpy(cityFileName, filename);
+    
+    if (!loadFile(filename))
+    {
+        MessageBox(hwndMain, "Failed to load city file", "Error", MB_ICONERROR | MB_OK);
+        return 0;
+    }
     
     xOffset = (WORLD_X * TILE_SIZE - cxClient) / 2;
     yOffset = (WORLD_Y * TILE_SIZE - cyClient) / 2;
@@ -1136,11 +1210,6 @@ int loadCity(char *filename)
     InvalidateRect(hwndMain, NULL, FALSE);
     
     return 1;
-    
-read_error:
-    fclose(f);
-    MessageBox(hwndMain, "Failed to read city data", "Error", MB_ICONERROR | MB_OK);
-    return 0;
 }
 
 int getBaseFromTile(short tile)
@@ -1679,7 +1748,19 @@ HMENU createMainMenu(void)
     /* Default simulation speed is medium */
     CheckMenuRadioItem(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_MEDIUM, MF_BYCOMMAND);
     
+    /* Create scenario menu */
+    hScenarioMenu = CreatePopupMenu();
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_DULLSVILLE, "&Dullsville (1900): Boredom");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_SANFRANCISCO, "&San Francisco (1906): Earthquake");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_HAMBURG, "&Hamburg (1944): Bombing");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_BERN, "&Bern (1965): Traffic");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_TOKYO, "&Tokyo (1957): Monster Attack");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_DETROIT, "&Detroit (1972): Crime");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_BOSTON, "&Boston (2010): Nuclear Meltdown");
+    AppendMenu(hScenarioMenu, MF_STRING, IDM_SCENARIO_RIO, "&Rio de Janeiro (2047): Coastal Flooding");
+    
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");
     
@@ -1726,3 +1807,4 @@ void populateTilesetMenu(HMENU hSubMenu)
         AppendMenu(hSubMenu, MF_GRAYED, 0, "No tilesets found");
     }
 }
+
