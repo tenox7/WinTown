@@ -9,6 +9,14 @@
 #include "simulation.h"
 #include "tools.h"
 
+/* Constants for boolean values */
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 /* External reference to main window handle */
 extern HWND hwndMain;
 
@@ -1150,6 +1158,50 @@ static int toolSize = 1;        /* 1x1, 3x3, or 5x5 */
 static int toolResult = TOOLRESULT_OK;
 static int toolCost = 0;
 
+/* Mapping of toolbar indices to tool states - this maps from toolbar position (0-15) to the simulation.h tool state constants */
+static const int toolbarToStateMapping[16] = {
+    residentialState,  /* 0 - Residential in toolbar position 0 */
+    commercialState,   /* 1 - Commercial in toolbar position 1 */
+    industrialState,   /* 2 - Industrial in toolbar position 2 */
+    fireState,         /* 3 - Fire Station in toolbar position 3 */
+    policeState,       /* 4 - Police Station in toolbar position 4 */
+    wireState,         /* 5 - Wire in toolbar position 5 */
+    roadState,         /* 6 - Road in toolbar position 6 */
+    railState,         /* 7 - Rail in toolbar position 7 */
+    parkState,         /* 8 - Park in toolbar position 8 */
+    stadiumState,      /* 9 - Stadium in toolbar position 9 */
+    seaportState,      /* 10 - Seaport in toolbar position 10 */
+    powerState,        /* 11 - Power Plant in toolbar position 11 */
+    nuclearState,      /* 12 - Nuclear Plant in toolbar position 12 */
+    airportState,      /* 13 - Airport in toolbar position 13 */
+    bulldozerState,    /* 14 - Bulldozer in toolbar position 14 */
+    queryState         /* 15 - Query in toolbar position 15 */
+};
+
+/* Reverse mapping from tool state to toolbar position for fast lookups */
+static const int stateToToolbarMapping[17] = {
+    0,  /* residentialState (0) -> position 0 */
+    1,  /* commercialState (1) -> position 1 */
+    2,  /* industrialState (2) -> position 2 */
+    3,  /* fireState (3) -> position 3 */
+    4,  /* policeState (4) -> position 4 */
+    5,  /* wireState (5) -> position 5 */
+    6,  /* roadState (6) -> position 6 */
+    7,  /* railState (7) -> position 7 */
+    8,  /* parkState (8) -> position 8 */
+    9,  /* stadiumState (9) -> position 9 */
+    10, /* seaportState (10) -> position 10 */
+    11, /* powerState (11) -> position 11 */
+    12, /* nuclearState (12) -> position 12 */
+    13, /* airportState (13) -> position 13 */
+    0,  /* networkState (14) - not used in toolbar */
+    14, /* bulldozerState (15) -> position 14 */
+    15  /* queryState (16) -> position 15 */
+};
+
+/* Tool active flag - needs to be exportable to main.c */
+int isToolActive = 0;  /* 0 = FALSE, 1 = TRUE */
+
 /* Helper function to check 3x3 area for zone placement */
 int Check3x3Area(int x, int y, int *cost)
 {
@@ -1252,16 +1304,361 @@ int Check6x6Area(int x, int y, int *cost)
     return 1;
 }
 
-/* Create toolbar dialog and controls */
+/* Toolbar button constants */
+#define TB_BULLDOZER      100
+#define TB_ROAD           101
+#define TB_RAIL           102
+#define TB_WIRE           103
+#define TB_PARK           104
+#define TB_RESIDENTIAL    105
+#define TB_COMMERCIAL     106
+#define TB_INDUSTRIAL     107
+#define TB_FIRESTATION    108
+#define TB_POLICESTATION  109
+#define TB_STADIUM        110
+#define TB_SEAPORT        111
+#define TB_POWERPLANT     112
+#define TB_NUCLEAR        113
+#define TB_AIRPORT        114
+#define TB_QUERY          115
+
+static HWND hwndToolbar = NULL;  /* Toolbar window handle */
+static int toolButtonSize = 32;  /* Size of each tool button */
+static int toolbarWidth = 96;    /* Width of the toolbar (3 columns) */
+static int toolbarColumns = 3;   /* Number of tool columns */
+
+/* Tool bitmap handles */
+static HBITMAP hToolBitmaps[16];        /* Normal state bitmaps */
+static HBITMAP hToolBitmapsSelected[16]; /* Selected state bitmaps */
+
+/* File names for tool bitmaps - order matches toolbar position */
+static const char* toolBitmapFiles[16] = {
+    "icres",  /* 0 - Residential */
+    "iccom",  /* 1 - Commercial */
+    "icind",  /* 2 - Industrial */
+    "icfire", /* 3 - Fire Station */
+    "icpol",  /* 4 - Police Station */
+    "icwire", /* 5 - Wire */
+    "icroad", /* 6 - Road */
+    "icrail", /* 7 - Rail */
+    "icpark", /* 8 - Park */
+    "icstad", /* 9 - Stadium */
+    "icseap", /* 10 - Seaport */
+    "iccoal", /* 11 - Coal Power Plant */
+    "icnuc",  /* 12 - Nuclear Power Plant */
+    "icairp", /* 13 - Airport */
+    "icdozr", /* 14 - Bulldozer */
+    "icqry"   /* 15 - Query */
+};
+
+/* Function to process toolbar button clicks */
+LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    HDC hdc;
+    PAINTSTRUCT ps;
+    RECT rect;
+    int buttonY;
+    int toolId;
+    int i;
+    
+    switch(msg)
+    {
+        case WM_CREATE:
+            return 0;
+            
+        case WM_PAINT:
+            hdc = BeginPaint(hwnd, &ps);
+            
+            /* Fill the background */
+            GetClientRect(hwnd, &rect);
+            FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
+            
+            /* Draw the buttons in a 3-column grid */
+            for (i = 0; i < 16; i++)
+            {
+                int row;
+                int col;
+                int buttonX;
+                int isSelected;
+                
+                row = i / toolbarColumns;
+                col = i % toolbarColumns;
+                buttonX = col * toolButtonSize;
+                buttonY = row * toolButtonSize;
+                
+                /* Set up button rect */
+                rect.left = buttonX;
+                rect.top = buttonY;
+                rect.right = buttonX + toolButtonSize;
+                rect.bottom = buttonY + toolButtonSize;
+                
+                /* Determine if this button is selected */
+                isSelected = (GetCurrentTool() == toolbarToStateMapping[i]);
+                
+                /* Draw the button with 3D effect */
+                if (isSelected)
+                {
+                    /* Selected button - sunken */
+                    DrawEdge(hdc, &rect, EDGE_SUNKEN, BF_RECT);
+                }
+                else
+                {
+                    /* Unselected button - raised */
+                    DrawEdge(hdc, &rect, EDGE_RAISED, BF_RECT);
+                }
+                
+                /* Draw the tool icon */
+                DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
+            }
+            
+            EndPaint(hwnd, &ps);
+            return 0;
+            
+        case WM_LBUTTONDOWN:
+            {
+                int mouseX, mouseY;
+                int row, col, toolIndex;
+                
+                /* Get mouse coordinates */
+                mouseX = LOWORD(lParam);
+                mouseY = HIWORD(lParam);
+                
+                /* Calculate row and column */
+                col = mouseX / toolButtonSize;
+                row = mouseY / toolButtonSize;
+                
+                /* Ensure col is within bounds */
+                if (col >= toolbarColumns) 
+                {
+                    col = toolbarColumns - 1;
+                }
+                
+                /* Calculate the tool index */
+                toolIndex = row * toolbarColumns + col;
+                
+                if (toolIndex >= 0 && toolIndex < 16)
+                {
+                    /* Select the corresponding tool using the mapping */
+                    SelectTool(toolbarToStateMapping[toolIndex]);
+                    
+                    /* Redraw the toolbar */
+                    InvalidateRect(hwnd, NULL, TRUE);
+                    
+                    /* Set the main window cursor to cross */
+                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    
+                    /* Set the tool active flag */
+                    isToolActive = 1;  /* TRUE */
+                }
+                return 0;
+            }
+            
+        case WM_DESTROY:
+            hwndToolbar = NULL;
+            return 0;
+            
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+}
+
+/* Load all toolbar bitmap resources */
+void LoadToolbarBitmaps(void)
+{
+    int i;
+    char filename[MAX_PATH];
+    
+    /* Load normal and selected state bitmaps for each tool */
+    for (i = 0; i < 16; i++)
+    {
+        /* Normal state bitmap */
+        wsprintf(filename, "images\\%s.bmp", toolBitmapFiles[i]);
+        hToolBitmaps[i] = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
+                                    LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+        
+        if (hToolBitmaps[i] == NULL)
+        {
+            OutputDebugString("Failed to load toolbar bitmap: ");
+            OutputDebugString(filename);
+        }
+        
+        /* Selected state bitmap */
+        wsprintf(filename, "images\\%shi.bmp", toolBitmapFiles[i]);
+        hToolBitmapsSelected[i] = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
+                                          LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+        
+        if (hToolBitmapsSelected[i] == NULL)
+        {
+            OutputDebugString("Failed to load toolbar selected bitmap: ");
+            OutputDebugString(filename);
+        }
+    }
+}
+
+/* Clean up toolbar bitmap resources */
+void CleanupToolbarBitmaps(void)
+{
+    int i;
+    
+    /* Delete all bitmap handles */
+    for (i = 0; i < 16; i++)
+    {
+        if (hToolBitmaps[i])
+        {
+            DeleteObject(hToolBitmaps[i]);
+            hToolBitmaps[i] = NULL;
+        }
+        
+        if (hToolBitmapsSelected[i])
+        {
+            DeleteObject(hToolBitmapsSelected[i]);
+            hToolBitmapsSelected[i] = NULL;
+        }
+    }
+}
+
+/* Draw a tool icon using bitmap resources */
+void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
+{
+    HDC hdcMem;
+    HBITMAP hbmOld;
+    int toolIndex;
+    BITMAP bm;
+    int width, height;
+    
+    /* Get the toolbar index using the reverse mapping */
+    if (toolType >= 0 && toolType < 17)
+    {
+        toolIndex = stateToToolbarMapping[toolType];
+    }
+    else
+    {
+        toolIndex = 0;
+    }
+    
+    /* Make sure index is in range */
+    if (toolIndex < 0 || toolIndex >= 16)
+    {
+        return;
+    }
+    
+    /* Create a memory DC */
+    hdcMem = CreateCompatibleDC(hdc);
+    
+    /* Select the appropriate bitmap */
+    if (isSelected && hToolBitmapsSelected[toolIndex])
+    {
+        hbmOld = SelectObject(hdcMem, hToolBitmapsSelected[toolIndex]);
+        
+        /* Get the bitmap dimensions */
+        GetObject(hToolBitmapsSelected[toolIndex], sizeof(BITMAP), &bm);
+    }
+    else if (hToolBitmaps[toolIndex])
+    {
+        hbmOld = SelectObject(hdcMem, hToolBitmaps[toolIndex]);
+        
+        /* Get the bitmap dimensions */
+        GetObject(hToolBitmaps[toolIndex], sizeof(BITMAP), &bm);
+    }
+    else
+    {
+        /* Failed to load bitmap - fall back to drawing a rectangle */
+        RECT rect;
+        
+        rect.left = x + 4;
+        rect.top = y + 4;
+        rect.right = x + 28;
+        rect.bottom = y + 28;
+        
+        Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
+        
+        DeleteDC(hdcMem);
+        return;
+    }
+    
+    width = bm.bmWidth;
+    height = bm.bmHeight;
+    
+    /* Calculate centering position if needed */
+    if (width < toolButtonSize)
+    {
+        x += (toolButtonSize - width) / 2;
+    }
+    
+    if (height < toolButtonSize)
+    {
+        y += (toolButtonSize - height) / 2;
+    }
+    
+    /* Draw the bitmap */
+    BitBlt(hdc, x, y, 
+           (width < toolButtonSize) ? width : toolButtonSize, 
+           (height < toolButtonSize) ? height : toolButtonSize,
+           hdcMem, 0, 0, SRCCOPY);
+    
+    /* Clean up */
+    SelectObject(hdcMem, hbmOld);
+    DeleteDC(hdcMem);
+}
+
+/* Create toolbar window */
 void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
 {
-    /* Toolbar implementation will be added here in a future update */
+    WNDCLASSEX wc;
+    RECT clientRect;
+    
+    /* Load the tool bitmaps */
+    LoadToolbarBitmaps();
+    
+    /* Register the toolbar window class if not already done */
+    if (!GetClassInfoEx(NULL, "MicropolisToolbar", &wc))
+    {
+        wc.cbSize        = sizeof(WNDCLASSEX);
+        wc.style         = CS_HREDRAW | CS_VREDRAW;
+        wc.lpfnWndProc   = ToolbarProc;
+        wc.cbClsExtra    = 0;
+        wc.cbWndExtra    = 0;
+        wc.hInstance     = GetModuleHandle(NULL);
+        wc.hIcon         = NULL;
+        wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+        wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
+        wc.lpszMenuName  = NULL;
+        wc.lpszClassName = "MicropolisToolbar";
+        wc.hIconSm       = NULL;
+        
+        RegisterClassEx(&wc);
+    }
+    
+    /* Create the toolbar window */
+    GetClientRect(hwndParent, &clientRect);
+    
+    hwndToolbar = CreateWindowEx(
+        0,
+        "MicropolisToolbar",
+        NULL,
+        WS_CHILD | WS_VISIBLE | WS_BORDER,
+        0, 0,  /* x, y - will be adjusted below */
+        toolbarWidth, clientRect.bottom,
+        hwndParent,
+        NULL,
+        GetModuleHandle(NULL),
+        NULL);
+    
+    /* Set the tool to bulldozer by default */
+    SelectTool(bulldozerState);
+    
+    /* Force a redraw of the toolbar */
+    if (hwndToolbar)
+    {
+        InvalidateRect(hwndToolbar, NULL, TRUE);
+    }
 }
 
 /* Set the current tool */
 void SelectTool(int toolType)
 {
     currentTool = toolType;
+    isToolActive = 1;  /* TRUE */
     
     /* Set the appropriate cursor for the tool */
     switch (currentTool)
@@ -2037,7 +2434,9 @@ int GetToolCost(void)
 /* Convert screen coordinates to map coordinates */
 void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset)
 {
-    *mapX = (screenX + xOffset) / TILE_SIZE;
+    /* For mouse input, screen coordinates are relative to client area including toolbar,
+       so we don't need to add the xOffset since it's baked into the coordinate */
+    *mapX = screenX / TILE_SIZE;
     *mapY = (screenY + yOffset) / TILE_SIZE;
 }
 

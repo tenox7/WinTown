@@ -7,6 +7,9 @@
 
 #include <windows.h>
 
+/* Tool active flag */
+extern int isToolActive;
+
 /* Tool result constants */
 #define TOOLRESULT_OK           0
 #define TOOLRESULT_FAILED       1
@@ -38,6 +41,9 @@ int ApplyTool(int mapX, int mapY);
 int GetCurrentTool(void);
 int GetToolResult(void);
 int GetToolCost(void);
+void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected);
+void LoadToolbarBitmaps(void);
+void CleanupToolbarBitmaps(void);
 void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset);
 int HandleToolMouse(int mouseX, int mouseY, int xOffset, int yOffset);
 

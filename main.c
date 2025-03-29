@@ -95,7 +95,6 @@ static int xOffset = 0;
 static int yOffset = 0;
 
 static BOOL isMouseDown = FALSE;        /* Used for map dragging */
-static BOOL isToolActive = FALSE;      /* Set when a tool is selected and active */
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
@@ -287,7 +286,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         "MicropolisNT - Tileset: classic",
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         CW_USEDEFAULT, CW_USEDEFAULT, 
-        800, 600,
+        896, 600,  /* Additional 96px width for the 3-column toolbar */
         NULL, hMenu, hInstance, NULL);
     
     if(hwndMain == NULL)
@@ -354,6 +353,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch(msg)
     {
         case WM_CREATE:
+            /* Initialize toolbar */
+            CreateToolbar(hwnd, 0, 0, 48, 600);
+            
             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1, 0, MF_BYPOSITION);
             /* Initialize simulation */
             DoSimInit();
@@ -642,8 +644,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 /* Draw the city to our buffer */
                 drawCity(hdcBuffer);
                 
-                /* Copy the buffer to the screen */
-                BitBlt(hdc, 0, 0, cxClient, cyClient, 
+                /* Copy the buffer to the screen with offset for toolbar */
+                BitBlt(hdc, xOffset, 0, cxClient - xOffset, cyClient, 
                        hdcBuffer, 0, 0, SRCCOPY);
             }
             
@@ -655,6 +657,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
+            
+            /* Skip toolbar area */
+            if (xPos < xOffset)
+            {
+                return 0;
+            }
             
             if (isToolActive)
             {
@@ -690,10 +698,18 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_MOUSEMOVE:
         {
+            int xPos = LOWORD(lParam);
+            int yPos = HIWORD(lParam);
+            
+            /* Skip toolbar area */
+            if (xPos < xOffset)
+            {
+                SetCursor(LoadCursor(NULL, IDC_ARROW));
+                return 0;
+            }
+            
             if (isMouseDown)
             {
-                int xPos = LOWORD(lParam);
-                int yPos = HIWORD(lParam);
                 int dx = lastMouseX - xPos;
                 int dy = lastMouseY - yPos;
                 
@@ -740,12 +756,14 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             /* Right click cancels the current tool */
             if (isToolActive)
             {
-                isToolActive = FALSE;
+                isToolActive = 0;  /* FALSE */
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
                 
-                /* Clear tool selection in menu */
-                CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
-                                 0, MF_BYCOMMAND);
+                /* Force a redraw of the toolbar */
+                if (FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL))
+                {
+                    InvalidateRect(FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL), NULL, TRUE);
+                }
             }
             return 0;
         }
@@ -767,9 +785,34 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_SIZE:
         {
+            static int toolbarWidth = 96;  /* 3-column toolbar width */
+            RECT rcClient;
+            HWND hwndToolbarWnd;
+            
+            /* Get full client area */
             cxClient = LOWORD(lParam);
             cyClient = HIWORD(lParam);
-            resizeBuffer(cxClient, cyClient);
+            
+            /* Get the toolbar window handle */
+            hwndToolbarWnd = FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL);
+            
+            /* If the toolbar exists, adjust its position */
+            if (hwndToolbarWnd)
+            {
+                MoveWindow(hwndToolbarWnd, 0, 0, toolbarWidth, cyClient, TRUE);
+            }
+            else
+            {
+                /* Create the toolbar if it doesn't exist yet */
+                CreateToolbar(hwnd, 0, 0, toolbarWidth, cyClient);
+            }
+            
+            /* Resize the drawing buffer to the client area less the toolbar */
+            resizeBuffer(cxClient - toolbarWidth, cyClient);
+            
+            /* Adjust the xOffset to account for the toolbar */
+            xOffset = toolbarWidth;
+            
             return 0;
         }
         
@@ -828,6 +871,16 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
             CleanupSimTimer(hwnd);
             cleanupGraphics();
+            
+            /* Clean up toolbar */
+            if (FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL))
+            {
+                DestroyWindow(FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL));
+            }
+            
+            /* Clean up toolbar bitmaps */
+            CleanupToolbarBitmaps();
+            
             PostQuitMessage(0);
             return 0;
             
@@ -2077,7 +2130,6 @@ HMENU createMainMenu(void)
     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_BULLDOZER, MF_BYCOMMAND);
     
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
-    AppendMenu(hMainMenu, MF_POPUP, (UINT)hToolMenu, "&Build");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");
