@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "simulation.h"
 #include "tools.h"
 
@@ -32,7 +33,9 @@
 
 /* View menu IDs */
 #define IDM_VIEW_INFOWINDOW        4100
-#define IDM_VIEW_POWER_OVERLAY     4101
+#define IDM_VIEW_LOGWINDOW         4101
+#define IDM_VIEW_POWER_OVERLAY     4102
+#define IDM_VIEW_DEBUG_LOGS        4103
 
 /* Info window definitions */
 #define INFO_WINDOW_CLASS         "MicropolisInfoWindow"
@@ -40,6 +43,14 @@
 #define INFO_WINDOW_HEIGHT        200
 #define INFO_TIMER_ID             2
 #define INFO_TIMER_INTERVAL       500  /* Update info window every 500ms */
+
+/* Log window definitions */
+#define LOG_WINDOW_CLASS          "MicropolisLogWindow"
+#define LOG_WINDOW_WIDTH          400
+#define LOG_WINDOW_HEIGHT         300
+#define LOG_TEXT_ID               101   /* ID for the text edit control */
+#define MAX_LOG_BUFFER            32000 /* Maximum size for the log text buffer */
+#define MAX_LOG_ENTRIES           100   /* Maximum number of log entries to keep */
 
 /* Tool menu IDs */
 #define IDM_TOOL_BASE             5000
@@ -95,6 +106,13 @@ short MiscHis[MISCHISTLEN/2];
 
 HWND hwndMain = NULL;  /* Main window handle - used by other modules */
 HWND hwndInfo = NULL;   /* Info window handle for displaying city stats */
+HWND hwndLog = NULL;    /* Log window handle for displaying game events */
+
+/* Log window variables */
+HWND hwndLogText = NULL; /* Handle to the edit control in the log window */
+char logBuffer[MAX_LOG_BUFFER]; /* Buffer to hold all log text */
+int logBufferPos = 0;    /* Current position in log buffer */
+int showDebugLogs = 1;   /* Flag to control whether debug logs are shown (enabled by default) */
 static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
 static HBITMAP hbmTiles = NULL;
@@ -247,6 +265,12 @@ extern short ScoreWait;         /* Score wait for scenario */
 #define TILES_PER_ROW       32
 LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK infoWndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK logWndProc(HWND, UINT, WPARAM, LPARAM);
+
+/* Function to add a game log entry */
+void addGameLog(const char* format, ...);
+/* Function to add a debug log entry */
+void addDebugLog(const char* format, ...);
 void initializeGraphics(HWND hwnd);
 void cleanupGraphics(void);
 int loadCity(char *filename);
@@ -317,6 +341,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
+    
+    /* Register log window class */
+    wcInfo.lpfnWndProc   = logWndProc;
+    wcInfo.lpszClassName = LOG_WINDOW_CLASS;
+    
+    if(!RegisterClassEx(&wcInfo))
+    {
+        MessageBox(NULL, "Log Window Registration Failed!", "Error",
+            MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
 
     hMenu = createMainMenu();
 
@@ -363,6 +398,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         /* Start timer to update info window */
         SetTimer(hwndInfo, INFO_TIMER_ID, INFO_TIMER_INTERVAL, NULL);
     }
+    
+    /* Initialize log system before creating the window */
+    logBufferPos = 0;
+    logBuffer[0] = '\0';
+    
+    /* Create log window */
+    hwndLog = CreateWindowEx(
+        WS_EX_CLIENTEDGE,
+        LOG_WINDOW_CLASS,
+        "Micropolis Log",
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE, /* Visible by default */
+        mainWindowX, mainWindowY + rect.bottom - rect.top + 10, /* Position below main window */
+        LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT,
+        NULL, NULL, hInstance, NULL);
+
+    if(hwndLog == NULL)
+    {
+        MessageBox(NULL, "Log Window Creation Failed!", "Error",
+            MB_ICONEXCLAMATION | MB_OK);
+        /* Continue anyway, just without the log window */
+    }
 
     initializeGraphics(hwndMain);
     cityFileName[0] = '\0';
@@ -407,6 +463,189 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
     return msg.wParam;
+}
+
+/**
+ * Adds an entry to the game log
+ */
+void addGameLog(const char* format, ...)
+{
+    va_list args;
+    char buffer[512];
+    char timeBuffer[64];
+    SYSTEMTIME st;
+    int len;
+    int textLen;
+    
+    /* Only proceed if we have a text control */
+    if (!hwndLogText)
+        return;
+    
+    /* Get current time */
+    GetLocalTime(&st);
+    sprintf(timeBuffer, "[%02d:%02d:%02d] ", st.wHour, st.wMinute, st.wSecond);
+    
+    /* Format message */
+    va_start(args, format);
+    vsprintf(buffer, format, args);
+    va_end(args);
+    
+    /* Add time prefix + message + newline to the log buffer */
+    len = lstrlen(timeBuffer) + lstrlen(buffer) + 2; /* +2 for newline and null terminator */
+    
+    /* Check if we need to make room in the buffer */
+    if (logBufferPos + len >= MAX_LOG_BUFFER) {
+        /* Buffer is full, remove some old text */
+        int amountToRemove = MAX_LOG_BUFFER / 4; /* Remove 25% of the buffer */
+        
+        /* Find the position after several newlines */
+        int i;
+        for (i = amountToRemove; i < logBufferPos; i++) {
+            if (logBuffer[i] == '\n') {
+                amountToRemove = i + 1;
+                break;
+            }
+        }
+        
+        /* Shift buffer */
+        memmove(logBuffer, logBuffer + amountToRemove, logBufferPos - amountToRemove);
+        logBufferPos -= amountToRemove;
+    }
+    
+    /* Add new entry to buffer */
+    strcpy(logBuffer + logBufferPos, timeBuffer);
+    logBufferPos += lstrlen(timeBuffer);
+    
+    strcpy(logBuffer + logBufferPos, buffer);
+    logBufferPos += lstrlen(buffer);
+    
+    /* Add newline */
+    logBuffer[logBufferPos++] = '\r';
+    logBuffer[logBufferPos++] = '\n';
+    logBuffer[logBufferPos] = '\0';
+    
+    /* Update the text control */
+    SetWindowText(hwndLogText, logBuffer);
+    
+    /* Scroll to the bottom */
+    textLen = GetWindowTextLength(hwndLogText);
+    SendMessage(hwndLogText, EM_SETSEL, textLen, textLen);
+    SendMessage(hwndLogText, EM_SCROLLCARET, 0, 0);
+}
+
+/**
+ * Adds a debug entry to the game log (only visible when debug logging is enabled)
+ */
+void addDebugLog(const char* format, ...)
+{
+    va_list args;
+    char buffer[512];
+    char debugPrefix[16] = "[DEBUG] ";
+    
+    /* Only process debug logs if debug logging is enabled */
+    if (!showDebugLogs || !hwndLogText)
+        return;
+    
+    /* Format debug message */
+    va_start(args, format);
+    vsprintf(buffer, format, args);
+    va_end(args);
+    
+    /* Create a new message with debug prefix */
+    {
+        char fullMessage[512];
+        strcpy(fullMessage, debugPrefix);
+        strcat(fullMessage, buffer);
+        
+        /* Add to log with the debug prefix (addGameLog will add the timestamp) */
+        addGameLog("%s", fullMessage);
+    }
+}
+
+/**
+ * Log window procedure - handles messages for the log window
+ */
+LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    RECT clientRect;
+    HMENU hMenu;
+    HMENU hViewMenu;
+    HFONT hFont;
+    
+    switch(msg)
+    {
+        case WM_CREATE:
+        {
+            /* Get client area dimensions */
+            GetClientRect(hwnd, &clientRect);
+            
+            /* Create the edit control for the log - fill the entire window */
+            hwndLogText = CreateWindowEx(
+                WS_EX_CLIENTEDGE,
+                "EDIT",
+                "",
+                WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
+                0, 0, /* Position - start at the top-left corner */
+                clientRect.right, clientRect.bottom, /* Size - full client area */
+                hwnd, (HMENU)LOG_TEXT_ID, NULL, NULL);
+                
+            if (!hwndLogText) {
+                MessageBox(hwnd, "Failed to create log text control", "Error", MB_OK | MB_ICONERROR);
+                return -1;
+            }
+            
+            /* Set default font */
+            hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+            if (hFont) {
+                SendMessage(hwndLogText, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(TRUE, 0));
+            }
+            
+            /* Initialize log buffer */
+            logBufferPos = 0;
+            logBuffer[0] = '\0';
+            
+            /* Add initial log message */
+            addGameLog("Log window initialized");
+            
+            return 0;
+        }
+        
+        case WM_SIZE:
+        {
+            /* Get new client area dimensions */
+            GetClientRect(hwnd, &clientRect);
+            
+            /* Resize the edit control to fill the entire window */
+            if (hwndLogText) {
+                SetWindowPos(hwndLogText, NULL,
+                    0, 0, /* Position - top-left corner */
+                    clientRect.right, clientRect.bottom, /* Size - full client area */
+                    SWP_NOZORDER);
+            }
+            return 0;
+        }
+
+        case WM_CLOSE:
+            /* Don't destroy, just hide the window */
+            ShowWindow(hwnd, SW_HIDE);
+            
+            /* Update menu checkmark */
+            if (hwndMain) {
+                hMenu = GetMenu(hwndMain);
+                hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                if (hViewMenu) {
+                    CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                }
+            }
+            return 0;
+
+        case WM_DESTROY:
+            hwndLogText = NULL;
+            hwndLog = NULL;
+            return 0;
+    }
+
+    return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 /**
@@ -596,18 +835,22 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 case IDM_SIM_PAUSE:
                     SetSimulationSpeed(hwnd, SPEED_PAUSED);
+                    addGameLog("Simulation paused");
                     return 0;
 
                 case IDM_SIM_SLOW:
                     SetSimulationSpeed(hwnd, SPEED_SLOW);
+                    addGameLog("Simulation speed: Slow");
                     return 0;
 
                 case IDM_SIM_MEDIUM:
                     SetSimulationSpeed(hwnd, SPEED_MEDIUM);
+                    addGameLog("Simulation speed: Medium");
                     return 0;
 
                 case IDM_SIM_FAST:
                     SetSimulationSpeed(hwnd, SPEED_FAST);
+                    addGameLog("Simulation speed: Fast");
                     return 0;
 
                 /* Scenario menu items */
@@ -659,6 +902,50 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                             CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_CHECKED);
                             ShowWindow(hwndInfo, SW_SHOW);
                             SetFocus(hwnd);  /* Keep focus on main window */
+                        }
+                    }
+                    return 0;
+                    
+                case IDM_VIEW_LOGWINDOW:
+                    if (hwndLog) {
+                        HMENU hMenu = GetMenu(hwnd);
+                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                        UINT state = GetMenuState(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND);
+
+                        if (state & MF_CHECKED) {
+                            /* Hide log window */
+                            CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                            ShowWindow(hwndLog, SW_HIDE);
+                        } else {
+                            /* Show log window */
+                            CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                            ShowWindow(hwndLog, SW_SHOW);
+                            SetFocus(hwnd);  /* Keep focus on main window */
+                            
+                            /* Add a log entry when window is shown */
+                            addGameLog("Log window opened");
+                        }
+                    }
+                    return 0;
+                    
+                case IDM_VIEW_DEBUG_LOGS:
+                    {
+                        HMENU hMenu = GetMenu(hwnd);
+                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                        UINT state = GetMenuState(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND);
+                        
+                        /* Toggle debug logging */
+                        showDebugLogs = (state & MF_CHECKED) ? 0 : 1;
+                        
+                        if (showDebugLogs) {
+                            /* Enable debug logging */
+                            CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_CHECKED);
+                            addGameLog("Debug logging enabled");
+                            addDebugLog("Debug logging initialized");
+                        } else {
+                            /* Disable debug logging */
+                            CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_UNCHECKED);
+                            addGameLog("Debug logging disabled");
                         }
                     }
                     return 0;
@@ -1920,6 +2207,25 @@ int loadCity(char *filename)
     }
 
     InvalidateRect(hwndMain, NULL, FALSE);
+    
+    /* Log the city load event */
+    {
+        char *baseName;
+        
+        baseName = cityFileName;
+        
+        if (strrchr(baseName, '\\'))
+            baseName = strrchr(baseName, '\\') + 1;
+        if (strrchr(baseName, '/'))
+            baseName = strrchr(baseName, '/') + 1;
+            
+        /* Log the city loading information */
+        addGameLog("City loaded: %s", baseName);
+        addGameLog("City stats - Population: %d, Funds: $%d", (int)CityPop, (int)TotalFunds);
+        addDebugLog("City class: %s, Year: %d, Month: %d", 
+                   GetCityClassName(), CityYear, CityMonth + 1);
+        addDebugLog("R-C-I population: %d, %d, %d", ResPop, ComPop, IndPop);
+    }
 
     return 1;
 }
@@ -2457,7 +2763,8 @@ void drawCity(HDC hdc)
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
-        hLegendBrush = CreateSolidBrush(GetStockObject(NULL_BRUSH));
+        /* Use black brush for frame (not NULL_BRUSH which was causing a type error) */
+        hLegendBrush = CreateSolidBrush(RGB(0, 0, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
         DeleteObject(hLegendBrush);
         
@@ -2617,8 +2924,15 @@ HMENU createMainMenu(void)
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_INFOWINDOW, "&Info Window");
     /* Check it by default since the info window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_CHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_LOGWINDOW, "&Log Window");
+    /* Check it by default since the log window is now shown on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_CHECKED);
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
+    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_DEBUG_LOGS, "Show &Debug Logs");
+    /* Check it by default since debug logs are now enabled on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_CHECKED);
 
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");

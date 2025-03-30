@@ -9,6 +9,10 @@
 #include <time.h>
 #include "simulation.h"
 
+/* External log functions */
+extern void addGameLog(const char* format, ...);
+extern void addDebugLog(const char* format, ...);
+
 /* Map data */
 Byte PopDensity[WORLD_Y/2][WORLD_X/2];
 Byte TrfDensity[WORLD_Y/2][WORLD_X/2];
@@ -430,6 +434,11 @@ void Simulate(int mod16)
 
 void DoTimeStuff(void)
 {
+    /* For milestone tracking */
+    static int lastMilestone = 0;
+    static int lastCityClass = 0;
+    int currentMilestone;
+    
     /* Process time advancement */
     CityTime++;
     
@@ -437,6 +446,35 @@ void DoTimeStuff(void)
     if (CityMonth > 11) {
         CityMonth = 0;
         CityYear++;
+        
+        /* Log the new year */
+        addGameLog("New year: %d", CityYear);
+        
+        /* Log population milestones */
+        currentMilestone = ((int)CityPop / 10000) * 10000;
+        
+        if (CityPop > 0 && currentMilestone > lastMilestone) {
+            if (currentMilestone == 10000)
+                addGameLog("Population milestone: 10,000 citizens!");
+            else if (currentMilestone == 50000)
+                addGameLog("Population milestone: 50,000 citizens!");
+            else if (currentMilestone == 100000)
+                addGameLog("Population milestone: 100,000 citizens!");
+            else if (currentMilestone == 500000)
+                addGameLog("Population milestone: 500,000 citizens!");
+            else if (currentMilestone >= 1000000 && (currentMilestone % 1000000) == 0)
+                addGameLog("Population milestone: %d Million citizens!", currentMilestone / 1000000);
+            else if (currentMilestone > 0)
+                addGameLog("Population milestone: %d citizens", currentMilestone);
+                
+            lastMilestone = currentMilestone;
+        }
+        
+        /* Check for city class changes */
+        if (CityClass > lastCityClass) {
+            addGameLog("City upgraded to %s!", GetCityClassName());
+            lastCityClass = CityClass;
+        }
         
         /* Make the simulation more dynamic - adjust valves more frequently */
         /* Increased from every 2 years to every year */

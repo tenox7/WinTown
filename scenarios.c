@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include "simulation.h"
 
+/* External log functions */
+extern void addGameLog(const char* format, ...);
+extern void addDebugLog(const char* format, ...);
+
 /* Scenario variables */
 short ScenarioID = 0;        /* Current scenario ID (0 = none) */
 short DisasterEvent = 0;     /* Current disaster type */
@@ -149,6 +153,11 @@ int loadScenario(int scenarioId)
         char winTitle[256];
         wsprintf(winTitle, "MicropolisNT - Scenario: %s", name);
         SetWindowText(hwndMain, winTitle);
+        
+        /* Log the scenario load */
+        addGameLog("Scenario loaded: %s (%d)", name, scenarioId);
+        addDebugLog("Scenario ID: %d, Start year: %d, Initial funds: $%d", 
+                   scenarioId, startYear, (int)TotalFunds);
     }
     
     /* Set disaster info */
@@ -299,28 +308,49 @@ void scenarioDisaster(void)
         case 1:            /* Dullsville */
             break;
         case 2:            /* San Francisco */
-            if (DisasterWait == 1) doEarthquake();
+            if (DisasterWait == 1) {
+                addGameLog("San Francisco scenario: Earthquake imminent!");
+                doEarthquake();
+            }
             break;
         case 3:            /* Hamburg */
             /* Drop fire bombs */
             if (DisasterWait % 10 == 0) {
                 disasterX = SimRandom(WORLD_X);
                 disasterY = SimRandom(WORLD_Y);
+                if (DisasterWait == 20) {
+                    addGameLog("Hamburg scenario: Firebombing attack has begun");
+                }
+                addDebugLog("Firebomb at coordinates %d,%d", disasterX, disasterY);
                 makeExplosion(disasterX, disasterY);
             }
             break;
         case 4:            /* Bern */
+            /* No disaster in Bern scenario */
             break;
         case 5:            /* Tokyo */
-            if (DisasterWait == 1) makeMonster();
+            if (DisasterWait == 1) {
+                addGameLog("Tokyo scenario: Monster attack warning!");
+                makeMonster();
+            }
             break;
         case 6:            /* Detroit */
+            /* No disaster in Detroit scenario */
             break;
         case 7:            /* Boston */
-            if (DisasterWait == 1) makeMeltdown();
+            if (DisasterWait == 1) {
+                addGameLog("Boston scenario: Nuclear meltdown warning!");
+                makeMeltdown();
+            }
             break;
         case 8:            /* Rio */
-            if ((DisasterWait % 24) == 0) makeFlood();
+            if ((DisasterWait % 24) == 0) {
+                if (DisasterWait == 48) {
+                    addGameLog("Rio scenario: Flood warning - waters are rising");
+                }
+                addDebugLog("Flood event triggered");
+                makeFlood();
+            }
             break;
         default:
             /* Invalid disaster event */

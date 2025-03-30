@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include "simulation.h"
 
+/* External log functions */
+extern void addGameLog(const char* format, ...);
+extern void addDebugLog(const char* format, ...);
+
 /* External functions */
 extern int SimRandom(int range);
 
@@ -58,6 +62,10 @@ void doEarthquake(void)
     
     /* Notify user */
     wsprintf(buf, "Earthquake reported at %d,%d!", epicenterX, epicenterY);
+    
+    /* Log the earthquake */
+    addGameLog("EARTHQUAKE!!!");
+    addDebugLog("Earthquake at coordinates %d,%d", epicenterX, epicenterY);
     MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
     
     /* Random earthquake damage - with reasonable limits */
@@ -202,6 +210,10 @@ void makeMonster(void)
     int i, tx, ty, dir;
     short tile;
     
+    /* Log the monster disaster */
+    addGameLog("A monster has been reported in the city!");
+    addDebugLog("Monster disaster starting");
+    
     /* Try to find a valid starting position for the monster */
     while (!found && attempts < 100) {
         /* Generate random position within world bounds */
@@ -263,6 +275,10 @@ void makeFlood(void)
     int t, i, j;
     char buf[256];
     short tileValue;
+    
+    /* Log the flood disaster */
+    addGameLog("A flood has been reported!");
+    addDebugLog("Flood disaster starting");
     
     /* Try to find water edge to start flood, with a reasonable attempt limit */
     while (!waterFound && attempts < 300) {
@@ -350,6 +366,11 @@ void makeMeltdown(void)
                 
                 /* Notify user */
                 wsprintf(buf, "Nuclear meltdown reported at %d,%d!", x, y);
+                
+                /* Log the meltdown */
+                addGameLog("NUCLEAR MELTDOWN!!!");
+                addDebugLog("Nuclear meltdown at coordinates %d,%d", x, y);
+                
                 MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
                 
                 /* Create radiation in a 20x20 area around the plant */
