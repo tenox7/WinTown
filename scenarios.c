@@ -155,9 +155,52 @@ int loadScenario(int scenarioId)
         SetWindowText(hwndMain, winTitle);
         
         /* Log the scenario load */
-        addGameLog("Scenario loaded: %s (%d)", name, scenarioId);
-        addDebugLog("Scenario ID: %d, Start year: %d, Initial funds: $%d", 
-                   scenarioId, startYear, (int)TotalFunds);
+        addGameLog("SCENARIO: %s loaded", name);
+        addGameLog("Year: %d, Initial funds: $%d", startYear, (int)TotalFunds);
+        
+        /* Add scenario-specific descriptions */
+        switch(scenarioId) {
+            case 1:
+                addGameLog("Dullsville: A sleepy town with room to grow");
+                addDebugLog("Scenario goal: Build a bigger city");
+                break;
+            case 2:
+                addGameLog("San Francisco 1906: Earthquake-prone metropolis");
+                addGameLog("WARNING: Earthquake disaster expected!");
+                addDebugLog("Scenario goal: Recover from earthquake");
+                break;
+            case 3:
+                addGameLog("Hamburg 1944: War-torn city requires rebuilding");
+                addGameLog("WARNING: Expect fire bombing attacks!");
+                addDebugLog("Scenario goal: Rebuild after fire bombing");
+                break;
+            case 4:
+                addGameLog("Bern 1965: Beautiful Swiss capital");
+                addDebugLog("Scenario goal: Manage traffic and growth");
+                break;
+            case 5:
+                addGameLog("Tokyo 1957: Dense Japanese metropolis");
+                addGameLog("WARNING: Monster attack imminent!");
+                addDebugLog("Scenario goal: Recover from monster disaster");
+                break;
+            case 6:
+                addGameLog("Detroit 1972: Struggling with economic decline");
+                addDebugLog("Scenario goal: Reverse economic decay");
+                break;
+            case 7:
+                addGameLog("Boston 2010: Home to high-tech industry");
+                addGameLog("WARNING: Nuclear accident risk detected!");
+                addDebugLog("Scenario goal: Manage nuclear disaster");
+                break;
+            case 8:
+                addGameLog("Rio 2047: Coastal city threatened by flooding");
+                addGameLog("WARNING: Flood risk is high!");
+                addDebugLog("Scenario goal: Handle rising water levels");
+                break;
+        }
+        
+        addDebugLog("Scenario ID: %d, Starting population ~%d", 
+                   scenarioId, (int)CityPop);
     }
     
     /* Set disaster info */
@@ -309,7 +352,8 @@ void scenarioDisaster(void)
             break;
         case 2:            /* San Francisco */
             if (DisasterWait == 1) {
-                addGameLog("San Francisco scenario: Earthquake imminent!");
+                addGameLog("SCENARIO EVENT: San Francisco earthquake is happening now!");
+                addGameLog("Significant damage reported throughout the city!");
                 doEarthquake();
             }
             break;
@@ -319,9 +363,11 @@ void scenarioDisaster(void)
                 disasterX = SimRandom(WORLD_X);
                 disasterY = SimRandom(WORLD_Y);
                 if (DisasterWait == 20) {
-                    addGameLog("Hamburg scenario: Firebombing attack has begun");
+                    addGameLog("SCENARIO EVENT: Hamburg firebombing attack has begun!");
+                    addGameLog("Multiple fires are breaking out across the city!");
                 }
-                addDebugLog("Firebomb at coordinates %d,%d", disasterX, disasterY);
+                addGameLog("Explosion reported at %d,%d", disasterX, disasterY);
+                addDebugLog("Firebomb at coordinates %d,%d, %d bombs remaining", disasterX, disasterY, DisasterWait/10);
                 makeExplosion(disasterX, disasterY);
             }
             break;
@@ -330,7 +376,8 @@ void scenarioDisaster(void)
             break;
         case 5:            /* Tokyo */
             if (DisasterWait == 1) {
-                addGameLog("Tokyo scenario: Monster attack warning!");
+                addGameLog("SCENARIO EVENT: Tokyo monster attack is underway!");
+                addGameLog("Giant creature is destroying buildings in its path!");
                 makeMonster();
             }
             break;
@@ -339,16 +386,20 @@ void scenarioDisaster(void)
             break;
         case 7:            /* Boston */
             if (DisasterWait == 1) {
-                addGameLog("Boston scenario: Nuclear meltdown warning!");
+                addGameLog("SCENARIO EVENT: Boston nuclear meltdown is happening!");
+                addGameLog("Nuclear power plant has suffered a catastrophic failure!");
                 makeMeltdown();
             }
             break;
         case 8:            /* Rio */
             if ((DisasterWait % 24) == 0) {
                 if (DisasterWait == 48) {
-                    addGameLog("Rio scenario: Flood warning - waters are rising");
+                    addGameLog("SCENARIO EVENT: Rio flood disaster is starting!");
+                    addGameLog("Ocean levels are rising - coastal areas at risk!");
+                } else {
+                    addGameLog("Flood waters continue to spread!");
                 }
-                addDebugLog("Flood event triggered");
+                addDebugLog("Flood event triggered - %d hours until flood peak", DisasterWait);
                 makeFlood();
             }
             break;
@@ -358,6 +409,16 @@ void scenarioDisaster(void)
             return;
     }
     
-    if (DisasterWait) DisasterWait--;
-    else DisasterEvent = 0;
+    if (DisasterWait) {
+        DisasterWait--;
+        
+        /* Log when disaster ends */
+        if (DisasterWait == 0) {
+            addGameLog("Scenario disaster has ended");
+            addDebugLog("Scenario disaster ID %d complete", DisasterEvent);
+            DisasterEvent = 0;
+        }
+    } else {
+        DisasterEvent = 0;
+    }
 }

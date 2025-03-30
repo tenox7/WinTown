@@ -8,6 +8,10 @@
 #include <string.h>
 #include "simulation.h"
 
+/* External log functions */
+extern void addGameLog(const char* format, ...);
+extern void addDebugLog(const char* format, ...);
+
 /* Constants */
 #define PROBNUM     8   /* Number of city problems tracked */
 
@@ -437,6 +441,9 @@ static void DoVotes(void)
 /* Perform a city evaluation */
 void CityEvaluation(void)
 {
+    short problems[4];
+    int i;
+    
     /* Indicate evaluation is in progress */
     EvalValid = 0;
     
@@ -447,6 +454,27 @@ void CityEvaluation(void)
         DoProblems();
         GetScore();
         DoVotes();
+        
+        /* Log evaluation results */
+        addDebugLog("City evaluation: Score=%d, Approval=%d%%", CityScore, CityYes);
+        addDebugLog("City assessment: $%d", (int)(CityAssValue / 1000));
+        
+        /* Log city problems */
+        GetTopProblems(problems);
+        addGameLog("City status report:");
+        addGameLog("Population: %d - %s", (int)CityPop, GetCityClassName());
+        
+        /* Log top problems if they exist */
+        if (problems[0] != PROB_NONE) {
+            addGameLog("Top problems:");
+            for (i = 0; i < 4; i++) {
+                if (problems[i] != PROB_NONE) {
+                    addGameLog("- %s", GetProblemText(problems[i]));
+                }
+            }
+        } else {
+            addGameLog("No significant problems detected");
+        }
     }
     else {
         /* No population, reset values */

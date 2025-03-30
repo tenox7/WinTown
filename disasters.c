@@ -64,8 +64,9 @@ void doEarthquake(void)
     wsprintf(buf, "Earthquake reported at %d,%d!", epicenterX, epicenterY);
     
     /* Log the earthquake */
-    addGameLog("EARTHQUAKE!!!");
-    addDebugLog("Earthquake at coordinates %d,%d", epicenterX, epicenterY);
+    addGameLog("DISASTER: EARTHQUAKE!!!");
+    addGameLog("Epicenter at coordinates %d,%d", epicenterX, epicenterY);
+    addDebugLog("Earthquake: Magnitude %d, Duration %d", (time / 100), time);
     MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
     
     /* Random earthquake damage - with reasonable limits */
@@ -128,6 +129,11 @@ void makeExplosion(int x, int y)
     
     /* Notify user */
     wsprintf(buf, "Explosion reported at %d,%d!", x, y);
+    
+    /* Log explosion */
+    addGameLog("DISASTER: Explosion at %d,%d!", x, y);
+    addDebugLog("Explosion created at coordinates %d,%d", x, y);
+    
     MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
     
     /* Force redraw */
@@ -148,6 +154,11 @@ void makeFire(int x, int y)
     
     /* Notify user */
     wsprintf(buf, "Fire reported at %d,%d!", x, y);
+    
+    /* Log fire */
+    addGameLog("DISASTER: Fire reported at %d,%d!", x, y);
+    addDebugLog("Fire created at coordinates %d,%d", x, y);
+    
     MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
     
     /* Force redraw */
@@ -177,6 +188,10 @@ void spreadFire(void)
         if (tileValue >= FIRE && tileValue < (FIRE + 8)) {
             /* It's a fire! Chance to spread to adjacent tiles */
             if (SimRandom(10) < 3) { /* 30% chance to spread */
+                /* Log fire spreading only occasionally to avoid spam */
+                if (SimRandom(20) == 0) {
+                    addDebugLog("Fire spreading at %d,%d", x, y);
+                }
                 /* Pick a random direction */
                 dir = SimRandom(4);
                 tx = x + xDelta[dir];
@@ -211,8 +226,9 @@ void makeMonster(void)
     short tile;
     
     /* Log the monster disaster */
-    addGameLog("A monster has been reported in the city!");
-    addDebugLog("Monster disaster starting");
+    addGameLog("DISASTER: A monster has been reported in the city!");
+    addGameLog("Monster is destroying everything in its path!");
+    addDebugLog("Monster disaster starting at random location");
     
     /* Try to find a valid starting position for the monster */
     while (!found && attempts < 100) {
@@ -277,8 +293,9 @@ void makeFlood(void)
     short tileValue;
     
     /* Log the flood disaster */
-    addGameLog("A flood has been reported!");
-    addDebugLog("Flood disaster starting");
+    addGameLog("DISASTER: Flooding has been reported!");
+    addGameLog("Water levels are rising in low-lying areas!");
+    addDebugLog("Flood disaster starting from water edge");
     
     /* Try to find water edge to start flood, with a reasonable attempt limit */
     while (!waterFound && attempts < 300) {
@@ -368,8 +385,10 @@ void makeMeltdown(void)
                 wsprintf(buf, "Nuclear meltdown reported at %d,%d!", x, y);
                 
                 /* Log the meltdown */
-                addGameLog("NUCLEAR MELTDOWN!!!");
-                addDebugLog("Nuclear meltdown at coordinates %d,%d", x, y);
+                addGameLog("DISASTER: NUCLEAR MELTDOWN!!!");
+                addGameLog("Nuclear power plant at %d,%d has experienced a critical failure!", x, y);
+                addGameLog("Area is heavily contaminated with radiation!");
+                addDebugLog("Nuclear meltdown at coordinates %d,%d, spreading radiation in 20x20 area", x, y);
                 
                 MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
                 

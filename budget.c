@@ -4,6 +4,10 @@
 
 #include "simulation.h"
 
+/* External log functions */
+extern void addGameLog(const char* format, ...);
+extern void addDebugLog(const char* format, ...);
+
 /* Budget values */
 float RoadPercent = 1.0;    /* Road funding percentage (0.0-1.0) */
 float PolicePercent = 1.0;  /* Police funding percentage (0.0-1.0) */
@@ -39,6 +43,10 @@ void InitBudget(void)
     PoliceSpend = 0;
     FireSpend = 0;
     TaxFund = 0;
+    
+    /* Log budget initialization */
+    addDebugLog("Budget system initialized: Tax rate %d%%", TaxRate);
+    addDebugLog("Starting funds: $%d", (int)TotalFunds);
 }
 
 /* Tax collection function - called yearly */
@@ -68,6 +76,11 @@ void CollectTax(void)
         income = (QUAD)(taxable * TaxRate * r);
         TaxFund = income;
         
+        /* Log tax collection */
+        addGameLog("Annual tax collection: $%d", (int)TaxFund);
+        addDebugLog("Tax details: Rate %d%%, Taxable pop %d, Difficulty modifier %.1f", 
+                  TaxRate, taxable, r);
+        
         /* Add funds to treasury */
         Spend(-TaxFund);
     }
@@ -77,6 +90,12 @@ void CollectTax(void)
     FireFund = FirePop * 100;    /* $100 per fire station */
     PoliceFund = PolicePop * 100; /* $100 per police station */
     
+    /* Log funding requirements */
+    addDebugLog("Annual budget requirements:");
+    addDebugLog("Roads: $%d (%d tiles)", (int)RoadFund, RoadTotal);
+    addDebugLog("Fire: $%d (%d stations)", (int)FireFund, FirePop);
+    addDebugLog("Police: $%d (%d stations)", (int)PoliceFund, PolicePop);
+    
     /* Update budget to allocate available funds */
     DoBudget();
 }
@@ -84,12 +103,29 @@ void CollectTax(void)
 /* Spend money (negative means income) */
 void Spend(QUAD amount)
 {
+    QUAD oldFunds = TotalFunds;
+    
     /* Add to treasury - negative values increase funds */
     TotalFunds -= amount;
     
     /* Ensure funds never go below zero */
     if (TotalFunds < 0) {
+        /* Log funds depleted */
+        addGameLog("FINANCIAL CRISIS: City treasury is empty!");
+        addDebugLog("Funds depleted: Attempted to spend $%d with only $%d available", 
+                  (int)amount, (int)oldFunds);
         TotalFunds = 0;
+    }
+    
+    /* Log major spending/income */
+    if (amount > 10000 || amount < -10000) {
+        if (amount > 0) {
+            addDebugLog("Major expense: $%d (Funds: $%d)", 
+                      (int)amount, (int)TotalFunds);
+        } else {
+            addDebugLog("Major income: $%d (Funds: $%d)", 
+                      (int)-amount, (int)TotalFunds);
+        }
     }
 }
 
@@ -199,6 +235,26 @@ void DoBudget(void)
     
     /* Spend budget money */
     total = FireSpend + PoliceSpend + RoadSpend;
+    
+    /* Log actual spending */
+    addGameLog("Annual budget: Income $%d, Expenses $%d", (int)TaxFund, (int)total);
+    addDebugLog("Spending breakdown:");
+    addDebugLog("Roads: $%d (%d%% funded)", (int)RoadSpend, RoadEffect);
+    addDebugLog("Fire: $%d (%d%% funded)", (int)FireSpend, FireEffect);
+    addDebugLog("Police: $%d (%d%% funded)", (int)PoliceSpend, PoliceEffect);
+    addDebugLog("Current funds: $%d", (int)TotalFunds);
+    
+    /* If funding is low, give a warning */
+    if (RoadEffect < 70) {
+        addGameLog("WARNING: Road maintenance underfunded (%d%%)", RoadEffect);
+    }
+    if (FireEffect < 70) {
+        addGameLog("WARNING: Fire department underfunded (%d%%)", FireEffect);
+    }
+    if (PoliceEffect < 70) {
+        addGameLog("WARNING: Police department underfunded (%d%%)", PoliceEffect);
+    }
+    
     Spend(total);
 }
 

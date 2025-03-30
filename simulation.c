@@ -299,6 +299,9 @@ void Simulate(int mod16)
             if (ValveFlag) {
                 SetValves(RValve, CValve, IValve);
                 ValveFlag = 0;
+                
+                /* Log valves change */
+                addDebugLog("Demand adjusted: R=%d C=%d I=%d", RValve, CValve, IValve);
             }
             
             /* DIRECT FIX: Run the power scan at the start of each major cycle
@@ -353,6 +356,13 @@ void Simulate(int mod16)
             /* Calculate traffic average periodically */
             if ((Scycle % 4) == 0) {
                 CalcTrafficAverage();
+                
+                /* Log traffic */
+                if (TrafficAverage > 100) {
+                    addDebugLog("Traffic level: %d (Heavy)", TrafficAverage);
+                } else if (TrafficAverage > 50) {
+                    addDebugLog("Traffic level: %d (Moderate)", TrafficAverage);
+                }
             }
             
             /* Update city population more frequently than just at census time */
@@ -372,6 +382,9 @@ void Simulate(int mod16)
             } else if (TotalPop == 0 && LastTotalPop != 0) {
                 /* ToDo: DoShowPicture(POPULATIONLOST_BIT); */
                 LastTotalPop = 0;
+                
+                /* Log catastrophic population decline */
+                addGameLog("CRISIS: All citizens have left the city!");
             }
             
             /* Update city class based on population */
@@ -381,12 +394,19 @@ void Simulate(int mod16)
             if (CityPop > 50000) CityClass++; /* Capital */
             if (CityPop > 100000) CityClass++; /* Metropolis */
             if (CityPop > 500000) CityClass++; /* Megalopolis */
+            
+            /* Log city class - only done when population changes */
+            addDebugLog("City class: %s (Pop: %d)", GetCityClassName(), (int)CityPop);
             break;
             
         case 12:
             /* Process pollution spread (at a reduced rate) */
             if ((Scycle % 16) == 0) {
                 PTLScan(); /* Do pollution, terrain, and land value */
+                
+                /* Log pollution and land value */
+                addDebugLog("Pollution average: %d", PollutionAverage);
+                addDebugLog("Land value average: %d", LVAverage);
             }
             
             /* Update special animations (power plants, etc.) - increased frequency for faster animations */
@@ -402,6 +422,13 @@ void Simulate(int mod16)
             /* Process crime spread (at a reduced rate) */
             if ((Scycle % 4) == 0) {
                 CrimeScan(); /* Do crime map analysis */
+                
+                /* Log crime level */
+                if (CrimeAverage > 100) {
+                    addGameLog("WARNING: Crime level is very high (%d)", CrimeAverage);
+                } else if (CrimeAverage > 50) {
+                    addDebugLog("Crime average: %d (Moderate)", CrimeAverage);
+                }
             }
             break;
             
@@ -418,6 +445,11 @@ void Simulate(int mod16)
             if ((Scycle % 4) == 0) {
                 /* Process fire spreading */
                 spreadFire();
+                
+                /* Log fire information */
+                if (FirePop > 0) {
+                    addDebugLog("Active fires: %d", FirePop);
+                }
             }
             
             /* Process disasters */
@@ -509,6 +541,10 @@ void DoTimeStuff(void)
                 wsprintf(debugMsg, "VALVES: R=%d C=%d I=%d (Year %d)\n",
                        RValve, CValve, IValve, CityYear);
                 OutputDebugString(debugMsg);
+                
+                /* Add to log window */
+                addDebugLog("Growth rates: Residential=%d Commercial=%d Industrial=%d", 
+                          RValve, CValve, IValve);
             }
         }
         
@@ -594,6 +630,13 @@ void ClearCensus(void)
     PrevResPop = ResPop;
     PrevCityPop = (int)CityPop;
     
+    /* Log infrastructure counts before resetting */
+    addDebugLog("Infrastructure: Roads=%d Rail=%d Fire=%d Police=%d", 
+              RoadTotal, RailTotal, FirePop, PolicePop);
+    addDebugLog("Special zones: Stadium=%d Port=%d Airport=%d Nuclear=%d", 
+              StadiumPop, PortPop, APortPop, NuclearPop);
+    addDebugLog("Power: Powered=%d Unpowered=%d", PwrdZCnt, UnpwrdZCnt);
+    
     /* Infrastructure counts always need resetting */
     RoadTotal = 0;
     RailTotal = 0;
@@ -644,6 +687,10 @@ void TakeCensus(void)
         wsprintf(debugMsg, "DEBUG Population: Res=%d Com=%d Ind=%d Total=%d CityPop=%d (Prev=%d) Resets=%d\n",
                 ResPop, ComPop, IndPop, TotalPop, (int)CityPop, PrevCityPop, DebugCensusReset);
         OutputDebugString(debugMsg);
+        
+        /* Add to log window */
+        addDebugLog("Census: R=%d C=%d I=%d Total=%d CityPop=%d", 
+                  ResPop, ComPop, IndPop, TotalPop, (int)CityPop);
     }
     
     /* Determine city class based on population */
@@ -681,16 +728,32 @@ void TakeCensus(void)
     if (CityPop > PrevCityPop) {
         /* Population is growing */
         char debugMsg[256];
+        int growth;
+        
+        growth = (int)(CityPop - PrevCityPop);
         wsprintf(debugMsg, "GROWTH: Population increased from %d to %d (+%d)\n",
-               PrevCityPop, (int)CityPop, (int)(CityPop - PrevCityPop));
+               PrevCityPop, (int)CityPop, growth);
         OutputDebugString(debugMsg);
+        
+        /* Add to log window - use regular log for population growth */
+        if (growth > 100) {
+            addGameLog("Population growing: +%d citizens", growth);
+        }
     }
     else if (CityPop < PrevCityPop) {
         /* Population is declining */
         char debugMsg[256];
+        int decline;
+        
+        decline = (int)(PrevCityPop - CityPop);
         wsprintf(debugMsg, "DECLINE: Population decreased from %d to %d (-%d)\n",
-               PrevCityPop, (int)CityPop, (int)(PrevCityPop - CityPop));
+               PrevCityPop, (int)CityPop, decline);
         OutputDebugString(debugMsg);
+        
+        /* Add to log window - use regular log for population decline */
+        if (decline > 100) {
+            addGameLog("Population declining: -%d citizens", decline);
+        }
     }
     
     /* Save current value for next comparison */
