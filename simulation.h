@@ -111,6 +111,7 @@ typedef long QUAD;
 #define bulldozerState     15
 #define queryState         16
 #define windowState        17
+#define noToolState        18
 
 /* Simulation speed settings */
 #define SPEED_PAUSED     0

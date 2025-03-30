@@ -93,6 +93,7 @@ static int cxClient = 0;
 static int cyClient = 0;
 static int xOffset = 0;
 static int yOffset = 0;
+static int toolbarWidth = 108;  /* 3-column toolbar width */
 
 static BOOL isMouseDown = FALSE;        /* Used for map dragging */
 static int lastMouseX = 0;
@@ -645,7 +646,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 drawCity(hdcBuffer);
                 
                 /* Copy the buffer to the screen with offset for toolbar */
-                BitBlt(hdc, xOffset, 0, cxClient - xOffset, cyClient, 
+                BitBlt(hdc, toolbarWidth, 0, cxClient - toolbarWidth, cyClient, 
                        hdcBuffer, 0, 0, SRCCOPY);
             }
             
@@ -659,7 +660,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             int yPos = HIWORD(lParam);
             
             /* Skip toolbar area */
-            if (xPos < xOffset)
+            if (xPos < toolbarWidth)
             {
                 return 0;
             }
@@ -703,7 +704,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             int mapX, mapY;
             
             /* Skip toolbar area */
-            if (xPos < xOffset)
+            if (xPos < toolbarWidth)
             {
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
                 return 0;
@@ -726,14 +727,21 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             else if (isToolActive)
             {
-                /* Convert mouse position to map coordinates */
+                /* Convert mouse position to map coordinates for tool hover */
                 ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
                 
                 /* Use normal cursor instead of crosshair */
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
                 
-                /* Force a redraw to show hover effect */
-                InvalidateRect(hwnd, NULL, FALSE);
+                /* Force a partial redraw to show hover effect only if needed */
+                {
+                    RECT updateRect;
+                    updateRect.left = toolbarWidth;
+                    updateRect.top = 0;
+                    updateRect.right = cxClient;
+                    updateRect.bottom = cyClient;
+                    InvalidateRect(hwnd, &updateRect, FALSE);
+                }
             }
             else
             {
@@ -754,18 +762,32 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_RBUTTONDOWN:
         {
-            /* Right click cancels the current tool */
-            if (isToolActive)
+            int xPos = LOWORD(lParam);
+            int yPos = HIWORD(lParam);
+            
+            /* Skip toolbar area */
+            if (xPos < toolbarWidth)
             {
-                isToolActive = 0;  /* FALSE */
-                SetCursor(LoadCursor(NULL, IDC_ARROW));
-                
-                /* Force a redraw of the toolbar */
-                if (FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL))
-                {
-                    InvalidateRect(FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL), NULL, TRUE);
-                }
+                return 0;
             }
+            
+            /* Start map dragging with right button regardless of tool state */
+            isMouseDown = TRUE;
+            lastMouseX = xPos;
+            lastMouseY = yPos;
+            SetCapture(hwnd);
+            SetCursor(LoadCursor(NULL, IDC_SIZEALL));
+            
+            return 0;
+        }
+        
+        case WM_RBUTTONUP:
+        {
+            isMouseDown = FALSE;
+            ReleaseCapture();
+            
+            /* Always use arrow cursor */
+            SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
         }
         
@@ -786,7 +808,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_SIZE:
         {
-            static int toolbarWidth = 108;  /* 3-column toolbar width */
             RECT rcClient;
             HWND hwndToolbarWnd;
             
@@ -1322,9 +1343,15 @@ void resizeBuffer(int cx, int cy)
 
 void scrollView(int dx, int dy)
 {
+    RECT rcClient;
+    RECT updateRect;
+    HRGN hRgn;
+    
+    /* Adjust offsets */
     xOffset += dx;
     yOffset += dy;
     
+    /* Enforce bounds */
     if (xOffset < 0)
         xOffset = 0;
     if (yOffset < 0)
@@ -1335,7 +1362,16 @@ void scrollView(int dx, int dy)
     if (yOffset > WORLD_Y * TILE_SIZE - cyClient)
         yOffset = WORLD_Y * TILE_SIZE - cyClient;
     
-    InvalidateRect(hwndMain, NULL, FALSE);
+    /* Get client area without toolbar */
+    GetClientRect(hwndMain, &rcClient);
+    rcClient.left = toolbarWidth;  /* Skip toolbar area */
+    
+    /* Create update region for the map area only */
+    hRgn = CreateRectRgnIndirect(&rcClient);
+    
+    /* Update only the map region, without erasing the background */
+    InvalidateRgn(hwndMain, hRgn, FALSE);
+    DeleteObject(hRgn);
 }
 
 /* Internal function to load file data */
@@ -1771,7 +1807,8 @@ void drawCity(HDC hdc)
     /* Calculate visible range */
     startX = xOffset / TILE_SIZE;
     startY = yOffset / TILE_SIZE;
-    endX = startX + (cxClient / TILE_SIZE) + 1;
+    /* Adjust the width of the map view based on toolbar */
+    endX = startX + ((cxClient - toolbarWidth) / TILE_SIZE) + 1;
     endY = startY + (cyClient / TILE_SIZE) + 1;
     
     /* Bounds check */
@@ -1810,7 +1847,7 @@ void drawCity(HDC hdc)
         ScreenToClient(hwndMain, &mousePos);
         
         /* Skip if mouse is outside client area or in toolbar */
-        if (mousePos.x >= xOffset && mousePos.y >= 0 && mousePos.x < cxClient && mousePos.y < cyClient)
+        if (mousePos.x >= toolbarWidth && mousePos.y >= 0 && mousePos.x < cxClient && mousePos.y < cyClient)
         {
             /* Convert to map coordinates */
             ScreenToMap(mousePos.x, mousePos.y, &mapX, &mapY, xOffset, yOffset);

@@ -9,6 +9,9 @@
 #include "simulation.h"
 #include "tools.h"
 
+/* External reference to the toolbar width */
+extern int toolbarWidth;
+
 /* Constants for boolean values */
 #ifndef TRUE
 #define TRUE 1
@@ -1161,8 +1164,8 @@ static int toolCost = 0;
 static int lastMouseMapX = -1;
 static int lastMouseMapY = -1;
 
-/* Mapping of toolbar indices to tool states - this maps from toolbar position (0-15) to the simulation.h tool state constants */
-static const int toolbarToStateMapping[16] = {
+/* Mapping of toolbar indices to tool states - this maps from toolbar position (0-17) to the simulation.h tool state constants */
+static const int toolbarToStateMapping[17] = {
     residentialState,  /* 0 - Residential in toolbar position 0 */
     commercialState,   /* 1 - Commercial in toolbar position 1 */
     industrialState,   /* 2 - Industrial in toolbar position 2 */
@@ -1178,11 +1181,12 @@ static const int toolbarToStateMapping[16] = {
     nuclearState,      /* 12 - Nuclear Plant in toolbar position 12 */
     airportState,      /* 13 - Airport in toolbar position 13 */
     bulldozerState,    /* 14 - Bulldozer in toolbar position 14 */
-    queryState         /* 15 - Query in toolbar position 15 */
+    queryState,        /* 15 - Query in toolbar position 15 */
+    noToolState        /* 16 - No Tool in toolbar position 16 */
 };
 
 /* Reverse mapping from tool state to toolbar position for fast lookups */
-static const int stateToToolbarMapping[17] = {
+static const int stateToToolbarMapping[19] = {
     0,  /* residentialState (0) -> position 0 */
     1,  /* commercialState (1) -> position 1 */
     2,  /* industrialState (2) -> position 2 */
@@ -1199,7 +1203,9 @@ static const int stateToToolbarMapping[17] = {
     13, /* airportState (13) -> position 13 */
     0,  /* networkState (14) - not used in toolbar */
     14, /* bulldozerState (15) -> position 14 */
-    15  /* queryState (16) -> position 15 */
+    15, /* queryState (16) -> position 15 */
+    16, /* windowState (17) - not used in toolbar */
+    16  /* noToolState (18) -> position 16 */
 };
 
 /* Tool active flag - needs to be exportable to main.c */
@@ -1331,10 +1337,10 @@ static int toolbarWidth = 108;    /* Width of the toolbar (3 columns) */
 static int toolbarColumns = 3;   /* Number of tool columns */
 
 /* Tool bitmap handles */
-static HBITMAP hToolBitmaps[16];        /* Tool bitmaps */
+static HBITMAP hToolBitmaps[17];        /* Tool bitmaps */
 
 /* File names for tool bitmaps - order matches toolbar position */
-static const char* toolBitmapFiles[16] = {
+static const char* toolBitmapFiles[17] = {
     "residential",  /* 0 - Residential */
     "commercial",   /* 1 - Commercial */
     "industrial",   /* 2 - Industrial */
@@ -1350,7 +1356,8 @@ static const char* toolBitmapFiles[16] = {
     "nuclear",      /* 12 - Nuclear Power Plant */
     "airport",      /* 13 - Airport */
     "bulldozer",    /* 14 - Bulldozer */
-    "query"         /* 15 - Query */
+    "query",        /* 15 - Query */
+    "bulldozer"     /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
 };
 
 /* Function to process toolbar button clicks */
@@ -1362,6 +1369,14 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     int buttonY;
     int toolId;
     int i;
+    int row;
+    int col;
+    int buttonX;
+    int isSelected;
+    int mouseX, mouseY;
+    int toolIndex;
+    HPEN hRedPen;
+    HPEN hOldPen;
     
     switch(msg)
     {
@@ -1376,13 +1391,8 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
             
             /* Draw the buttons in a 3-column grid */
-            for (i = 0; i < 16; i++)
+            for (i = 0; i < 17; i++)
             {
-                int row;
-                int col;
-                int buttonX;
-                int isSelected;
-                
                 row = i / toolbarColumns;
                 col = i % toolbarColumns;
                 buttonX = col * toolButtonSize;
@@ -1403,8 +1413,28 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 /* Draw a thin dark gray border */
                 FrameRect(hdc, &rect, (HBRUSH)GetStockObject(DKGRAY_BRUSH));
                 
-                /* Draw the tool icon */
-                DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
+                /* Draw the tool icon, with special handling for noToolState */
+                if (toolbarToStateMapping[i] == noToolState) {
+                    /* Draw the tool icon */
+                    DrawToolIcon(hdc, bulldozerState, buttonX, buttonY, isSelected);
+                    
+                    /* Add a slash symbol to indicate "no tool" */
+                    
+                    /* Create a red pen for the slash */
+                    hRedPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+                    hOldPen = SelectObject(hdc, hRedPen);
+                    
+                    /* Draw a diagonal line (slash) */
+                    MoveToEx(hdc, buttonX + 8, buttonY + 8, NULL);
+                    LineTo(hdc, buttonX + toolButtonSize - 8, buttonY + toolButtonSize - 8);
+                    
+                    /* Clean up */
+                    SelectObject(hdc, hOldPen);
+                    DeleteObject(hRedPen);
+                } else {
+                    /* Draw the normal tool icon */
+                    DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
+                }
             }
             
             EndPaint(hwnd, &ps);
@@ -1412,9 +1442,6 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             
         case WM_LBUTTONDOWN:
             {
-                int mouseX, mouseY;
-                int row, col, toolIndex;
-                
                 /* Get mouse coordinates */
                 mouseX = LOWORD(lParam);
                 mouseY = HIWORD(lParam);
@@ -1432,19 +1459,13 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 /* Calculate the tool index */
                 toolIndex = row * toolbarColumns + col;
                 
-                if (toolIndex >= 0 && toolIndex < 16)
+                if (toolIndex >= 0 && toolIndex < 17)
                 {
                     /* Select the corresponding tool using the mapping */
                     SelectTool(toolbarToStateMapping[toolIndex]);
                     
                     /* Redraw the toolbar */
                     InvalidateRect(hwnd, NULL, TRUE);
-                    
-                    /* Set the main window cursor to arrow instead of cross */
-                    SetCursor(LoadCursor(NULL, IDC_ARROW));
-                    
-                    /* Set the tool active flag */
-                    isToolActive = 1;  /* TRUE */
                 }
                 return 0;
             }
@@ -1465,7 +1486,7 @@ void LoadToolbarBitmaps(void)
     char filename[MAX_PATH];
     
     /* Load the renamed bitmaps directly from the images folder */
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < 17; i++)
     {
         /* Use only the new bitmap files with descriptive names */
         wsprintf(filename, "images\\%s.bmp", toolBitmapFiles[i]);
@@ -1489,7 +1510,7 @@ void CleanupToolbarBitmaps(void)
     int i;
     
     /* Delete all bitmap handles */
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < 17; i++)
     {
         if (hToolBitmaps[i])
         {
@@ -1688,13 +1709,22 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
     }
 }
 
-/* Set the current tool */
+/* Select a tool - set the current tool and activate it */
 void SelectTool(int toolType)
 {
+    /* Update the current tool */
     currentTool = toolType;
-    isToolActive = 1;  /* TRUE */
     
-    /* Set the appropriate cursor for the tool */
+    /* Set tool active state based on tool type */
+    isToolActive = (toolType != noToolState);
+    
+    /* Only redraw the toolbar - the main window doesn't need to be redrawn completely */
+    if (hwndToolbar)
+    {
+        InvalidateRect(hwndToolbar, NULL, TRUE);
+    }
+    
+    /* Update tool cost */
     switch (currentTool)
     {
         case bulldozerState:
@@ -2578,9 +2608,12 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
 /* Convert screen coordinates to map coordinates */
 void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset)
 {
-    /* For mouse input, screen coordinates are relative to client area including toolbar,
-       so we don't need to add the xOffset since it's baked into the coordinate */
-    *mapX = screenX / TILE_SIZE;
+    /* 
+     * Convert mouse position to map coordinates.
+     * Add xOffset to account for the map scrolling,
+     * no need to adjust for toolbar as screenX is already relative to the left of client area
+     */
+    *mapX = (screenX + xOffset - toolbarWidth) / TILE_SIZE;
     *mapY = (screenY + yOffset) / TILE_SIZE;
 }
 
