@@ -1,5 +1,7 @@
 # MicropolisNT
 
+![Micropolis NT](micropolisnt.png)
+
 A port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka SimCity) game to Windows NT (Win32) using GDI graphics. The primary objective is to make the game playable on NT RISC machines like Alpha AXP, MIPS, PPC and ARM.
 
 --------------
