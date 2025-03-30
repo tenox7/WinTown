@@ -4,7 +4,7 @@ A port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka
 
 --------------
 
-THIS IS NOT A WORKING GAME YET - WORK IS IN PROGRESS
+This game is not fully working yet. There are major features missing, see [TODO](TODO.md) for details. Work is in progress. PRs welcome!
 
 --------------
 
