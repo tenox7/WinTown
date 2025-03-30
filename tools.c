@@ -1326,8 +1326,8 @@ int Check6x6Area(int x, int y, int *cost)
 #define TB_QUERY          115
 
 static HWND hwndToolbar = NULL;  /* Toolbar window handle */
-static int toolButtonSize = 32;  /* Size of each tool button */
-static int toolbarWidth = 96;    /* Width of the toolbar (3 columns) */
+static int toolButtonSize = 36;  /* Size of each tool button, increased for better spacing */
+static int toolbarWidth = 108;    /* Width of the toolbar (3 columns) */
 static int toolbarColumns = 3;   /* Number of tool columns */
 
 /* Tool bitmap handles */
@@ -1514,6 +1514,7 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     char debugMsg[100];
     char indexStr[8];
     RECT rect;
+    int margin;  /* Margin around tool icons */
     
     /* Get the toolbar index using the reverse mapping */
     if (toolType >= 0 && toolType < 17)
@@ -1577,16 +1578,35 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     width = bm.bmWidth;
     height = bm.bmHeight;
     
-    /* Calculate centering position within the button */
+    /* Calculate centering position within the button with minimum margin of 4 pixels */
+    margin = 4;
+    
+    /* Ensure we don't exceed button size minus margin */
+    if (width > toolButtonSize - 2*margin) 
+    {
+        width = toolButtonSize - 2*margin;
+    }
+    if (height > toolButtonSize - 2*margin) 
+    {
+        height = toolButtonSize - 2*margin;
+    }
+    
+    /* Calculate centered position */
     centerX = x + (toolButtonSize - width) / 2;
     centerY = y + (toolButtonSize - height) / 2;
     
-    /* Make sure we don't have negative positions */
-    if (centerX < x) centerX = x;
-    if (centerY < y) centerY = y;
+    /* Make sure we respect minimum margins */
+    if (centerX < x + margin) 
+    {
+        centerX = x + margin;
+    }
+    if (centerY < y + margin) 
+    {
+        centerY = y + margin;
+    }
     
-    /* Draw the bitmap */
-    BitBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, SRCCOPY);
+    /* Draw the bitmap with proper sizing */
+    StretchBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
     
     /* If this tool is selected, draw a thick yellow box around it */
     if (isSelected)

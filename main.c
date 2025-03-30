@@ -286,7 +286,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         "MicropolisNT - Tileset: classic",
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         CW_USEDEFAULT, CW_USEDEFAULT, 
-        896, 600,  /* Additional 96px width for the 3-column toolbar */
+        908, 600,  /* Additional 108px width for the 3-column toolbar */
         NULL, hMenu, hInstance, NULL);
     
     if(hwndMain == NULL)
@@ -354,7 +354,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         case WM_CREATE:
             /* Initialize toolbar */
-            CreateToolbar(hwnd, 0, 0, 48, 600);
+            CreateToolbar(hwnd, 0, 0, 108, 600);
             
             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1, 0, MF_BYPOSITION);
             /* Initialize simulation */
@@ -786,7 +786,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_SIZE:
         {
-            static int toolbarWidth = 96;  /* 3-column toolbar width */
+            static int toolbarWidth = 108;  /* 3-column toolbar width */
             RECT rcClient;
             HWND hwndToolbarWnd;
             
