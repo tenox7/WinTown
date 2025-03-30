@@ -1688,10 +1688,10 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
     GetClientRect(hwndParent, &clientRect);
     
     hwndToolbar = CreateWindowEx(
-        0,
+        WS_EX_DLGMODALFRAME,  /* Using dialog frame style for a raised appearance */
         "MicropolisToolbar",
         NULL,
-        WS_CHILD | WS_VISIBLE | WS_BORDER,
+        WS_CHILD | WS_VISIBLE,  /* Removed WS_BORDER as DLGMODALFRAME provides its own border */
         0, 0,  /* x, y - will be adjusted below */
         toolbarWidth, clientRect.bottom,
         hwndParent,
