@@ -1,6 +1,5 @@
 # MicropolisNT TODO
 
-- Event log window
 - Color map issues
 - Animations like power plant, etc
 - Population, traffic, pollution
