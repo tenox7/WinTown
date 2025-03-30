@@ -54,6 +54,7 @@ void CleanupToolbarBitmaps(void);
 void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset);
 int HandleToolMouse(int mouseX, int mouseY, int xOffset, int yOffset);
 void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int yOffset);
+void UpdateToolbar(void);
 
 /* Individual tool functions */
 int DoBulldozer(int mapX, int mapY);

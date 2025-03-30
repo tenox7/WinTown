@@ -7,6 +7,9 @@
 
 #include <windows.h>
 
+/* External declaration for UpdateToolbar function */
+extern void UpdateToolbar(void);
+
 /* Basic type definitions */
 typedef unsigned char Byte;
 typedef long QUAD;

@@ -12,6 +12,9 @@
 /* External reference to the toolbar width */
 extern int toolbarWidth;
 
+/* External reference to RCI values */
+extern short RValve, CValve, IValve;
+
 /* Constants for boolean values */
 #ifndef TRUE
 #define TRUE 1
@@ -1437,6 +1440,125 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
             }
             
+            /* Draw RCI bars below the tool buttons */
+            {
+                /* Constants for RCI display - position below the last row of tools */
+                int barWidth = 24;
+                int maxHeight = 50;
+                int spacing = 6;
+                int rciStartX = 12; /* Center in the toolbar (108px wide) */
+                int rciStartY = 6 * 36 + 40; /* Position RCI below the last row of tools */
+                int localR, localC, localI;
+                int rHeight, cHeight, iHeight;
+                RECT rciRect;
+                HBRUSH hResBrush, hComBrush, hIndBrush;
+                HPEN hCenterPen, hOldPen;
+                
+                /* Add title for RCI section */
+                SetTextColor(hdc, RGB(0, 0, 0));  /* Black text */
+                SetBkMode(hdc, TRANSPARENT);
+                TextOut(hdc, rciStartX, rciStartY - maxHeight - 20, "Zone Demand", 11);
+                
+                /* Copy RCI values to local variables */
+                localR = RValve;
+                localC = CValve;
+                localI = IValve;
+                
+                /* Limit values to range for drawing */
+                if (localR > 2000) localR = 2000;
+                if (localR < -2000) localR = -2000;
+                if (localC > 2000) localC = 2000;
+                if (localC < -2000) localC = -2000;
+                if (localI > 2000) localI = 2000;
+                if (localI < -2000) localI = -2000;
+                
+                /* Create brushes using system palette colors */
+                hResBrush = CreateSolidBrush(RGB(0, 128, 0));    /* Dark Green */
+                hComBrush = CreateSolidBrush(RGB(0, 0, 128));    /* Dark Blue */
+                hIndBrush = CreateSolidBrush(RGB(128, 128, 0));  /* Dark Yellow */
+                
+                /* Error check for failed resource creation */
+                if (!hResBrush || !hComBrush || !hIndBrush)
+                {
+                    /* Clean up any resources that were created */
+                    if (hResBrush) DeleteObject(hResBrush);
+                    if (hComBrush) DeleteObject(hComBrush);
+                    if (hIndBrush) DeleteObject(hIndBrush);
+                    EndPaint(hwnd, &ps);
+                    return 0;
+                }
+                
+                /* Draw the horizontal center line */
+                hCenterPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+                if (hCenterPen)
+                {
+                    hOldPen = (HPEN)SelectObject(hdc, hCenterPen);
+                    MoveToEx(hdc, rciStartX - 5, rciStartY, NULL);
+                    LineTo(hdc, rciStartX + barWidth * 3 + spacing * 2 + 5, rciStartY);
+                    SelectObject(hdc, hOldPen);
+                }
+                
+                /* Residential demand bar */
+                if (localR >= 0) {
+                    rHeight = localR * maxHeight / 2000;
+                    rciRect.left = rciStartX;
+                    rciRect.right = rciStartX + barWidth;
+                    rciRect.bottom = rciStartY;
+                    rciRect.top = rciStartY - rHeight;
+                } else {
+                    rHeight = -localR * maxHeight / 2000;
+                    rciRect.left = rciStartX;
+                    rciRect.right = rciStartX + barWidth;
+                    rciRect.top = rciStartY;
+                    rciRect.bottom = rciStartY + rHeight;
+                }
+                FillRect(hdc, &rciRect, hResBrush);
+                
+                /* Commercial demand bar */
+                if (localC >= 0) {
+                    cHeight = localC * maxHeight / 2000;
+                    rciRect.left = rciStartX + barWidth + spacing;
+                    rciRect.right = rciStartX + barWidth * 2 + spacing;
+                    rciRect.bottom = rciStartY;
+                    rciRect.top = rciStartY - cHeight;
+                } else {
+                    cHeight = -localC * maxHeight / 2000;
+                    rciRect.left = rciStartX + barWidth + spacing;
+                    rciRect.right = rciStartX + barWidth * 2 + spacing;
+                    rciRect.top = rciStartY;
+                    rciRect.bottom = rciStartY + cHeight;
+                }
+                FillRect(hdc, &rciRect, hComBrush);
+                
+                /* Industrial demand bar */
+                if (localI >= 0) {
+                    iHeight = localI * maxHeight / 2000;
+                    rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
+                    rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
+                    rciRect.bottom = rciStartY;
+                    rciRect.top = rciStartY - iHeight;
+                } else {
+                    iHeight = -localI * maxHeight / 2000;
+                    rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
+                    rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
+                    rciRect.top = rciStartY;
+                    rciRect.bottom = rciStartY + iHeight;
+                }
+                FillRect(hdc, &rciRect, hIndBrush);
+                
+                /* Add labels for RCI bars */
+                SetTextColor(hdc, RGB(0, 0, 0));  /* Black text */
+                TextOut(hdc, rciStartX + (barWidth / 2) - 4, rciStartY + 5, "R", 1);
+                TextOut(hdc, rciStartX + barWidth + spacing + (barWidth / 2) - 4, rciStartY + 5, "C", 1);
+                TextOut(hdc, rciStartX + barWidth * 2 + spacing * 2 + (barWidth / 2) - 4, rciStartY + 5, "I", 1);
+            
+                /* Clean up GDI resources properly */
+                if (hResBrush) DeleteObject(hResBrush);
+                if (hComBrush) DeleteObject(hComBrush);
+                if (hIndBrush) DeleteObject(hIndBrush);
+                if (hCenterPen) DeleteObject(hCenterPen);
+            }
+            
             EndPaint(hwnd, &ps);
             return 0;
             
@@ -2482,6 +2604,15 @@ int ApplyTool(int mapX, int mapY)
 int GetCurrentTool(void)
 {
     return currentTool;
+}
+
+/* Function to update the toolbar display (including RCI bars) */
+void UpdateToolbar(void)
+{
+    if (hwndToolbar)
+    {
+        InvalidateRect(hwndToolbar, NULL, TRUE);
+    }
 }
 
 /* Get the last tool result */

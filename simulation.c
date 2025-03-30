@@ -514,6 +514,9 @@ void SetValves(int res, int com, int ind)
     RValve = res;
     CValve = com;
     IValve = ind;
+    
+    /* Update the toolbar to reflect the new RCI values */
+    UpdateToolbar();
 }
 
 void ClearCensus(void)

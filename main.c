@@ -2256,6 +2256,12 @@ void drawCity(HDC hdc)
             rciRect.bottom = rciStartY + iHeight;
         }
         FillRect(hdc, &rciRect, hIndBrush);
+        
+        /* Add labels for RCI bars */
+        SetTextColor(hdc, RGB(255, 255, 255));  /* White text */
+        TextOut(hdc, rciStartX + (barWidth / 2) - 4, rciStartY + maxHeight + 5, "R", 1);
+        TextOut(hdc, rciStartX + barWidth + spacing + (barWidth / 2) - 4, rciStartY + maxHeight + 5, "C", 1);
+        TextOut(hdc, rciStartX + barWidth * 2 + spacing * 2 + (barWidth / 2) - 4, rciStartY + maxHeight + 5, "I", 1);
     
         /* Clean up GDI resources properly */
         if (hResBrush) DeleteObject(hResBrush);
