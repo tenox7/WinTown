@@ -2273,37 +2273,56 @@ void drawCity(HDC hdc)
                     {
                         if (Map[y][x] & POWERBIT)
                         {
-                            /* Powered zones - green overlay */
+                            /* Powered zones - bright green border */
                             hOverlayBrush = CreateSolidBrush(RGB(0, 255, 0));
                             /* Draw a thick green border for powered zones */
                             FrameRect(hdc, &tileRect, hOverlayBrush);
-                            /* Adjust rectangle and draw another frame for thickness */
-                            tileRect.left += 1;
-                            tileRect.top += 1;
-                            tileRect.right -= 1;
-                            tileRect.bottom -= 1;
-                            FrameRect(hdc, &tileRect, hOverlayBrush);
+                            /* Add a small green power indicator in the corner */
+                            Rectangle(hdc, 
+                                    tileRect.left + 2, 
+                                    tileRect.top + 2,
+                                    tileRect.left + 6, 
+                                    tileRect.top + 6);
                             DeleteObject(hOverlayBrush);
                         }
                         else
                         {
                             /* Unpowered zones - red overlay */
                             hOverlayBrush = CreateSolidBrush(RGB(255, 0, 0));
-                            /* Draw a solid filled rectangle with 50% transparency */
-                            FillRect(hdc, &tileRect, hOverlayBrush);
+                            /* Draw a thick red border for unpowered zones */
+                            FrameRect(hdc, &tileRect, hOverlayBrush);
+                            /* Add an X in the corner to indicate no power */
+                            MoveToEx(hdc, tileRect.left + 2, tileRect.top + 2, NULL);
+                            LineTo(hdc, tileRect.left + 6, tileRect.top + 6);
+                            MoveToEx(hdc, tileRect.left + 6, tileRect.top + 2, NULL);
+                            LineTo(hdc, tileRect.left + 2, tileRect.top + 6);
                             DeleteObject(hOverlayBrush);
                         }
                     }
                     else if (PowerMap[y][x] == 1)
                     {
-                        /* Non-zone tiles that have power - light green outline */
+                        /* Show power conducting elements (power lines, roads, etc.) clearly */
                         hOverlayBrush = CreateSolidBrush(RGB(0, 200, 0));
-                        /* Draw a dot in the middle of the tile to show power */
-                        Rectangle(hdc, 
-                                tileRect.left + (TILE_SIZE/2) - 2, 
-                                tileRect.top + (TILE_SIZE/2) - 2,
-                                tileRect.left + (TILE_SIZE/2) + 2, 
-                                tileRect.top + (TILE_SIZE/2) + 2);
+                        /* Show the power path with an overlay */
+                        if ((Map[y][x] & LOMASK) >= POWERBASE && (Map[y][x] & LOMASK) < POWERBASE + 12) {
+                            /* Power lines - make them bright */
+                            HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+                            HPEN hOldPen = SelectObject(hdc, hPen);
+                            /* Draw a cross through the tile to indicate power flow */
+                            MoveToEx(hdc, tileRect.left, tileRect.top, NULL);
+                            LineTo(hdc, tileRect.right, tileRect.bottom);
+                            MoveToEx(hdc, tileRect.right, tileRect.top, NULL);
+                            LineTo(hdc, tileRect.left, tileRect.bottom);
+                            SelectObject(hdc, hOldPen);
+                            DeleteObject(hPen);
+                        } else {
+                            /* Other conductive tiles - highlight them */
+                            Rectangle(hdc, 
+                                    tileRect.left + (TILE_SIZE/2) - 1, 
+                                    tileRect.top + (TILE_SIZE/2) - 1,
+                                    tileRect.left + (TILE_SIZE/2) + 2, 
+                                    tileRect.top + (TILE_SIZE/2) + 2);
+                        }
                         DeleteObject(hOverlayBrush);
                     }
                 }
@@ -2343,7 +2362,7 @@ void drawCity(HDC hdc)
         int legendX = (cxClient - toolbarWidth) - 300;
         int legendY = 10;
         int legendWidth = 150;
-        int legendHeight = 80;
+        int legendHeight = 120;
         
         /* Create semi-transparent background for the legend */
         legendBackground.left = legendX - 5;
@@ -2370,12 +2389,10 @@ void drawCity(HDC hdc)
         legendRect.bottom = legendY + 15;
         hLegendBrush = CreateSolidBrush(RGB(0, 255, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
-        /* Draw a second frame to show the thick border */
-        legendRect.left += 1;
-        legendRect.top += 1;
-        legendRect.right -= 1;
-        legendRect.bottom -= 1;
-        FrameRect(hdc, &legendRect, hLegendBrush);
+        /* Add the green power indicator in corner */
+        Rectangle(hdc, 
+                legendX + 2, legendY + 2,
+                legendX + 6, legendY + 6);
         DeleteObject(hLegendBrush);
         TextOut(hdc, legendX + 20, legendY, "Powered Zones", 13);
         legendY += 20;
@@ -2386,24 +2403,53 @@ void drawCity(HDC hdc)
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
         hLegendBrush = CreateSolidBrush(RGB(255, 0, 0));
-        FillRect(hdc, &legendRect, hLegendBrush);
+        FrameRect(hdc, &legendRect, hLegendBrush);
+        /* Add an X to match visualization */
+        MoveToEx(hdc, legendX + 2, legendY + 2, NULL);
+        LineTo(hdc, legendX + 6, legendY + 6);
+        MoveToEx(hdc, legendX + 6, legendY + 2, NULL);
+        LineTo(hdc, legendX + 2, legendY + 6);
         DeleteObject(hLegendBrush);
         TextOut(hdc, legendX + 20, legendY, "Unpowered Zones", 15);
         legendY += 20;
         
-        /* Powered grid tiles */
+        /* Power lines */
         legendRect.left = legendX;
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
         hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
-        /* Draw a dot in the center to match the visualization */
+        
+        /* Draw a cross through the tile to indicate power flow */
+        {
+            HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+            HPEN hOldPen = SelectObject(hdc, hPen);
+            MoveToEx(hdc, legendX, legendY, NULL);
+            LineTo(hdc, legendX + 15, legendY + 15);
+            MoveToEx(hdc, legendX + 15, legendY, NULL);
+            LineTo(hdc, legendX, legendY + 15);
+            SelectObject(hdc, hOldPen);
+            DeleteObject(hPen);
+        }
+        
+        DeleteObject(hLegendBrush);
+        TextOut(hdc, legendX + 20, legendY, "Power Lines", 11);
+        legendY += 20;
+        
+        /* Other powered grid connections */
+        legendRect.left = legendX;
+        legendRect.top = legendY;
+        legendRect.right = legendX + 15;
+        legendRect.bottom = legendY + 15;
+        hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
+        FrameRect(hdc, &legendRect, hLegendBrush);
+        /* Draw a dot in the center */
         Rectangle(hdc, 
                 legendX + 6, legendY + 6,
                 legendX + 10, legendY + 10);
         DeleteObject(hLegendBrush);
-        TextOut(hdc, legendX + 20, legendY, "Powered Grid", 12);
+        TextOut(hdc, legendX + 20, legendY, "Power Grid", 10);
         legendY += 20;
         
         /* Power plants */

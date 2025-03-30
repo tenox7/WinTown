@@ -188,12 +188,13 @@ void FindPowerPlants(void)
     }
 }
 
-/* Do a full power distribution scan - EMERGENCY FIXED VERSION
-   This is a radical simplification that will definitely address the power issue */
+/* Do a full power distribution scan - ORIGINAL ALGORITHM
+   This uses the original Micropolis power transmission method that traces along
+   power lines and conductive terrain rather than using a simple radius */
 void DoPowerScan(void)
 {
-    int x, y, dx, dy;
-    int powerPlantFound = 0;
+    int x, y;
+    short ADir, ConNum, Dir;
     
     /* Count power plants */
     CountPowerPlants();
@@ -202,15 +203,16 @@ void DoPowerScan(void)
     MaxPower = (CoalPop * 700L) + (NuclearPop * 2000L);
     NumPower = 0;
     
+    /* Clear the power map first */
+    for (y = 0; y < WORLD_Y; y++) {
+        for (x = 0; x < WORLD_X; x++) {
+            Map[y][x] &= ~POWERBIT;  /* Turn off the power bit */
+            PowerMap[y][x] = 0;      /* Set PowerMap to unpowered */
+        }
+    }
+    
     /* If we have no power plants, no point in doing anything else */
     if (CoalPop == 0 && NuclearPop == 0) {
-        /* Clear all power */
-        for (y = 0; y < WORLD_Y; y++) {
-            for (x = 0; x < WORLD_X; x++) {
-                Map[y][x] &= ~POWERBIT;  /* Turn off the power bit */
-                PowerMap[y][x] = 0;      /* Set PowerMap to unpowered */
-            }
-        }
         /* Update power counts */
         PwrdZCnt = 0;
         UnpwrdZCnt = 0;
@@ -226,45 +228,64 @@ void DoPowerScan(void)
         return;
     }
     
-    /* EXTREME SIMPLIFICATION:
-       If we have power plants, just power EVERYTHING within a large radius of them.
-       This is not the original game behavior but will ensure power "just works" */
-       
-    /* First, clear all power bits */
-    for (y = 0; y < WORLD_Y; y++) {
-        for (x = 0; x < WORLD_X; x++) {
-            Map[y][x] &= ~POWERBIT;  /* Turn off the power bit */
-            PowerMap[y][x] = 0;      /* Set PowerMap to unpowered */
-        }
-    }
+    /* Initialize the power stack with all power plants */
+    FindPowerPlants();
     
-    /* Find all power plants */
-    for (y = 0; y < WORLD_Y; y++) {
-        for (x = 0; x < WORLD_X; x++) {
-            short tile = Map[y][x] & LOMASK;
-            
-            /* Power plant found - mark it as powered */
-            if (tile == POWERPLANT || tile == NUCLEAR) {
-                Map[y][x] |= POWERBIT;  /* Power plants are always powered */
-                PowerMap[y][x] = 1;     /* Set PowerMap entry to powered */
-                powerPlantFound = 1;
-                
-                /* Now power EVERYTHING within a 15-tile radius of this plant.
-                   This is especially simple and likely to solve the problem. */
-                for (dy = -15; dy <= 15; dy++) {
-                    for (dx = -15; dx <= 15; dx++) {
-                        int nx = x + dx;
-                        int ny = y + dy;
-                        
-                        /* Check bounds */
-                        if (nx >= 0 && nx < WORLD_X && ny >= 0 && ny < WORLD_Y) {
-                            Map[ny][nx] |= POWERBIT;  /* Set power bit */
-                            PowerMap[ny][nx] = 1;     /* Mark as powered in PowerMap */
+    /* Process the power stack until empty */
+    while (PowerStackNum > 0) {
+        /* Get the next position from the stack */
+        PullPowerStack();
+        
+        /* Start in the current position (direction 4) */
+        ADir = 4;
+        
+        do {
+            /* Increment the power counter - if over capacity, stop */
+            if (++NumPower > MaxPower) {
+                /* We've reached the power capacity limit */
+                /* Update power zone counts */
+                PwrdZCnt = 0;
+                UnpwrdZCnt = 0;
+    
+                for (y = 0; y < WORLD_Y; y++) {
+                    for (x = 0; x < WORLD_X; x++) {
+                        if (Map[y][x] & ZONEBIT) {
+                            if (Map[y][x] & POWERBIT) {
+                                PwrdZCnt++;
+                            } else {
+                                UnpwrdZCnt++;
+                            }
                         }
                     }
                 }
+                return;
             }
-        }
+            
+            /* Move to the current direction */
+            MoveMapSim(ADir);
+            
+            /* Power the current position */
+            Map[SMapY][SMapX] |= POWERBIT;
+            PowerMap[SMapY][SMapX] = 1;
+            
+            /* Look in all four directions for conducting tiles */
+            ConNum = 0;
+            Dir = 0;
+            
+            while ((Dir < 4) && (ConNum < 2)) {
+                /* If there is a conductive tile in this direction */
+                if (TestForCond(Dir)) {
+                    ConNum++;      /* Count it */
+                    ADir = Dir;    /* Remember direction */
+                }
+                Dir++;
+            }
+            
+            /* If we found more than one conductive direction, branch */
+            if (ConNum > 1) {
+                PushPowerStack();
+            }
+        } while (ConNum); /* Continue as long as we have conductive paths */
     }
     
     /* Update power zone counts */
