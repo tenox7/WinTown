@@ -1556,6 +1556,84 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 if (hCenterPen) DeleteObject(hCenterPen);
             }
 
+            /* Show current tool information if a tool is active */
+            if (isToolActive)
+            {
+                const char *toolName;
+                int toolCost;
+                char buffer[256];
+                int textY = 6 * 36 + 55; /* Position below the RCI labels (rciStartY + 15) */
+
+                /* Get the tool name */
+                switch (GetCurrentTool())
+                {
+                    case bulldozerState:
+                        toolName = "Bulldozer";
+                        break;
+                    case roadState:
+                        toolName = "Road";
+                        break;
+                    case railState:
+                        toolName = "Rail";
+                        break;
+                    case wireState:
+                        toolName = "Wire";
+                        break;
+                    case parkState:
+                        toolName = "Park";
+                        break;
+                    case residentialState:
+                        toolName = "Residential Zone";
+                        break;
+                    case commercialState:
+                        toolName = "Commercial Zone";
+                        break;
+                    case industrialState:
+                        toolName = "Industrial Zone";
+                        break;
+                    case fireState:
+                        toolName = "Fire Station";
+                        break;
+                    case policeState:
+                        toolName = "Police Station";
+                        break;
+                    case stadiumState:
+                        toolName = "Stadium";
+                        break;
+                    case seaportState:
+                        toolName = "Seaport";
+                        break;
+                    case powerState:
+                        toolName = "Coal Power Plant";
+                        break;
+                    case nuclearState:
+                        toolName = "Nuclear Power Plant";
+                        break;
+                    case airportState:
+                        toolName = "Airport";
+                        break;
+                    case queryState:
+                        toolName = "Query";
+                        break;
+                    default:
+                        toolName = "Unknown Tool";
+                        break;
+                }
+
+                toolCost = GetToolCost();
+
+                /* Show the tool name and cost in the toolbar */
+                SetTextColor(hdc, RGB(0, 0, 0));  /* Black text */
+                SetBkMode(hdc, TRANSPARENT);
+                wsprintf(buffer, "Tool: %s", toolName);
+                TextOut(hdc, 10, textY, buffer, lstrlen(buffer));
+                
+                if (toolCost > 0) {
+                    wsprintf(buffer, "Cost: $%d", toolCost);
+                    TextOut(hdc, 10, textY + 15, buffer, lstrlen(buffer));
+                }
+            }
+
             EndPaint(hwnd, &ps);
             return 0;
 
