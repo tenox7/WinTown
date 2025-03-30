@@ -62,7 +62,7 @@ static void DoIndIn(int pop, int x, int y);
 int calcResPop(int zone)
 {
     int pop;
-    
+
     /* Check if in residential range */
     if (zone >= RESBASE && zone < RESBASE + 8) {
         /* Low value */
@@ -70,7 +70,7 @@ int calcResPop(int zone)
         pop = pop << 3;
         return pop;
     }
-    
+
     if (zone >= RESBASE + 8 && zone < RESBASE + 16) {
         /* Medium value */
         pop = zone - RESBASE - 8;
@@ -78,7 +78,7 @@ int calcResPop(int zone)
         pop += 32;
         return pop;
     }
-    
+
     if (zone >= RESBASE + 16 && zone < RESBASE + 24) {
         /* High value */
         pop = zone - RESBASE - 16;
@@ -86,20 +86,20 @@ int calcResPop(int zone)
         pop += 64;
         return pop;
     }
-    
+
     /* Continue checking other residential zone types */
     if (zone >= RESBASE + 24 && zone <= LASTRES) {
         /* Higher density residential */
         return 16 + (zone - RESBASE - 24) / 8 * 16;
     }
-    
+
     if (zone == HOSPITAL) {
         return 30;
     }
     if (zone == CHURCH) {
         return 10;
     }
-    
+
     return 0;
 }
 
@@ -107,7 +107,7 @@ int calcResPop(int zone)
 int calcComPop(int zone)
 {
     int pop;
-    
+
     /* Check if in commercial range */
     if (zone >= COMBASE && zone < COMBASE + 8) {
         /* Low value */
@@ -115,7 +115,7 @@ int calcComPop(int zone)
         pop = pop << 3;
         return pop;
     }
-    
+
     if (zone >= COMBASE + 8 && zone < COMBASE + 16) {
         /* Medium value */
         pop = zone - COMBASE - 8;
@@ -123,7 +123,7 @@ int calcComPop(int zone)
         pop += 32;
         return pop;
     }
-    
+
     if (zone >= COMBASE + 16 && zone < COMBASE + 24) {
         /* High value */
         pop = zone - COMBASE - 16;
@@ -131,13 +131,13 @@ int calcComPop(int zone)
         pop += 64;
         return pop;
     }
-    
+
     /* Continue checking other commercial zone types */
     if (zone >= COMBASE + 24 && zone <= LASTCOM) {
         /* Higher density commercial */
         return 16 + (zone - COMBASE - 24) / 8 * 16;
     }
-    
+
     return 0;
 }
 
@@ -145,7 +145,7 @@ int calcComPop(int zone)
 int calcIndPop(int zone)
 {
     int pop;
-    
+
     /* Check if in industrial range */
     if (zone >= INDBASE && zone < INDBASE + 8) {
         /* Low value */
@@ -153,7 +153,7 @@ int calcIndPop(int zone)
         pop = pop << 3;
         return pop;
     }
-    
+
     if (zone >= INDBASE + 8 && zone < INDBASE + 16) {
         /* Medium value */
         pop = zone - INDBASE - 8;
@@ -161,7 +161,7 @@ int calcIndPop(int zone)
         pop += 32;
         return pop;
     }
-    
+
     if (zone >= INDBASE + 16 && zone < INDBASE + 24) {
         /* High value */
         pop = zone - INDBASE - 16;
@@ -169,18 +169,18 @@ int calcIndPop(int zone)
         pop += 64;
         return pop;
     }
-    
+
     /* Continue checking other industrial zone types */
     if (zone >= INDBASE + 24 && zone <= LASTIND) {
         /* Higher density industrial */
         return 16 + (zone - INDBASE - 24) / 8 * 16;
     }
-    
+
     /* Special case for certain building types */
     if (zone == AIRPORT || zone == PORT) {
         return 40;
     }
-    
+
     return 0;
 }
 static void IncROG(int x, int y);
@@ -207,11 +207,11 @@ void DoZone(int Xloc, int Yloc, int pos)
     if (!(Map[Yloc][Xloc] & ZONEBIT)) {
         return;
     }
-    
+
     /* Set global position variables for this zone */
     SMapX = Xloc;
     SMapY = Yloc;
-    
+
     /* Do special processing based on zone type */
     if (pos >= RESBASE) {
         if (pos < COMBASE) {
@@ -220,14 +220,14 @@ void DoZone(int Xloc, int Yloc, int pos)
             DoResidential(Xloc, Yloc);
             return;
         }
-    
+
         if (pos < INDBASE) {
             /* Commercial zone */
             SetZPower(Xloc, Yloc);
             DoCommercial(Xloc, Yloc);
             return;
         }
-    
+
         if (pos < PORTBASE) {
             /* Industrial zone */
             SetZPower(Xloc, Yloc);
@@ -235,7 +235,7 @@ void DoZone(int Xloc, int Yloc, int pos)
             return;
         }
     }
-    
+
     /* Handle special zones */
     if (pos < HOSPITALBASE || pos > FOOTBALLBASE) {
         switch (pos) {
@@ -249,12 +249,12 @@ void DoZone(int Xloc, int Yloc, int pos)
                 break;
         }
     }
-    
+
     if (pos >= HOSPITALBASE && pos <= FOOTBALLBASE) {
         DoHospChur(Xloc, Yloc);
         return;
     }
-    
+
     /* Special zones */
     DoSPZ(Xloc, Yloc);
 }
@@ -263,34 +263,38 @@ void DoZone(int Xloc, int Yloc, int pos)
 static void DoHospChur(int x, int y)
 {
     short z;
-    
-    if (!(Map[y][x] & ZONEBIT))
-        return;
-    
-    SetZPower(x, y);
-    
-    if (CityTime & 3)
-        return;
-    
-    z = Map[y][x] & LOMASK;
-    
-    if (z == HOSPITAL) {
-        /* Add hospital population to census directly */
-        ResPop += 30;  
-        
-        /* Also increment trade zone count on some cycles */
-        if (ZoneRandom(20) < 10)
-            IZPop++;
+
+    if (!(Map[y][x] & ZONEBIT)) {
         return;
     }
-    
+
+    SetZPower(x, y);
+
+    if (CityTime & 3) {
+        return;
+    }
+
+    z = Map[y][x] & LOMASK;
+
+    if (z == HOSPITAL) {
+        /* Add hospital population to census directly */
+        ResPop += 30;
+
+        /* Also increment trade zone count on some cycles */
+        if (ZoneRandom(20) < 10) {
+            IZPop++;
+        }
+        return;
+    }
+
     if (z == CHURCH) {
         /* Add church population to census directly */
         ResPop += 10;
-        
+
         /* Also increment residential zone count on some cycles */
-        if (ZoneRandom(20) < 10)
+        if (ZoneRandom(20) < 10) {
             RZPop++;
+        }
     }
 }
 
@@ -298,42 +302,44 @@ static void DoHospChur(int x, int y)
 static void DoSPZ(int x, int y)
 {
     short z;
-    
-    if (!(Map[y][x] & ZONEBIT))
+
+    if (!(Map[y][x] & ZONEBIT)) {
         return;
-    
+    }
+
     SetZPower(x, y);
-    
+
     /* Only process every 16th time */
-    if (CityTime & 15)
+    if (CityTime & 15) {
         return;
-    
+    }
+
     z = Map[y][x] & LOMASK;
-    
+
     /* Handle special case of coal power plant */
     if (z == POWERPLANT) {
         SetSmoke(x, y);
         return;
     }
-    
+
     /* Handle special case of stadium */
     if (z == STADIUM) {
         int xpos;
         int ypos;
-        
+
         xpos = (x - 1) + ZoneRandom(3);
         ypos = (y - 1) + ZoneRandom(3);
-        
+
         /* Add stadium population to census directly */
-        ComPop += 50;  /* Stadiums contribute to commercial population */
-        
+        ComPop += 50; /* Stadiums contribute to commercial population */
+
         /* Additional random chance to increase commercial zone */
         if (ZoneRandom(5) == 1) {
             CZPop += 1;
         }
         return;
     }
-    
+
     /* Handle special case of nuclear power */
     if (z == NUCLEAR) {
         /* Handle nuclear power plant (no meltdowns for now) */
@@ -354,53 +360,54 @@ static void DoIndustrial(int x, int y)
     short zone;
     short tpop;
     int pop;
-    
+
     zone = Map[y][x];
-    if (!(zone & ZONEBIT))
+    if (!(zone & ZONEBIT)) {
         return;
-        
+    }
+
     SetZPower(x, y);
-    
+
     tpop = IZPop;
-    
+
     /* Get actual zone population */
     pop = calcIndPop(zone);
-    
+
     /* Add to total industrial population for the census */
     IndPop += pop;
-    
+
     /* Generate traffic from industrial zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
         /* Industrial zones (2) try to generate traffic to residential zones */
         SMapX = x;
         SMapY = y;
-        
+
         /* If traffic generation successful, update population count */
         if (MakeTraffic(2) > 0) {
             IZPop += pop;
         }
     }
-    
+
     /* Process industrial zone less often (every 8th cycle) */
     if ((CityTime & 7) == 0) {
         int value;
-        
+
         value = GetCRVal(x, y);
-        
+
         if (value < 0) {
             DoIndOut(tpop, x, y);
             return;
         }
-        
+
         value = EvalInd(x, y);
-        
+
         if (value > 0) {
             DoIndIn(tpop, x, y);
         } else if (value < 0) {
             DoIndOut(tpop, x, y);
         }
     }
-    
+
     if ((CityTime & 7) == 0) {
         IZPop = 0;
     }
@@ -412,53 +419,54 @@ static void DoCommercial(int x, int y)
     short zone;
     short tpop;
     int pop;
-    
+
     zone = Map[y][x];
-    if (!(zone & ZONEBIT))
+    if (!(zone & ZONEBIT)) {
         return;
-        
+    }
+
     SetZPower(x, y);
-    
+
     tpop = CZPop;
-    
+
     /* Get actual zone population */
     pop = calcComPop(zone);
-    
+
     /* Add to total commercial population for the census */
     ComPop += pop;
-    
+
     /* Generate traffic from commercial zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
         /* Commercial zones (1) try to generate traffic to industrial zones */
         SMapX = x;
         SMapY = y;
-        
+
         /* If traffic generation successful, update population count */
         if (MakeTraffic(1) > 0) {
             CZPop += pop;
         }
     }
-    
+
     /* Process commercial zone less often (every 8th cycle) */
     if ((CityTime & 7) == 0) {
         int value;
-        
+
         value = GetCRVal(x, y);
-        
+
         if (value < 0) {
             DoComOut(tpop, x, y);
             return;
         }
-        
+
         value = EvalCom(x, y);
-        
+
         if (value > 0) {
             DoComIn(tpop, x, y);
         } else if (value < 0) {
             DoComOut(tpop, x, y);
         }
     }
-    
+
     if ((CityTime & 7) == 0) {
         CZPop = 0;
     }
@@ -471,60 +479,61 @@ static void DoResidential(int x, int y)
     short tpop;
     int pop;
     int zonePowered;
-    
+
     zone = Map[y][x];
-    if (!(zone & ZONEBIT))
+    if (!(zone & ZONEBIT)) {
         return;
-        
+    }
+
     /* Check if zone has power */
     zonePowered = (zone & POWERBIT) != 0;
-    
+
     tpop = RZPop;
-    
+
     /* Get actual zone population */
     pop = calcResPop(zone);
-    
+
     /* Add to total residential population for the census */
     ResPop += pop;
-    
+
     /* Generate traffic from residential zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
         /* Residential zones (0) try to generate traffic to commercial or industrial zones */
         SMapX = x;
         SMapY = y;
-        
+
         /* If traffic generation successful, update population count */
         if (MakeTraffic(0) > 0) {
             RZPop += pop;
         }
     }
-    
+
     /* Process growth or decline based on power status */
     if ((CityTime & 7) == 0) {
         int value;
-        
+
         value = GetCRVal(x, y);
-        
+
         if (value < 0) {
             DoResOut(tpop, value, x, y);
             return;
         }
-        
+
         /* No growth in unpowered zones */
         if (!zonePowered) {
             DoResOut(tpop, -500, x, y);
             return;
         }
-        
+
         value = EvalRes(x, y);
-        
+
         if (value > 0) {
             DoResIn(tpop, value, x, y);
         } else if (value < 0) {
             DoResOut(tpop, value, x, y);
         }
     }
-    
+
     /* Reset population counter periodically */
     if ((CityTime & 7) == 0) {
         RZPop = 0;
@@ -535,21 +544,23 @@ static void DoResidential(int x, int y)
 static int GetCRVal(int x, int y)
 {
     int landVal;
-    
+
     landVal = LandValueMem[y>>1][x>>1];
-    
+
     /* Check if it's connected to power */
     if (!(Map[y][x] & POWERBIT)) {
         landVal -= 20;
-        
+
         /* No power = bad location */
-        if (landVal < 0)
+        if (landVal < 0) {
             landVal = 0;
-            
-        if (landVal < 30)
+        }
+
+        if (landVal < 30) {
             return -1;
+        }
     }
-    
+
     return landVal;
 }
 
@@ -560,10 +571,12 @@ static void DoResIn(int pop, int value, int x, int y)
     short z;
     short deltaValue;
     short growthRate = 1;
-    
+
     /* Increase growth likelihood */
-    if (RValve > 500) growthRate = 2; /* More aggressive growth with high demand */
-    
+    if (RValve > 500) {
+        growthRate = 2; /* More aggressive growth with high demand */
+    }
+
     if (pop > 0) {
         /* Less restrictive population requirement for growth */
         if (pop < 6 + value/12) {
@@ -571,46 +584,49 @@ static void DoResIn(int pop, int value, int x, int y)
             return;
         }
     }
-    
+
     /* Zone is ready for growth! */
     base = (Map[y][x] & LOMASK) - RESBASE;
-    
+
     z = RZPop;
-    if (z < 0)
+    if (z < 0) {
         z = 0;
-        
+    }
+
     if (base < 3) {
         /* Low-value residential building: 0, 1, 2 */
         /* Increased chance of growth */
         if (ZoneRandom(3) || (RValve > 300 && ZoneRandom(2))) {
             Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base + growthRate);
             IncROG(x, y);
-            
+
             /* Debug the growth */
             {
                 char debugMsg[256];
-                wsprintf(debugMsg, "ZONE GROWTH: Residential base %d grew to %d at (%d,%d)\n", 
-                        base, base + growthRate, x, y);
+                wsprintf(debugMsg, "ZONE GROWTH: Residential base %d grew to %d at (%d,%d)\n",
+                    base, base + growthRate, x, y);
                 OutputDebugString(debugMsg);
             }
         }
     } else if (base < 6) {
         /* Medium-value residential building: 3, 4, 5 */
         deltaValue = 0;
-        
-        if (value >= 80)
+
+        if (value >= 80) {
             deltaValue = 1;
-            
-        if (value >= 150)
+        }
+
+        if (value >= 150) {
             deltaValue = 2;
-            
+        }
+
         Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base + deltaValue);
-        
+
         /* Increased chance of growth */
         if (ZoneRandom(12) < 3 || (RValve > 400 && ZoneRandom(10) < 3)) {
             ResPlop(x, y, ZoneRandom(2) + base - 3);
             IncROG(x, y);
-            
+
             /* Debug the growth */
             {
                 char debugMsg[256];
@@ -621,7 +637,7 @@ static void DoResIn(int pop, int value, int x, int y)
     } else {
         /* Big residential building: 6, 7, 8 */
         Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base);
-        
+
         /* Increased chance of growth */
         if ((value > 120 && ZoneRandom(8) < 2) || (RValve > 500 && ZoneRandom(10) < 3)) {
             if (ZoneRandom(2)) {
@@ -629,7 +645,7 @@ static void DoResIn(int pop, int value, int x, int y)
             } else {
                 ResPlop(x, y, ZoneRandom(3) + 3);
             }
-            
+
             /* Debug the growth */
             {
                 char debugMsg[256];
@@ -644,16 +660,16 @@ static void DoResIn(int pop, int value, int x, int y)
 static void DoComIn(int pop, int x, int y)
 {
     short base;
-    
+
     /* Reduced population threshold for growth */
     if (pop < 4) {
         IncROG(x, y);
         return;
     }
-    
+
     /* Zone is ready for growth! */
     base = (Map[y][x] & LOMASK) - COMBASE;
-    
+
     /* Increased chance of growth - more likely if CValve (commercial demand) is high */
     if (ZoneRandom(3) == 0 || (CValve > 400 && ZoneRandom(5) < 2)) {
         if (ZoneRandom(2) == 0) {
@@ -662,7 +678,7 @@ static void DoComIn(int pop, int x, int y)
             ComPlop(x, y, ZoneRandom(4) + 5);
         }
         IncROG(x, y);
-        
+
         /* Debug the growth */
         {
             char debugMsg[256];
@@ -680,7 +696,7 @@ static void DoIndIn(int pop, int x, int y)
         IncROG(x, y);
         return;
     }
-    
+
     /* Zone is ready for growth! */
     /* Increased chance of growth - more likely if IValve (industrial demand) is high */
     if (ZoneRandom(3) == 0 || (IValve > 400 && ZoneRandom(5) < 2)) {
@@ -690,7 +706,7 @@ static void DoIndIn(int pop, int x, int y)
             IndPlop(x, y, ZoneRandom(4) + 4);
         }
         IncROG(x, y);
-        
+
         /* Debug the growth */
         {
             char debugMsg[256];
@@ -707,7 +723,7 @@ static void IncROG(int x, int y)
     if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
         short xx;
         short yy;
-        
+
         xx = x >> 3;
         yy = y >> 3;
         /* Rate of growth map would be incremented here */
@@ -718,12 +734,13 @@ static void IncROG(int x, int y)
 static void DoResOut(int pop, int value, int x, int y)
 {
     short base;
-    
+
     base = (Map[y][x] & LOMASK) - RESBASE;
-    
-    if (base == 0)
+
+    if (base == 0) {
         return;
-    
+    }
+
     if (pop > 16) {
         /* Turn to small house */
         Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base - 1);
@@ -731,19 +748,20 @@ static void DoResOut(int pop, int value, int x, int y)
         /* Gradually decay */
         Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base - 1);
     }
-    
+
     /* Check for complete ruin */
     if ((base < 4) && (value < 30) && (!pop) && (ZoneRandom(4) == 0)) {
         if (ZoneRandom(2) == 0) {
             /* Make into rubble */
             short z1;
             short z2;
-            
+
             z1 = (ZoneRandom(3) + 43) | BULLBIT;
-            
+
             z2 = Map[y][x] & LOMASK;
-            if ((z2 < COMBASE) || (z2 > LASTIND))
+            if ((z2 < COMBASE) || (z2 > LASTIND)) {
                 Map[y][x] = z1;
+            }
         }
     }
 }
@@ -752,12 +770,13 @@ static void DoResOut(int pop, int value, int x, int y)
 static void DoComOut(int pop, int x, int y)
 {
     short base;
-    
+
     base = (Map[y][x] & LOMASK) - COMBASE;
-    
-    if (base == 0)
+
+    if (base == 0) {
         return;
-    
+    }
+
     if ((base > 0) && (ZoneRandom(8) == 0)) {
         /* Gradually decay */
         Map[y][x] = (Map[y][x] & ALLBITS) | (COMBASE + base - 1);
@@ -768,12 +787,13 @@ static void DoComOut(int pop, int x, int y)
 static void DoIndOut(int pop, int x, int y)
 {
     short base;
-    
+
     base = (Map[y][x] & LOMASK) - INDBASE;
-    
-    if (base == 0)
+
+    if (base == 0) {
         return;
-    
+    }
+
     if ((base > 0) && (ZoneRandom(8) == 0)) {
         /* Gradually decay */
         Map[y][x] = (Map[y][x] & ALLBITS) | (INDBASE + base - 1);
@@ -789,20 +809,21 @@ static void BuildHouse(int x, int y, int value)
     short score;
     short xx;
     short yy;
-    
+
     z = 0;
-    
+
     /* Find best place to build a house */
     for (yy = -1; yy <= 1; yy++) {
         for (xx = -1; xx <= 1; xx++) {
             if (xx || yy) {
                 score = EvalLot(x + xx, y + yy);
-                if (score > z)
+                if (score > z) {
                     z = score;
+                }
             }
         }
     }
-    
+
     /* If we found any valid location, build house there */
     if (z > 0) {
         /* Would build the house at the specified location */
@@ -832,23 +853,27 @@ static int EvalLot(int x, int y)
 {
     int score;
     short z;
-    
+
     score = 1;
-    
-    if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y)
+
+    if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
         return -1;
-    
+    }
+
     z = Map[y][x] & LOMASK;
-    
-    if ((z >= RESBASE) && (z <= RESBASE + 8))
+
+    if ((z >= RESBASE) && (z <= RESBASE + 8)) {
         score = 0;
-    
-    if (score && (z != DIRT))
+    }
+
+    if (score && (z != DIRT)) {
         score = 0;
-    
-    if (!score)
+    }
+
+    if (!score) {
         return score;
-    
+    }
+
     /* Suitable place found! */
     return score;
 }
@@ -861,42 +886,44 @@ static int ZonePlop(int xpos, int ypos, int base)
     short x;
     short y;
     short z;
-    
+
     /* Bounds check */
-    if (xpos < 0 || xpos >= WORLD_X || ypos < 0 || ypos >= WORLD_Y)
+    if (xpos < 0 || xpos >= WORLD_X || ypos < 0 || ypos >= WORLD_Y) {
         return 0;
-    
+    }
+
     /* Make sure center tile is bulldozable */
-    if (!(Map[ypos][xpos] & BULLBIT))
+    if (!(Map[ypos][xpos] & BULLBIT)) {
         return 0;
-    
+    }
+
     /* Update zone center with the zone bit and power */
     Map[ypos][xpos] = (Map[ypos][xpos] & MASKBITS) | BNCNBIT |
-                      base | CONDBIT | BURNBIT | BULLBIT;
-    
+        base | CONDBIT | BURNBIT | BULLBIT;
+
     /* Set the 3x3 zone around center */
     for (dy = -1; dy <= 1; dy++) {
         for (dx = -1; dx <= 1; dx++) {
             x = xpos + dx;
             y = ypos + dy;
-            
+
             if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
                 if (!(dx == 0 && dy == 0)) {
                     /* Not the center tile */
                     z = Map[y][x] & LOMASK;
-                    
+
                     if ((z < ROADS) || (z > LASTRAIL)) {
                         if (Map[y][x] & BULLBIT) {
-                            Map[y][x] = (Map[y][x] & MASKBITS) | 
-                                       (base + BSIZE + ZoneRandom(2)) |
-                                       CONDBIT | BURNBIT | BULLBIT;
+                            Map[y][x] = (Map[y][x] & MASKBITS) |
+                                (base + BSIZE + ZoneRandom(2)) |
+                                CONDBIT | BURNBIT | BULLBIT;
                         }
                     }
                 }
             }
         }
     }
-    
+
     return 1;
 }
 
@@ -904,36 +931,43 @@ static int ZonePlop(int xpos, int ypos, int base)
 static int EvalRes(int x, int y)
 {
     int value;
-    
+
     value = LandValueMem[y>>1][x>>1];
-    
+
     /* Reduced minimum value requirement */
-    if (value < 20)
+    if (value < 20) {
         return -1;
-    
+    }
+
     /* Increased tolerance for pollution */
     if (value < 80) {
-        if (PollutionMem[y>>1][x>>1] > 100) /* Was 80 */
+        if (PollutionMem[y>>1][x>>1] > 100) { /* Was 80 */
             return -1;
+        }
     } else {
-        if (PollutionMem[y>>1][x>>1] > 60) /* Was 40 */
+        if (PollutionMem[y>>1][x>>1] > 60) { /* Was 40 */
             return -1;
+        }
     }
-    
+
     /* Increased tolerance for crime */
-    if (CrimeMem[y>>1][x>>1] > 220) /* Was 190 */
+    if (CrimeMem[y>>1][x>>1] > 220) { /* Was 190 */
         return -1;
-    
+    }
+
     /* Less restrictive RValve requirements */
-    if ((value > 30) && RValve < -100) /* Was 0 */
+    if ((value > 30) && RValve < -100) { /* Was 0 */
         return 0;
-    
-    if ((value > 80) && RValve < 0) /* Was 20 */
+    }
+
+    if ((value > 80) && RValve < 0) { /* Was 20 */
         return 0;
-    
-    if ((value > 150) && RValve < 20) /* Was 40 */
+    }
+
+    if ((value > 150) && RValve < 20) { /* Was 40 */
         return 0;
-    
+    }
+
     /* Bump up values slightly to encourage more growth */
     return value + 10;
 }
@@ -942,29 +976,35 @@ static int EvalRes(int x, int y)
 static int EvalCom(int x, int y)
 {
     int value;
-    
+
     value = ComRate[y>>1][x>>1];
-    
+
     /* Reduced minimum requirement */
-    if (value < 1)
+    if (value < 1) {
         return -1;
-    
+    }
+
     /* Less restrictive CValve requirements */
-    if (value < 20 && CValve < -50) /* Was 0 */
+    if (value < 20 && CValve < -50) { /* Was 0 */
         return -1;
-    
-    if (value < 50 && CValve < 0) /* Was 10 */
+    }
+
+    if (value < 50 && CValve < 0) { /* Was 10 */
         return -1;
-    
-    if (value < 100 && CValve < 10) /* Was 20 */
+    }
+
+    if (value < 100 && CValve < 10) { /* Was 20 */
         return 0;
-    
-    if (value < 150)
+    }
+
+    if (value < 150) {
         return value + 10; /* Boost value to encourage growth */
-    
-    if (CValve < 20) /* Was 40 */
+    }
+
+    if (CValve < 20) { /* Was 40 */
         return 0;
-    
+    }
+
     /* Boost high values */
     return value + 20;
 }
@@ -973,12 +1013,14 @@ static int EvalCom(int x, int y)
 static int EvalInd(int x, int y)
 {
     /* Less restrictive IValve requirements */
-    if (IValve < -50) /* Was 0 */
+    if (IValve < -50) { /* Was 0 */
         return -1;
-    
-    if (IValve < 20) /* Was 50 */
+    }
+
+    if (IValve < 20) { /* Was 50 */
         return 0;
-    
+    }
+
     /* Boost value to encourage growth */
     return IValve + 50;
 }
@@ -992,23 +1034,24 @@ static int DoFreePop(int x, int y)
     int xxx;
     int yyy;
     short z;
-    
+
     count = 0;
-    
+
     for (yy = -1; yy <= 1; yy++) {
         for (xx = -1; xx <= 1; xx++) {
             xxx = x + xx;
             yyy = y + yy;
-            
+
             if (xxx >= 0 && xxx < WORLD_X && yyy >= 0 && yyy < WORLD_Y) {
                 z = Map[yyy][xxx] & LOMASK;
-                
-                if (z >= LHTHR && z <= HHTHR)
+
+                if (z >= LHTHR && z <= HHTHR) {
                     count++;
+                }
             }
         }
     }
-    
+
     return count;
 }
 
@@ -1018,37 +1061,37 @@ static void SetZPower(int x, int y)
     short z;
     int powered;
     int dx, dy;
-    
+
     /* First check if this is a power plant - they're always powered */
     z = Map[y][x] & LOMASK;
-    
+
     if (z == NUCLEAR || z == POWERPLANT) {
         /* Power plants are always powered */
         Map[y][x] |= POWERBIT;
         PwrdZCnt++;
         return;
     }
-    
+
     /* Check if already powered according to PowerMap */
     if (PowerMap[y][x] == 1) {
         Map[y][x] |= POWERBIT;
         powered = 1;
-    } 
+    }
     /* If not already powered, check surrounding tiles */
     else {
         powered = 0;
-        
+
         /* Check all 8 surrounding tiles for power */
         for (dy = -1; dy <= 1 && !powered; dy++) {
             for (dx = -1; dx <= 1 && !powered; dx++) {
                 int nx = x + dx;
                 int ny = y + dy;
-                
+
                 /* Skip the center tile */
                 if (dx == 0 && dy == 0) {
                     continue;
                 }
-                
+
                 /* Check if neighbor is in bounds */
                 if (nx >= 0 && nx < WORLD_X && ny >= 0 && ny < WORLD_Y) {
                     /* If a neighboring tile has power, this zone gets power */
@@ -1059,7 +1102,7 @@ static void SetZPower(int x, int y)
                 }
             }
         }
-        
+
         /* Update the power bit based on our check */
         if (powered) {
             Map[y][x] |= POWERBIT;
@@ -1069,7 +1112,7 @@ static void SetZPower(int x, int y)
             PowerMap[y][x] = 0;
         }
     }
-    
+
     /* Update power count */
     if (powered) {
         PwrdZCnt++;

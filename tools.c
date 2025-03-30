@@ -173,19 +173,19 @@ int ConnectTile(int x, int y, short *tilePtr, int command)
     }
 
     /* AutoBulldoze feature - if trying to build road, rail, or wire */
-    if ((command >= 2) && (command <= 4)) {
-        if ((TotalFunds > 0) &&
-            ((tile = (*tilePtr)) & BULLBIT)) {
-
+    if (command >= 2 && command <= 4) {
+        /* Check if we have funds and if the tile can be bulldozed */
+        if (TotalFunds > 0 && ((tile = (*tilePtr)) & BULLBIT)) {
             /* Can bulldoze small objects and rubble */
-            if (((tile & LOMASK) >= RUBBLE) &&
-                ((tile & LOMASK) <= LASTRUBBLE)) {
+            tile &= LOMASK;
+            if (tile >= RUBBLE && tile <= LASTRUBBLE) {
                 Spend(1);
                 *tilePtr = DIRT;
             }
         }
     }
 
+    /* Execute the appropriate command and fix zone */
     switch (command) {
         case 0:    /* Fix zone */
             FixZone(x, y, tilePtr);
@@ -219,16 +219,20 @@ int ConnectTile(int x, int y, short *tilePtr, int command)
 int checkSize(short tileValue)
 {
     /* Check for the normal com, resl, ind 3x3 zones & the fireDept & PoliceDept */
-    if (((tileValue >= (RESBASE - 1)) && (tileValue <= (PORTBASE - 1))) ||
-        ((tileValue >= (LASTPOWERPLANT + 1)) && (tileValue <= (POLICESTATION + 4)))) {
+    if ((tileValue >= (RESBASE - 1) && tileValue <= (PORTBASE - 1)) ||
+        (tileValue >= (LASTPOWERPLANT + 1) && tileValue <= (POLICESTATION + 4))) {
         return 3;
     }
-    else if (((tileValue >= PORTBASE) && (tileValue <= LASTPORT)) ||
-            ((tileValue >= COALBASE) && (tileValue <= LASTPOWERPLANT)) ||
-            ((tileValue >= STADIUMBASE) && (tileValue <= LASTSTADIUM))) {
+
+    /* 4x4 zone buildings */
+    if ((tileValue >= PORTBASE && tileValue <= LASTPORT) ||
+        (tileValue >= COALBASE && tileValue <= LASTPOWERPLANT) ||
+        (tileValue >= STADIUMBASE && tileValue <= LASTSTADIUM)) {
         return 4;
     }
-    else if ((tileValue >= AIRPORTBASE) && (tileValue <= LASTAIRPORT)) {
+
+    /* 6x6 zone buildings (airport) */
+    if (tileValue >= AIRPORTBASE && tileValue <= LASTAIRPORT) {
         return 6;
     }
 
@@ -238,400 +242,314 @@ int checkSize(short tileValue)
 /* Check if this tile is part of a big zone and find its center */
 int checkBigZone(short id, int *deltaHPtr, int *deltaVPtr)
 {
-    /*
-     * We need to use if-else statements instead of a switch to avoid duplicate case values
-     * The issue is that POWERPLANT (750) = TILE_POWERPLANT, etc.
-     */
+    /* Handle zone center tiles */
+    switch (id) {
+        case 750: /* POWERPLANT / TILE_POWERPLANT */
+        case 698: /* PORT / TILE_PORT */
+        case 816: /* NUCLEAR / TILE_NUCLEAR */
+        case 785: /* STADIUM / TILE_STADIUM */
+            *deltaHPtr = 0;
+            *deltaVPtr = 0;
+            return 4;
 
-    /* Check for center tiles first */
-    if (id == 750) {       /* POWERPLANT / TILE_POWERPLANT */
-        *deltaHPtr = 0;
-        *deltaVPtr = 0;
-        return 4;
-    }
-    else if (id == 698) {  /* PORT / TILE_PORT */
-        *deltaHPtr = 0;
-        *deltaVPtr = 0;
-        return 4;
-    }
-    else if (id == 816) {  /* NUCLEAR / TILE_NUCLEAR */
-        *deltaHPtr = 0;
-        *deltaVPtr = 0;
-        return 4;
-    }
-    else if (id == 785) {  /* STADIUM / TILE_STADIUM */
-        *deltaHPtr = 0;
-        *deltaVPtr = 0;
-        return 4;
-    }
-    else if (id == 716) {  /* AIRPORT / TILE_AIRPORT */
-        *deltaHPtr = 0;
-        *deltaVPtr = 0;
-        return 6;
+        case 716: /* AIRPORT / TILE_AIRPORT */
+            *deltaHPtr = 0;
+            *deltaVPtr = 0;
+            return 6;
     }
 
     /* Coal power plant parts (745-754) */
-    else if (id == TILE_COALBASE + 1) {
+    if (id == TILE_COALBASE + 1) {
         *deltaHPtr = -1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 2) {
+    } else if (id == TILE_COALBASE + 2) {
         *deltaHPtr = 0;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 3) {
+    } else if (id == TILE_COALBASE + 3) {
         *deltaHPtr = -1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 4) {
+    } else if (id == TILE_COALBASE + 4) {
         *deltaHPtr = 1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 5) {
+    } else if (id == TILE_COALBASE + 5) {
         *deltaHPtr = 1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 6) {
+    } else if (id == TILE_COALBASE + 6) {
         *deltaHPtr = 0;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 7) {
+    } else if (id == TILE_COALBASE + 7) {
         *deltaHPtr = -1;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_COALBASE + 8) {
+    } else if (id == TILE_COALBASE + 8) {
         *deltaHPtr = 1;
         *deltaVPtr = 1;
         return 4;
     }
-
     /* Nuclear power plant parts (811-826) */
     else if (id == TILE_NUCLEARBASE + 1) {
         *deltaHPtr = -1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 2) {
+    } else if (id == TILE_NUCLEARBASE + 2) {
         *deltaHPtr = 0;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 3) {
+    } else if (id == TILE_NUCLEARBASE + 3) {
         *deltaHPtr = -1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 4) {
+    } else if (id == TILE_NUCLEARBASE + 4) {
         *deltaHPtr = 1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 5) {
+    } else if (id == TILE_NUCLEARBASE + 5) {
         *deltaHPtr = 1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 6) {
+    } else if (id == TILE_NUCLEARBASE + 6) {
         *deltaHPtr = 0;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 7) {
+    } else if (id == TILE_NUCLEARBASE + 7) {
         *deltaHPtr = -1;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE + 8) {
+    } else if (id == TILE_NUCLEARBASE + 8) {
         *deltaHPtr = 1;
         *deltaVPtr = 1;
         return 4;
     }
-
     /* Stadium parts (779-799) */
     else if (id == TILE_STADIUMBASE + 1) {
         *deltaHPtr = -1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 2) {
+    } else if (id == TILE_STADIUMBASE + 2) {
         *deltaHPtr = 0;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 3) {
+    } else if (id == TILE_STADIUMBASE + 3) {
         *deltaHPtr = -1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 4) {
+    } else if (id == TILE_STADIUMBASE + 4) {
         *deltaHPtr = 1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 5) {
+    } else if (id == TILE_STADIUMBASE + 5) {
         *deltaHPtr = 1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 6) {
+    } else if (id == TILE_STADIUMBASE + 6) {
         *deltaHPtr = 0;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 7) {
+    } else if (id == TILE_STADIUMBASE + 7) {
         *deltaHPtr = -1;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE + 8) {
+    } else if (id == TILE_STADIUMBASE + 8) {
         *deltaHPtr = 1;
         *deltaVPtr = 1;
         return 4;
     }
-
     /* Seaport parts (693-708) */
     else if (id == TILE_PORTBASE + 1) {
         *deltaHPtr = -1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 2) {
+    } else if (id == TILE_PORTBASE + 2) {
         *deltaHPtr = 0;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 3) {
+    } else if (id == TILE_PORTBASE + 3) {
         *deltaHPtr = -1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 4) {
+    } else if (id == TILE_PORTBASE + 4) {
         *deltaHPtr = 1;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 5) {
+    } else if (id == TILE_PORTBASE + 5) {
         *deltaHPtr = 1;
         *deltaVPtr = -1;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 6) {
+    } else if (id == TILE_PORTBASE + 6) {
         *deltaHPtr = 0;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 7) {
+    } else if (id == TILE_PORTBASE + 7) {
         *deltaHPtr = -1;
         *deltaVPtr = 1;
         return 4;
-    }
-    else if (id == TILE_PORTBASE + 8) {
+    } else if (id == TILE_PORTBASE + 8) {
         *deltaHPtr = 1;
         *deltaVPtr = 1;
         return 4;
     }
-
     /* Airport parts (709-744) */
     else if (id == TILE_AIRPORTBASE) {
         *deltaHPtr = -2;
         *deltaVPtr = -2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 1) {
+    } else if (id == TILE_AIRPORTBASE + 1) {
         *deltaHPtr = -1;
         *deltaVPtr = -2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 2) {
+    } else if (id == TILE_AIRPORTBASE + 2) {
         *deltaHPtr = 0;
         *deltaVPtr = -2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 3) {
+    } else if (id == TILE_AIRPORTBASE + 3) {
         *deltaHPtr = 1;
         *deltaVPtr = -2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 4) {
+    } else if (id == TILE_AIRPORTBASE + 4) {
         *deltaHPtr = 2;
         *deltaVPtr = -2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 5) {
+    } else if (id == TILE_AIRPORTBASE + 5) {
         *deltaHPtr = 3;
         *deltaVPtr = -2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 6) {
+    } else if (id == TILE_AIRPORTBASE + 6) {
         *deltaHPtr = -2;
         *deltaVPtr = -1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 7) {
+    } else if (id == TILE_AIRPORTBASE + 7) {
         *deltaHPtr = -1;
         *deltaVPtr = -1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 8) {
+    } else if (id == TILE_AIRPORTBASE + 8) {
         *deltaHPtr = 0;
         *deltaVPtr = -1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 9) {
+    } else if (id == TILE_AIRPORTBASE + 9) {
         *deltaHPtr = 1;
         *deltaVPtr = -1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 10) {
+    } else if (id == TILE_AIRPORTBASE + 10) {
         *deltaHPtr = 2;
         *deltaVPtr = -1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 11) {
+    } else if (id == TILE_AIRPORTBASE + 11) {
         *deltaHPtr = 3;
         *deltaVPtr = -1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 12) {
+    } else if (id == TILE_AIRPORTBASE + 12) {
         *deltaHPtr = -2;
         *deltaVPtr = 0;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 13) {
+    } else if (id == TILE_AIRPORTBASE + 13) {
         *deltaHPtr = -1;
         *deltaVPtr = 0;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 14) {
+    } else if (id == TILE_AIRPORTBASE + 14) {
         *deltaHPtr = 1;
         *deltaVPtr = 0;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 15) {
+    } else if (id == TILE_AIRPORTBASE + 15) {
         *deltaHPtr = 2;
         *deltaVPtr = 0;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 16) {
+    } else if (id == TILE_AIRPORTBASE + 16) {
         *deltaHPtr = 3;
         *deltaVPtr = 0;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 17) {
+    } else if (id == TILE_AIRPORTBASE + 17) {
         *deltaHPtr = -2;
         *deltaVPtr = 1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 18) {
+    } else if (id == TILE_AIRPORTBASE + 18) {
         *deltaHPtr = -1;
         *deltaVPtr = 1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 19) {
+    } else if (id == TILE_AIRPORTBASE + 19) {
         *deltaHPtr = 0;
         *deltaVPtr = 1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 20) {
+    } else if (id == TILE_AIRPORTBASE + 20) {
         *deltaHPtr = 1;
         *deltaVPtr = 1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 21) {
+    } else if (id == TILE_AIRPORTBASE + 21) {
         *deltaHPtr = 2;
         *deltaVPtr = 1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 22) {
+    } else if (id == TILE_AIRPORTBASE + 22) {
         *deltaHPtr = 3;
         *deltaVPtr = 1;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 23) {
+    } else if (id == TILE_AIRPORTBASE + 23) {
         *deltaHPtr = -2;
         *deltaVPtr = 2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 24) {
+    } else if (id == TILE_AIRPORTBASE + 24) {
         *deltaHPtr = -1;
         *deltaVPtr = 2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 25) {
+    } else if (id == TILE_AIRPORTBASE + 25) {
         *deltaHPtr = 0;
         *deltaVPtr = 2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 26) {
+    } else if (id == TILE_AIRPORTBASE + 26) {
         *deltaHPtr = 1;
         *deltaVPtr = 2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 27) {
+    } else if (id == TILE_AIRPORTBASE + 27) {
         *deltaHPtr = 2;
         *deltaVPtr = 2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 28) {
+    } else if (id == TILE_AIRPORTBASE + 28) {
         *deltaHPtr = 3;
         *deltaVPtr = 2;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 29) {
+    } else if (id == TILE_AIRPORTBASE + 29) {
         *deltaHPtr = -2;
         *deltaVPtr = 3;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 30) {
+    } else if (id == TILE_AIRPORTBASE + 30) {
         *deltaHPtr = -1;
         *deltaVPtr = 3;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 31) {
+    } else if (id == TILE_AIRPORTBASE + 31) {
         *deltaHPtr = 0;
         *deltaVPtr = 3;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 32) {
+    } else if (id == TILE_AIRPORTBASE + 32) {
         *deltaHPtr = 1;
         *deltaVPtr = 3;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 33) {
+    } else if (id == TILE_AIRPORTBASE + 33) {
         *deltaHPtr = 2;
         *deltaVPtr = 3;
         return 6;
-    }
-    else if (id == TILE_AIRPORTBASE + 34) {
+    } else if (id == TILE_AIRPORTBASE + 34) {
         *deltaHPtr = 3;
         *deltaVPtr = 3;
         return 6;
     }
-
     /* Also handle base tiles */
     else if (id == TILE_COALBASE) {
         *deltaHPtr = 0;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_NUCLEARBASE) {
+    } else if (id == TILE_NUCLEARBASE) {
         *deltaHPtr = 0;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_STADIUMBASE) {
+    } else if (id == TILE_STADIUMBASE) {
         *deltaHPtr = 0;
         *deltaVPtr = 0;
         return 4;
-    }
-    else if (id == TILE_PORTBASE) {
+    } else if (id == TILE_PORTBASE) {
         *deltaHPtr = 0;
         *deltaVPtr = 0;
         return 4;
@@ -761,7 +679,7 @@ int LayDoze(int x, int y, short *tilePtr)
 
     /* Special case for water-related structures which cost more */
     if ((tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
-         tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
+        tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
         TotalFunds < 5) {
         return 0;
     }
@@ -1169,46 +1087,46 @@ static int lastMouseMapY = -1;
 
 /* Mapping of toolbar indices to tool states - this maps from toolbar position (0-17) to the simulation.h tool state constants */
 static const int toolbarToStateMapping[17] = {
-    residentialState,  /* 0 - Residential in toolbar position 0 */
-    commercialState,   /* 1 - Commercial in toolbar position 1 */
-    industrialState,   /* 2 - Industrial in toolbar position 2 */
-    fireState,         /* 3 - Fire Station in toolbar position 3 */
-    policeState,       /* 4 - Police Station in toolbar position 4 */
-    wireState,         /* 5 - Wire in toolbar position 5 */
-    roadState,         /* 6 - Road in toolbar position 6 */
-    railState,         /* 7 - Rail in toolbar position 7 */
-    parkState,         /* 8 - Park in toolbar position 8 */
-    stadiumState,      /* 9 - Stadium in toolbar position 9 */
-    seaportState,      /* 10 - Seaport in toolbar position 10 */
-    powerState,        /* 11 - Power Plant in toolbar position 11 */
-    nuclearState,      /* 12 - Nuclear Plant in toolbar position 12 */
-    airportState,      /* 13 - Airport in toolbar position 13 */
-    bulldozerState,    /* 14 - Bulldozer in toolbar position 14 */
-    queryState,        /* 15 - Query in toolbar position 15 */
-    noToolState        /* 16 - No Tool in toolbar position 16 */
+    residentialState, /* 0 - Residential in toolbar position 0 */
+    commercialState, /* 1 - Commercial in toolbar position 1 */
+    industrialState, /* 2 - Industrial in toolbar position 2 */
+    fireState,     /* 3 - Fire Station in toolbar position 3 */
+    policeState,   /* 4 - Police Station in toolbar position 4 */
+    wireState,     /* 5 - Wire in toolbar position 5 */
+    roadState,     /* 6 - Road in toolbar position 6 */
+    railState,     /* 7 - Rail in toolbar position 7 */
+    parkState,     /* 8 - Park in toolbar position 8 */
+    stadiumState,  /* 9 - Stadium in toolbar position 9 */
+    seaportState,  /* 10 - Seaport in toolbar position 10 */
+    powerState,    /* 11 - Power Plant in toolbar position 11 */
+    nuclearState,  /* 12 - Nuclear Plant in toolbar position 12 */
+    airportState,  /* 13 - Airport in toolbar position 13 */
+    bulldozerState, /* 14 - Bulldozer in toolbar position 14 */
+    queryState,    /* 15 - Query in toolbar position 15 */
+    noToolState    /* 16 - No Tool in toolbar position 16 */
 };
 
 /* Reverse mapping from tool state to toolbar position for fast lookups */
 static const int stateToToolbarMapping[19] = {
-    0,  /* residentialState (0) -> position 0 */
-    1,  /* commercialState (1) -> position 1 */
-    2,  /* industrialState (2) -> position 2 */
-    3,  /* fireState (3) -> position 3 */
-    4,  /* policeState (4) -> position 4 */
-    5,  /* wireState (5) -> position 5 */
-    6,  /* roadState (6) -> position 6 */
-    7,  /* railState (7) -> position 7 */
-    8,  /* parkState (8) -> position 8 */
-    9,  /* stadiumState (9) -> position 9 */
+    0, /* residentialState (0) -> position 0 */
+    1, /* commercialState (1) -> position 1 */
+    2, /* industrialState (2) -> position 2 */
+    3, /* fireState (3) -> position 3 */
+    4, /* policeState (4) -> position 4 */
+    5, /* wireState (5) -> position 5 */
+    6, /* roadState (6) -> position 6 */
+    7, /* railState (7) -> position 7 */
+    8, /* parkState (8) -> position 8 */
+    9, /* stadiumState (9) -> position 9 */
     10, /* seaportState (10) -> position 10 */
     11, /* powerState (11) -> position 11 */
     12, /* nuclearState (12) -> position 12 */
     13, /* airportState (13) -> position 13 */
-    0,  /* networkState (14) - not used in toolbar */
+    0, /* networkState (14) - not used in toolbar */
     14, /* bulldozerState (15) -> position 14 */
     15, /* queryState (16) -> position 15 */
     16, /* windowState (17) - not used in toolbar */
-    16  /* noToolState (18) -> position 16 */
+    16 /* noToolState (18) -> position 16 */
 };
 
 /* Tool active flag - needs to be exportable to main.c */
@@ -1344,23 +1262,23 @@ static HBITMAP hToolBitmaps[17];        /* Tool bitmaps */
 
 /* File names for tool bitmaps - order matches toolbar position */
 static const char* toolBitmapFiles[17] = {
-    "residential",  /* 0 - Residential */
-    "commercial",   /* 1 - Commercial */
-    "industrial",   /* 2 - Industrial */
-    "firestation",  /* 3 - Fire Station */
+    "residential", /* 0 - Residential */
+    "commercial", /* 1 - Commercial */
+    "industrial", /* 2 - Industrial */
+    "firestation", /* 3 - Fire Station */
     "policestation",/* 4 - Police Station */
-    "powerline",    /* 5 - Wire */
-    "road",         /* 6 - Road */
-    "rail",         /* 7 - Rail */
-    "park",         /* 8 - Park */
-    "stadium",      /* 9 - Stadium */
-    "seaport",      /* 10 - Seaport */
-    "powerplant",   /* 11 - Coal Power Plant */
-    "nuclear",      /* 12 - Nuclear Power Plant */
-    "airport",      /* 13 - Airport */
-    "bulldozer",    /* 14 - Bulldozer */
-    "query",        /* 15 - Query */
-    "bulldozer"     /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
+    "powerline", /* 5 - Wire */
+    "road",     /* 6 - Road */
+    "rail",     /* 7 - Rail */
+    "park",     /* 8 - Park */
+    "stadium",  /* 9 - Stadium */
+    "seaport",  /* 10 - Seaport */
+    "powerplant", /* 11 - Coal Power Plant */
+    "nuclear",  /* 12 - Nuclear Power Plant */
+    "airport",  /* 13 - Airport */
+    "bulldozer", /* 14 - Bulldozer */
+    "query",    /* 15 - Query */
+    "bulldozer" /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
 };
 
 /* Function to process toolbar button clicks */
@@ -1381,8 +1299,7 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HPEN hRedPen;
     HPEN hOldPen;
 
-    switch(msg)
-    {
+    switch (msg) {
         case WM_CREATE:
             return 0;
 
@@ -1394,8 +1311,7 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
 
             /* Draw the buttons in a 3-column grid */
-            for (i = 0; i < 17; i++)
-            {
+            for (i = 0; i < 17; i++) {
                 row = i / toolbarColumns;
                 col = i % toolbarColumns;
                 buttonX = col * toolButtonSize;
@@ -1461,33 +1377,49 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 localI = IValve;
 
                 /* Limit values to range for drawing */
-                if (localR > 2000) localR = 2000;
-                if (localR < -2000) localR = -2000;
-                if (localC > 2000) localC = 2000;
-                if (localC < -2000) localC = -2000;
-                if (localI > 2000) localI = 2000;
-                if (localI < -2000) localI = -2000;
+                if (localR > 2000) {
+                    localR = 2000;
+                }
+                if (localR < -2000) {
+                    localR = -2000;
+                }
+                if (localC > 2000) {
+                    localC = 2000;
+                }
+                if (localC < -2000) {
+                    localC = -2000;
+                }
+                if (localI > 2000) {
+                    localI = 2000;
+                }
+                if (localI < -2000) {
+                    localI = -2000;
+                }
 
                 /* Create brushes using system palette colors */
-                hResBrush = CreateSolidBrush(RGB(0, 128, 0));    /* Dark Green */
-                hComBrush = CreateSolidBrush(RGB(0, 0, 128));    /* Dark Blue */
-                hIndBrush = CreateSolidBrush(RGB(128, 128, 0));  /* Dark Yellow */
+                hResBrush = CreateSolidBrush(RGB(0, 128, 0)); /* Dark Green */
+                hComBrush = CreateSolidBrush(RGB(0, 0, 128)); /* Dark Blue */
+                hIndBrush = CreateSolidBrush(RGB(128, 128, 0)); /* Dark Yellow */
 
                 /* Error check for failed resource creation */
-                if (!hResBrush || !hComBrush || !hIndBrush)
-                {
+                if (!hResBrush || !hComBrush || !hIndBrush) {
                     /* Clean up any resources that were created */
-                    if (hResBrush) DeleteObject(hResBrush);
-                    if (hComBrush) DeleteObject(hComBrush);
-                    if (hIndBrush) DeleteObject(hIndBrush);
+                    if (hResBrush) {
+                        DeleteObject(hResBrush);
+                    }
+                    if (hComBrush) {
+                        DeleteObject(hComBrush);
+                    }
+                    if (hIndBrush) {
+                        DeleteObject(hIndBrush);
+                    }
                     EndPaint(hwnd, &ps);
                     return 0;
                 }
 
                 /* Draw the horizontal center line */
                 hCenterPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-                if (hCenterPen)
-                {
+                if (hCenterPen) {
                     hOldPen = (HPEN)SelectObject(hdc, hCenterPen);
                     MoveToEx(hdc, rciStartX - 5, rciStartY, NULL);
                     LineTo(hdc, rciStartX + barWidth * 3 + spacing * 2 + 5, rciStartY);
@@ -1543,30 +1475,36 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 FillRect(hdc, &rciRect, hIndBrush);
 
                 /* Add labels for RCI bars */
-                SetTextColor(hdc, RGB(0, 0, 0));  /* Black text */
+                SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
                 SetBkMode(hdc, TRANSPARENT);
                 TextOut(hdc, rciStartX + (barWidth / 2) - 4, rciStartY + 5, "R", 1);
                 TextOut(hdc, rciStartX + barWidth + spacing + (barWidth / 2) - 4, rciStartY + 5, "C", 1);
                 TextOut(hdc, rciStartX + barWidth * 2 + spacing * 2 + (barWidth / 2) - 4, rciStartY + 5, "I", 1);
 
                 /* Clean up GDI resources properly */
-                if (hResBrush) DeleteObject(hResBrush);
-                if (hComBrush) DeleteObject(hComBrush);
-                if (hIndBrush) DeleteObject(hIndBrush);
-                if (hCenterPen) DeleteObject(hCenterPen);
+                if (hResBrush) {
+                    DeleteObject(hResBrush);
+                }
+                if (hComBrush) {
+                    DeleteObject(hComBrush);
+                }
+                if (hIndBrush) {
+                    DeleteObject(hIndBrush);
+                }
+                if (hCenterPen) {
+                    DeleteObject(hCenterPen);
+                }
             }
 
             /* Show current tool information if a tool is active */
-            if (isToolActive)
-            {
+            if (isToolActive) {
                 const char *toolName;
                 int toolCost;
                 char buffer[256];
                 int textY = 6 * 36 + 55; /* Position below the RCI labels (rciStartY + 15) */
 
                 /* Get the tool name */
-                switch (GetCurrentTool())
-                {
+                switch (GetCurrentTool()) {
                     case bulldozerState:
                         toolName = "Bulldozer";
                         break;
@@ -1623,11 +1561,11 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 toolCost = GetToolCost();
 
                 /* Show the tool name and cost in the toolbar */
-                SetTextColor(hdc, RGB(0, 0, 0));  /* Black text */
+                SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
                 SetBkMode(hdc, TRANSPARENT);
                 wsprintf(buffer, "Tool: %s", toolName);
                 TextOut(hdc, 10, textY, buffer, lstrlen(buffer));
-                
+
                 if (toolCost > 0) {
                     wsprintf(buffer, "Cost: $%d", toolCost);
                     TextOut(hdc, 10, textY + 15, buffer, lstrlen(buffer));
@@ -1637,35 +1575,32 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             EndPaint(hwnd, &ps);
             return 0;
 
-        case WM_LBUTTONDOWN:
-            {
-                /* Get mouse coordinates */
-                mouseX = LOWORD(lParam);
-                mouseY = HIWORD(lParam);
+        case WM_LBUTTONDOWN: {
+            /* Get mouse coordinates */
+            mouseX = LOWORD(lParam);
+            mouseY = HIWORD(lParam);
 
-                /* Calculate row and column */
-                col = mouseX / toolButtonSize;
-                row = mouseY / toolButtonSize;
+            /* Calculate row and column */
+            col = mouseX / toolButtonSize;
+            row = mouseY / toolButtonSize;
 
-                /* Ensure col is within bounds */
-                if (col >= toolbarColumns)
-                {
-                    col = toolbarColumns - 1;
-                }
-
-                /* Calculate the tool index */
-                toolIndex = row * toolbarColumns + col;
-
-                if (toolIndex >= 0 && toolIndex < 17)
-                {
-                    /* Select the corresponding tool using the mapping */
-                    SelectTool(toolbarToStateMapping[toolIndex]);
-
-                    /* Redraw the toolbar */
-                    InvalidateRect(hwnd, NULL, TRUE);
-                }
-                return 0;
+            /* Ensure col is within bounds */
+            if (col >= toolbarColumns) {
+                col = toolbarColumns - 1;
             }
+
+            /* Calculate the tool index */
+            toolIndex = row * toolbarColumns + col;
+
+            if (toolIndex >= 0 && toolIndex < 17) {
+                /* Select the corresponding tool using the mapping */
+                SelectTool(toolbarToStateMapping[toolIndex]);
+
+                /* Redraw the toolbar */
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+            return 0;
+        }
 
         case WM_DESTROY:
             hwndToolbar = NULL;
@@ -1683,17 +1618,15 @@ void LoadToolbarBitmaps(void)
     char filename[MAX_PATH];
 
     /* Load the renamed bitmaps directly from the images folder */
-    for (i = 0; i < 17; i++)
-    {
+    for (i = 0; i < 17; i++) {
         /* Use only the new bitmap files with descriptive names */
         wsprintf(filename, "images\\%s.bmp", toolBitmapFiles[i]);
 
         /* Load the bitmap */
         hToolBitmaps[i] = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0,
-                                   LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+                LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
-        if (hToolBitmaps[i] == NULL)
-        {
+        if (hToolBitmaps[i] == NULL) {
             /* Log error if bitmap loading fails */
             OutputDebugString("Failed to load bitmap: ");
             OutputDebugString(filename);
@@ -1707,10 +1640,8 @@ void CleanupToolbarBitmaps(void)
     int i;
 
     /* Delete all bitmap handles */
-    for (i = 0; i < 17; i++)
-    {
-        if (hToolBitmaps[i])
-        {
+    for (i = 0; i < 17; i++) {
+        if (hToolBitmaps[i]) {
             DeleteObject(hToolBitmaps[i]);
             hToolBitmaps[i] = NULL;
         }
@@ -1732,21 +1663,17 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     char debugMsg[100];
     char indexStr[8];
     RECT rect;
-    int margin;  /* Margin around tool icons */
+    int margin; /* Margin around tool icons */
 
     /* Get the toolbar index using the reverse mapping */
-    if (toolType >= 0 && toolType < 17)
-    {
+    if (toolType >= 0 && toolType < 17) {
         toolIndex = stateToToolbarMapping[toolType];
-    }
-    else
-    {
+    } else {
         toolIndex = 0;
     }
 
     /* Make sure index is in range */
-    if (toolIndex < 0 || toolIndex >= 16)
-    {
+    if (toolIndex < 0 || toolIndex >= 16) {
         return;
     }
 
@@ -1754,13 +1681,11 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     hdcMem = CreateCompatibleDC(hdc);
 
     /* Select the bitmap (we only have one version now) */
-    if (hToolBitmaps[toolIndex])
-    {
+    if (hToolBitmaps[toolIndex]) {
         hbmOld = SelectObject(hdcMem, hToolBitmaps[toolIndex]);
 
         /* Get the bitmap dimensions */
-        if (GetObject(hToolBitmaps[toolIndex], sizeof(BITMAP), &bm) == 0)
-        {
+        if (GetObject(hToolBitmaps[toolIndex], sizeof(BITMAP), &bm) == 0) {
             /* If GetObject fails, use default dimensions */
             bm.bmWidth = 24;
             bm.bmHeight = 24;
@@ -1769,9 +1694,7 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
             wsprintf(debugMsg, "GetObject failed for bitmap %d", toolIndex);
             OutputDebugString(debugMsg);
         }
-    }
-    else
-    {
+    } else {
         /* Failed to load bitmap - fall back to drawing a rectangle with tool name */
         wsprintf(debugMsg, "No bitmap for tool %d", toolIndex);
         OutputDebugString(debugMsg);
@@ -1800,12 +1723,10 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     margin = 4;
 
     /* Ensure we don't exceed button size minus margin */
-    if (width > toolButtonSize - 2*margin)
-    {
+    if (width > toolButtonSize - 2*margin) {
         width = toolButtonSize - 2*margin;
     }
-    if (height > toolButtonSize - 2*margin)
-    {
+    if (height > toolButtonSize - 2*margin) {
         height = toolButtonSize - 2*margin;
     }
 
@@ -1814,12 +1735,10 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     centerY = y + (toolButtonSize - height) / 2;
 
     /* Make sure we respect minimum margins */
-    if (centerX < x + margin)
-    {
+    if (centerX < x + margin) {
         centerX = x + margin;
     }
-    if (centerY < y + margin)
-    {
+    if (centerY < y + margin) {
         centerY = y + margin;
     }
 
@@ -1827,8 +1746,7 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     StretchBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 
     /* If this tool is selected, draw a thick yellow box around it */
-    if (isSelected)
-    {
+    if (isSelected) {
         /* Draw the highlight box using the BUTTON boundaries, not the icon */
         toolRect.left = x + 2;
         toolRect.top = y + 2;
@@ -1863,8 +1781,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
     LoadToolbarBitmaps();
 
     /* Register the toolbar window class if not already done */
-    if (!GetClassInfoEx(NULL, "MicropolisToolbar", &wc))
-    {
+    if (!GetClassInfoEx(NULL, "MicropolisToolbar", &wc)) {
         wc.cbSize        = sizeof(WNDCLASSEX);
         wc.style         = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc   = ToolbarProc;
@@ -1885,23 +1802,22 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
     GetClientRect(hwndParent, &clientRect);
 
     hwndToolbar = CreateWindowEx(
-        WS_EX_DLGMODALFRAME,  /* Using dialog frame style for a raised appearance */
-        "MicropolisToolbar",
-        NULL,
-        WS_CHILD | WS_VISIBLE,  /* Removed WS_BORDER as DLGMODALFRAME provides its own border */
-        0, 0,  /* x, y - will be adjusted below */
-        toolbarWidth, clientRect.bottom,
-        hwndParent,
-        NULL,
-        GetModuleHandle(NULL),
-        NULL);
+            WS_EX_DLGMODALFRAME,        /* Using dialog frame style for a raised appearance */
+            "MicropolisToolbar",
+            NULL,
+            WS_CHILD | WS_VISIBLE,        /* Removed WS_BORDER as DLGMODALFRAME provides its own border */
+            0, 0,        /* x, y - will be adjusted below */
+            toolbarWidth, clientRect.bottom,
+            hwndParent,
+            NULL,
+            GetModuleHandle(NULL),
+            NULL);
 
     /* Set the tool to bulldozer by default */
     SelectTool(bulldozerState);
 
     /* Force a redraw of the toolbar */
-    if (hwndToolbar)
-    {
+    if (hwndToolbar) {
         InvalidateRect(hwndToolbar, NULL, TRUE);
     }
 }
@@ -1916,14 +1832,12 @@ void SelectTool(int toolType)
     isToolActive = (toolType != noToolState);
 
     /* Only redraw the toolbar - the main window doesn't need to be redrawn completely */
-    if (hwndToolbar)
-    {
+    if (hwndToolbar) {
         InvalidateRect(hwndToolbar, NULL, TRUE);
     }
 
     /* Update tool cost */
-    switch (currentTool)
-    {
+    switch (currentTool) {
         case bulldozerState:
             toolCost = TOOL_BULLDOZER_COST;
             break;
@@ -1985,7 +1899,7 @@ void SelectTool(int toolType)
             break;
 
         case queryState:
-            toolCost = 0;  /* Query tool is free */
+            toolCost = 0; /* Query tool is free */
             break;
 
         default:
@@ -2019,8 +1933,9 @@ int DoBulldozer(int mapX, int mapY)
     int deltaV = 0;
 
     /* Check bounds */
-    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y)
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
         return TOOLRESULT_FAILED;
+    }
 
     /* Get current tile */
     tile = Map[mapY][mapX] & LOMASK;
@@ -2037,8 +1952,8 @@ int DoBulldozer(int mapX, int mapY)
 
     /* Special case for water-related structures which cost more */
     if ((tile == RIVER || tile == REDGE || tile == CHANNEL ||
-         tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
-         tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
+        tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
+        tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
         TotalFunds < 5) {
         return TOOLRESULT_NO_MONEY;
     }
@@ -2099,18 +2014,15 @@ int DoBulldozer(int mapX, int mapY)
     if (tile == RIVER || tile == REDGE || tile == CHANNEL) {
         /* Can't bulldoze natural water features */
         return TOOLRESULT_FAILED;
-    }
-    else if (tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
-             tile == VBRIDGE || tile == BRWH || tile == BRWV) {
+    } else if (tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
+        tile == VBRIDGE || tile == BRWH || tile == BRWV) {
         /* Water-related structures cost $5 */
         Spend(5);
-        Map[mapY][mapX] = RIVER;  /* Convert back to water */
-    }
-    else if (tile == RADTILE) {
+        Map[mapY][mapX] = RIVER; /* Convert back to water */
+    } else if (tile == RADTILE) {
         /* Can't bulldoze radiation */
         return TOOLRESULT_FAILED;
-    }
-    else {
+    } else {
         /* All other tiles cost $1 */
         Spend(1);
         Map[mapY][mapX] = DIRT;
@@ -2129,8 +2041,9 @@ int DoRoad(int mapX, int mapY)
     short baseTile;
 
     /* Check bounds */
-    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y)
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
         return TOOLRESULT_FAILED;
+    }
 
     baseTile = Map[mapY][mapX] & LOMASK;
 
@@ -2165,8 +2078,9 @@ int DoRail(int mapX, int mapY)
     short baseTile;
 
     /* Check bounds */
-    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y)
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
         return TOOLRESULT_FAILED;
+    }
 
     baseTile = Map[mapY][mapX] & LOMASK;
 
@@ -2201,8 +2115,9 @@ int DoWire(int mapX, int mapY)
     short baseTile;
 
     /* Check bounds */
-    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y)
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
         return TOOLRESULT_FAILED;
+    }
 
     baseTile = Map[mapY][mapX] & LOMASK;
 
@@ -2237,18 +2152,21 @@ int DoPark(int mapX, int mapY)
     int randval;
 
     /* Check bounds */
-    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y)
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
         return TOOLRESULT_FAILED;
+    }
 
     tile = Map[mapY][mapX] & LOMASK;
 
     /* Parks can only be built on clear land */
-    if (tile != TILE_DIRT)
+    if (tile != TILE_DIRT) {
         return TOOLRESULT_NEED_BULLDOZE;
+    }
 
     /* Check if we have enough money */
-    if (!CheckFunds(TOOL_PARK_COST))
+    if (!CheckFunds(TOOL_PARK_COST)) {
         return TOOLRESULT_NO_MONEY;
+    }
 
     Spend(TOOL_PARK_COST); /* Deduct cost */
 
@@ -2401,7 +2319,9 @@ int Place4x4Building(int mapX, int mapY, int baseValue, int centerTile, int tota
                 Map[mapY][mapX] = centerTile | ZONEBIT | BULLBIT;
             } else {
                 /* Skip the center index (5) */
-                if (index == 5) index++;
+                if (index == 5) {
+                    index++;
+                }
                 Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT;
             }
             index++;
@@ -2491,7 +2411,9 @@ int Place6x6Building(int mapX, int mapY, int baseValue, int centerTile, int tota
                 Map[mapY][mapX] = centerTile | ZONEBIT | BULLBIT;
             } else {
                 /* Skip the center index (14) */
-                if (index == 14) index++;
+                if (index == 14) {
+                    index++;
+                }
                 Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT;
             }
             index++;
@@ -2520,44 +2442,45 @@ const char* GetZoneName(short tile)
 {
     short baseTile = tile & LOMASK;
 
-    if (baseTile >= RESBASE && baseTile <= LASTRES)
+    if (baseTile >= RESBASE && baseTile <= LASTRES) {
         return "Residential Zone";
-    else if (baseTile >= COMBASE && baseTile <= LASTCOM)
+    } else if (baseTile >= COMBASE && baseTile <= LASTCOM) {
         return "Commercial Zone";
-    else if (baseTile >= INDBASE && baseTile <= LASTIND)
+    } else if (baseTile >= INDBASE && baseTile <= LASTIND) {
         return "Industrial Zone";
-    else if (baseTile >= PORTBASE && baseTile <= LASTPORT)
+    } else if (baseTile >= PORTBASE && baseTile <= LASTPORT) {
         return "Seaport";
-    else if (baseTile >= AIRPORTBASE && baseTile <= LASTAIRPORT)
+    } else if (baseTile >= AIRPORTBASE && baseTile <= LASTAIRPORT) {
         return "Airport";
-    else if (baseTile >= COALBASE && baseTile <= LASTPOWERPLANT)
+    } else if (baseTile >= COALBASE && baseTile <= LASTPOWERPLANT) {
         return "Coal Power Plant";
-    else if (baseTile >= NUCLEARBASE && baseTile <= LASTNUCLEAR)
+    } else if (baseTile >= NUCLEARBASE && baseTile <= LASTNUCLEAR) {
         return "Nuclear Power Plant";
-    else if (baseTile >= FIRESTBASE && baseTile <= LASTFIRESTATION)
+    } else if (baseTile >= FIRESTBASE && baseTile <= LASTFIRESTATION) {
         return "Fire Station";
-    else if (baseTile >= POLICESTBASE && baseTile <= LASTPOLICESTATION)
+    } else if (baseTile >= POLICESTBASE && baseTile <= LASTPOLICESTATION) {
         return "Police Station";
-    else if (baseTile >= STADIUMBASE && baseTile <= LASTSTADIUM)
+    } else if (baseTile >= STADIUMBASE && baseTile <= LASTSTADIUM) {
         return "Stadium";
-    else if (baseTile >= ROADBASE && baseTile <= LASTROAD)
+    } else if (baseTile >= ROADBASE && baseTile <= LASTROAD) {
         return "Road";
-    else if (baseTile >= RAILBASE && baseTile <= LASTRAIL)
+    } else if (baseTile >= RAILBASE && baseTile <= LASTRAIL) {
         return "Rail";
-    else if (baseTile >= POWERBASE && baseTile <= LASTPOWER)
+    } else if (baseTile >= POWERBASE && baseTile <= LASTPOWER) {
         return "Power Line";
-    else if (baseTile == RIVER || baseTile == REDGE || baseTile == CHANNEL)
+    } else if (baseTile == RIVER || baseTile == REDGE || baseTile == CHANNEL) {
         return "Water";
-    else if (baseTile >= RUBBLE && baseTile <= LASTRUBBLE)
+    } else if (baseTile >= RUBBLE && baseTile <= LASTRUBBLE) {
         return "Rubble";
-    else if (baseTile >= TREEBASE && baseTile <= LASTTREE)
+    } else if (baseTile >= TREEBASE && baseTile <= LASTTREE) {
         return "Trees";
-    else if (baseTile == RADTILE)
+    } else if (baseTile == RADTILE) {
         return "Radiation";
-    else if (baseTile >= FIREBASE && baseTile <= LASTFIRE)
+    } else if (baseTile >= FIREBASE && baseTile <= LASTFIRE) {
         return "Fire";
-    else if (baseTile >= FLOOD && baseTile <= LASTFLOOD)
+    } else if (baseTile >= FLOOD && baseTile <= LASTFLOOD) {
         return "Flood";
+    }
 
     return "Clear Land";
 }
@@ -2570,8 +2493,9 @@ int DoQuery(int mapX, int mapY)
     const char *zoneName;
 
     /* Check bounds */
-    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y)
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
         return TOOLRESULT_FAILED;
+    }
 
     tile = Map[mapY][mapX];
 
@@ -2580,9 +2504,9 @@ int DoQuery(int mapX, int mapY)
 
     /* Prepare message */
     wsprintf(message, "Location: %d, %d\nTile Type: %s\nHas Power: %s",
-             mapX, mapY,
-             zoneName,
-             (tile & POWERBIT) ? "Yes" : "No");
+        mapX, mapY,
+        zoneName,
+        (tile & POWERBIT) ? "Yes" : "No");
 
     /* Display the message box with information */
     MessageBox(hwndMain, message, "Zone Info", MB_OK | MB_ICONINFORMATION);
@@ -2595,8 +2519,7 @@ int ApplyTool(int mapX, int mapY)
 {
     int result = TOOLRESULT_FAILED;
 
-    switch (currentTool)
-    {
+    switch (currentTool) {
         case bulldozerState:
             result = DoBulldozer(mapX, mapY);
             break;
@@ -2684,8 +2607,7 @@ int GetCurrentTool(void)
 /* Function to update the toolbar display (including RCI bars) */
 void UpdateToolbar(void)
 {
-    if (hwndToolbar)
-    {
+    if (hwndToolbar) {
         InvalidateRect(hwndToolbar, NULL, TRUE);
     }
 }
@@ -2705,23 +2627,22 @@ int GetToolCost(void)
 /* Get the size of a tool (1x1, 3x3, 4x4, or 6x6) */
 int GetToolSize(int toolType)
 {
-    switch (toolType)
-    {
+    switch (toolType) {
         case residentialState:
         case commercialState:
         case industrialState:
         case fireState:
         case policeState:
-            return TOOL_SIZE_3X3;  /* 3x3 zones */
+            return TOOL_SIZE_3X3; /* 3x3 zones */
 
         case stadiumState:
         case seaportState:
         case powerState:
         case nuclearState:
-            return TOOL_SIZE_4X4;  /* 4x4 buildings */
+            return TOOL_SIZE_4X4; /* 4x4 buildings */
 
         case airportState:
-            return TOOL_SIZE_6X6;  /* 6x6 buildings */
+            return TOOL_SIZE_6X6; /* 6x6 buildings */
 
         case roadState:
         case railState:
@@ -2730,7 +2651,7 @@ int GetToolSize(int toolType)
         case bulldozerState:
         case queryState:
         default:
-            return TOOL_SIZE_1X1;  /* Single tile tools */
+            return TOOL_SIZE_1X1; /* Single tile tools */
     }
 }
 
@@ -2746,8 +2667,7 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
     HBRUSH hOldBrush;
 
     /* Calculate the starting position based on tool size */
-    switch (size)
-    {
+    switch (size) {
         case TOOL_SIZE_3X3:
             /* Center 3x3 highlight at cursor */
             startX = mapX - 1;
@@ -2789,8 +2709,9 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
     /* Create a white pen for the outline */
     hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
 
-    if (!hPen)
+    if (!hPen) {
         return;
+    }
 
     /* Select pen and null brush (for hollow rectangle) */
     hOldPen = SelectObject(hdc, hPen);
@@ -2798,8 +2719,8 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
 
     /* Draw the rectangle */
     Rectangle(hdc, screenX, screenY,
-              screenX + (width * TILE_SIZE),
-              screenY + (height * TILE_SIZE));
+        screenX + (width * TILE_SIZE),
+        screenY + (height * TILE_SIZE));
 
     /* Clean up */
     SelectObject(hdc, hOldPen);

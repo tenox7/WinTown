@@ -216,8 +216,8 @@ extern short ScoreWait;         /* Score wait for scenario */
 
 /* Tileset constants - commented out because they're defined elsewhere
    If you need to modify these, update the definitions where they are first defined
-#define TILE_TOTAL_COUNT   1024  Maximum number of tiles in the tileset
-#define TILES_IN_ROW       32    Number of tiles per row in the tileset bitmap */
+ #define TILE_TOTAL_COUNT   1024  Maximum number of tiles in the tileset
+ #define TILES_IN_ROW       32    Number of tiles per row in the tileset bitmap */
 #ifndef TILE_TOTAL_COUNT
 #define TILE_TOTAL_COUNT   1024 /* Maximum number of tiles in the tileset */
 #endif
@@ -293,7 +293,7 @@ void ForceFullCensus(void);
 /* External functions - defined in simulation.c */
 extern int SimRandom(int range);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine, int nCmdShow)
+    LPSTR lpCmdLine, int nCmdShow)
 {
     WNDCLASSEX wc, wcInfo;
     MSG msg;
@@ -314,8 +314,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     wc.lpszClassName = "MicropolisNT";
     wc.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
 
-    if(!RegisterClassEx(&wc))
-    {
+    if (!RegisterClassEx(&wc)) {
         MessageBox(NULL, "Window Registration Failed!", "Error",
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
@@ -335,19 +334,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     wcInfo.lpszClassName = INFO_WINDOW_CLASS;
     wcInfo.hIconSm       = NULL;
 
-    if(!RegisterClassEx(&wcInfo))
-    {
+    if (!RegisterClassEx(&wcInfo)) {
         MessageBox(NULL, "Info Window Registration Failed!", "Error",
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
-    
+
     /* Register log window class */
     wcInfo.lpfnWndProc   = logWndProc;
     wcInfo.lpszClassName = LOG_WINDOW_CLASS;
-    
-    if(!RegisterClassEx(&wcInfo))
-    {
+
+    if (!RegisterClassEx(&wcInfo)) {
         MessageBox(NULL, "Log Window Registration Failed!", "Error",
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
@@ -357,16 +354,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     /* Create main window */
     hwndMain = CreateWindowEx(
-        WS_EX_CLIENTEDGE,
-        "MicropolisNT",
-        "MicropolisNT - Tileset: classic",
-        WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        908, 600,  /* Additional 108px width for the 3-column toolbar */
-        NULL, hMenu, hInstance, NULL);
+            WS_EX_CLIENTEDGE,
+            "MicropolisNT",
+            "MicropolisNT - Tileset: classic",
+            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+            CW_USEDEFAULT, CW_USEDEFAULT,
+            908, 600,     /* Additional 108px width for the 3-column toolbar */
+            NULL, hMenu, hInstance, NULL);
 
-    if(hwndMain == NULL)
-    {
+    if (hwndMain == NULL) {
         MessageBox(NULL, "Window Creation Failed!", "Error",
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
@@ -379,42 +375,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     /* Create info window */
     hwndInfo = CreateWindowEx(
-        WS_EX_CLIENTEDGE,
-        INFO_WINDOW_CLASS,
-        "Micropolis Info",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        mainWindowX + rect.right - rect.left + 10, mainWindowY, /* Position to right of main window */
-        INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT,
-        NULL, NULL, hInstance, NULL);
+            WS_EX_CLIENTEDGE,
+            INFO_WINDOW_CLASS,
+            "Micropolis Info",
+            WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            mainWindowX + rect.right - rect.left + 10, mainWindowY,    /* Position to right of main window */
+            INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT,
+            NULL, NULL, hInstance, NULL);
 
-    if(hwndInfo == NULL)
-    {
+    if (hwndInfo == NULL) {
         MessageBox(NULL, "Info Window Creation Failed!", "Error",
             MB_ICONEXCLAMATION | MB_OK);
         /* Continue anyway, just without the info window */
-    }
-    else
-    {
+    } else {
         /* Start timer to update info window */
         SetTimer(hwndInfo, INFO_TIMER_ID, INFO_TIMER_INTERVAL, NULL);
     }
-    
+
     /* Initialize log system before creating the window */
     logBufferPos = 0;
     logBuffer[0] = '\0';
-    
+
     /* Create log window */
     hwndLog = CreateWindowEx(
-        WS_EX_CLIENTEDGE,
-        LOG_WINDOW_CLASS,
-        "Micropolis Log",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE, /* Visible by default */
-        mainWindowX, mainWindowY + rect.bottom - rect.top + 10, /* Position below main window */
-        LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT,
-        NULL, NULL, hInstance, NULL);
+            WS_EX_CLIENTEDGE,
+            LOG_WINDOW_CLASS,
+            "Micropolis Log",
+            WS_OVERLAPPEDWINDOW | WS_VISIBLE,   /* Visible by default */
+            mainWindowX, mainWindowY + rect.bottom - rect.top + 10,   /* Position below main window */
+            LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT,
+            NULL, NULL, hInstance, NULL);
 
-    if(hwndLog == NULL)
-    {
+    if (hwndLog == NULL) {
         MessageBox(NULL, "Log Window Creation Failed!", "Error",
             MB_ICONEXCLAMATION | MB_OK);
         /* Continue anyway, just without the log window */
@@ -425,10 +417,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     {
         int x, y;
-        for (y = 0; y < WORLD_Y; y++)
-        {
-            for (x = 0; x < WORLD_X; x++)
-            {
+        for (y = 0; y < WORLD_Y; y++) {
+            for (x = 0; x < WORLD_X; x++) {
                 Map[y][x] = TILE_DIRT;
             }
         }
@@ -448,8 +438,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ShowWindow(hwndMain, nCmdShow);
     UpdateWindow(hwndMain);
 
-    while(GetMessage(&msg, NULL, 0, 0) > 0)
-    {
+    while (GetMessage(&msg, NULL, 0, 0) > 0) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -457,8 +446,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     cleanupGraphics();
 
     /* Clean up info window timer */
-    if (hwndInfo)
-    {
+    if (hwndInfo) {
         KillTimer(hwndInfo, INFO_TIMER_ID);
     }
 
@@ -476,28 +464,29 @@ void addGameLog(const char* format, ...)
     SYSTEMTIME st;
     int len;
     int textLen;
-    
+
     /* Only proceed if we have a text control */
-    if (!hwndLogText)
+    if (!hwndLogText) {
         return;
-    
+    }
+
     /* Get current time */
     GetLocalTime(&st);
     sprintf(timeBuffer, "[%02d:%02d:%02d] ", st.wHour, st.wMinute, st.wSecond);
-    
+
     /* Format message */
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
-    
+
     /* Add time prefix + message + newline to the log buffer */
     len = lstrlen(timeBuffer) + lstrlen(buffer) + 2; /* +2 for newline and null terminator */
-    
+
     /* Check if we need to make room in the buffer */
     if (logBufferPos + len >= MAX_LOG_BUFFER) {
         /* Buffer is full, remove some old text */
         int amountToRemove = MAX_LOG_BUFFER / 4; /* Remove 25% of the buffer */
-        
+
         /* Find the position after several newlines */
         int i;
         for (i = amountToRemove; i < logBufferPos; i++) {
@@ -506,27 +495,27 @@ void addGameLog(const char* format, ...)
                 break;
             }
         }
-        
+
         /* Shift buffer */
         memmove(logBuffer, logBuffer + amountToRemove, logBufferPos - amountToRemove);
         logBufferPos -= amountToRemove;
     }
-    
+
     /* Add new entry to buffer */
     strcpy(logBuffer + logBufferPos, timeBuffer);
     logBufferPos += lstrlen(timeBuffer);
-    
+
     strcpy(logBuffer + logBufferPos, buffer);
     logBufferPos += lstrlen(buffer);
-    
+
     /* Add newline */
     logBuffer[logBufferPos++] = '\r';
     logBuffer[logBufferPos++] = '\n';
     logBuffer[logBufferPos] = '\0';
-    
+
     /* Update the text control */
     SetWindowText(hwndLogText, logBuffer);
-    
+
     /* Scroll to the bottom */
     textLen = GetWindowTextLength(hwndLogText);
     SendMessage(hwndLogText, EM_SETSEL, textLen, textLen);
@@ -541,22 +530,23 @@ void addDebugLog(const char* format, ...)
     va_list args;
     char buffer[512];
     char debugPrefix[16] = "[DEBUG] ";
-    
+
     /* Only process debug logs if debug logging is enabled */
-    if (!showDebugLogs || !hwndLogText)
+    if (!showDebugLogs || !hwndLogText) {
         return;
-    
+    }
+
     /* Format debug message */
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
-    
+
     /* Create a new message with debug prefix */
     {
         char fullMessage[512];
         strcpy(fullMessage, debugPrefix);
         strcat(fullMessage, buffer);
-        
+
         /* Add to log with the debug prefix (addGameLog will add the timestamp) */
         addGameLog("%s", fullMessage);
     }
@@ -571,50 +561,47 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HMENU hMenu;
     HMENU hViewMenu;
     HFONT hFont;
-    
-    switch(msg)
-    {
-        case WM_CREATE:
-        {
+
+    switch (msg) {
+        case WM_CREATE: {
             /* Get client area dimensions */
             GetClientRect(hwnd, &clientRect);
-            
+
             /* Create the edit control for the log - fill the entire window */
             hwndLogText = CreateWindowEx(
-                WS_EX_CLIENTEDGE,
-                "EDIT",
-                "",
-                WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
-                0, 0, /* Position - start at the top-left corner */
-                clientRect.right, clientRect.bottom, /* Size - full client area */
-                hwnd, (HMENU)LOG_TEXT_ID, NULL, NULL);
-                
+                    WS_EX_CLIENTEDGE,
+                    "EDIT",
+                    "",
+                    WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
+                    0, 0,       /* Position - start at the top-left corner */
+                    clientRect.right, clientRect.bottom,       /* Size - full client area */
+                    hwnd, (HMENU)LOG_TEXT_ID, NULL, NULL);
+
             if (!hwndLogText) {
                 MessageBox(hwnd, "Failed to create log text control", "Error", MB_OK | MB_ICONERROR);
                 return -1;
             }
-            
+
             /* Set default font */
             hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
             if (hFont) {
                 SendMessage(hwndLogText, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(TRUE, 0));
             }
-            
+
             /* Initialize log buffer */
             logBufferPos = 0;
             logBuffer[0] = '\0';
-            
+
             /* Add initial log message */
             addGameLog("Log window initialized");
-            
+
             return 0;
         }
-        
-        case WM_SIZE:
-        {
+
+        case WM_SIZE: {
             /* Get new client area dimensions */
             GetClientRect(hwnd, &clientRect);
-            
+
             /* Resize the edit control to fill the entire window */
             if (hwndLogText) {
                 SetWindowPos(hwndLogText, NULL,
@@ -628,11 +615,11 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_CLOSE:
             /* Don't destroy, just hide the window */
             ShowWindow(hwnd, SW_HIDE);
-            
+
             /* Update menu checkmark */
             if (hwndMain) {
                 hMenu = GetMenu(hwndMain);
-                hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
                 if (hViewMenu) {
                     CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
                 }
@@ -653,10 +640,8 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
  */
 LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    switch(msg)
-    {
-        case WM_PAINT:
-        {
+    switch (msg) {
+        case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc;
             RECT clientRect;
@@ -679,8 +664,7 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SetTextColor(hdc, RGB(255, 255, 255));
 
             /* Get city name from file path */
-            if (cityFileName[0] != '\0')
-            {
+            if (cityFileName[0] != '\0') {
                 /* Make a copy of the path to work with */
                 char tempPath[MAX_PATH];
                 lstrcpy(tempPath, cityFileName);
@@ -690,15 +674,18 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 lastSlash = strrchr(tempPath, '\\');
                 lastFwdSlash = strrchr(tempPath, '/');
 
-                if (lastSlash && lastSlash > baseName)
+                if (lastSlash && lastSlash > baseName) {
                     baseName = lastSlash + 1;
-                if (lastFwdSlash && lastFwdSlash > baseName)
+                }
+                if (lastFwdSlash && lastFwdSlash > baseName) {
                     baseName = lastFwdSlash + 1;
+                }
 
                 lstrcpy(nameBuffer, baseName);
                 dot = strrchr(nameBuffer, '.');
-                if (dot)
+                if (dot) {
                     *dot = '\0';
+                }
 
                 /* Draw title */
                 TextOut(hdc, 10, y, "CITY INFO", 9);
@@ -743,30 +730,28 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 /* Draw city assessment */
                 wsprintf(buffer, "Score: %d  Assessment: %s",
-                         CityScore, GetCityClassName());
+                    CityScore, GetCityClassName());
                 TextOut(hdc, 10, y, buffer, lstrlen(buffer));
                 y += 20;
 
                 wsprintf(buffer, "Approval Rating: %d%%",
-                         (CityYes > 0) ? (CityYes * 100 / (CityYes + CityNo)) : 0);
+                    (CityYes > 0) ? (CityYes * 100 / (CityYes + CityNo)) : 0);
                 TextOut(hdc, 10, y, buffer, lstrlen(buffer));
                 y += 20;
 
                 /* Draw other stats */
                 wsprintf(buffer, "Traffic: %d  Pollution: %d",
-                         TrafficAverage, PollutionAverage);
+                    TrafficAverage, PollutionAverage);
                 TextOut(hdc, 10, y, buffer, lstrlen(buffer));
                 y += 20;
 
                 wsprintf(buffer, "Crime: %d  Land Value: %d",
-                         CrimeAverage, LVAverage);
+                    CrimeAverage, LVAverage);
                 TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            }
-            else
-            {
+            } else {
                 /* No city loaded */
                 TextOut(hdc, 10, clientRect.bottom / 2 - 10,
-                        "No city loaded", 14);
+                    "No city loaded", 14);
             }
 
             EndPaint(hwnd, &ps);
@@ -774,8 +759,7 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
 
         case WM_TIMER:
-            if (wParam == INFO_TIMER_ID)
-            {
+            if (wParam == INFO_TIMER_ID) {
                 /* Repaint the window to update the stats */
                 InvalidateRect(hwnd, NULL, FALSE);
                 return 0;
@@ -806,13 +790,12 @@ void UpdateSimulationMenu(HWND hwnd, int speed)
 {
     /* Update menu checkmarks */
     CheckMenuRadioItem(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST,
-                      IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
+        IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
 }
 
 LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    switch(msg)
-    {
+    switch (msg) {
         case WM_CREATE:
             /* Initialize toolbar */
             CreateToolbar(hwnd, 0, 0, 108, 600);
@@ -823,8 +806,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
 
         case WM_COMMAND:
-            switch(LOWORD(wParam))
-            {
+            switch (LOWORD(wParam)) {
                 case IDM_FILE_OPEN:
                     openCityDialog(hwnd);
                     return 0;
@@ -890,7 +872,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 case IDM_VIEW_INFOWINDOW:
                     if (hwndInfo) {
                         HMENU hMenu = GetMenu(hwnd);
-                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                        HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
                         UINT state = GetMenuState(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND);
 
                         if (state & MF_CHECKED) {
@@ -901,15 +883,15 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                             /* Show info window */
                             CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_CHECKED);
                             ShowWindow(hwndInfo, SW_SHOW);
-                            SetFocus(hwnd);  /* Keep focus on main window */
+                            SetFocus(hwnd); /* Keep focus on main window */
                         }
                     }
                     return 0;
-                    
+
                 case IDM_VIEW_LOGWINDOW:
                     if (hwndLog) {
                         HMENU hMenu = GetMenu(hwnd);
-                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                        HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
                         UINT state = GetMenuState(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND);
 
                         if (state & MF_CHECKED) {
@@ -920,64 +902,62 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                             /* Show log window */
                             CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_CHECKED);
                             ShowWindow(hwndLog, SW_SHOW);
-                            SetFocus(hwnd);  /* Keep focus on main window */
-                            
+                            SetFocus(hwnd); /* Keep focus on main window */
+
                             /* Add a log entry when window is shown */
                             addGameLog("Log window opened");
                         }
                     }
                     return 0;
-                    
-                case IDM_VIEW_DEBUG_LOGS:
-                    {
-                        HMENU hMenu = GetMenu(hwnd);
-                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
-                        UINT state = GetMenuState(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND);
-                        
-                        /* Toggle debug logging */
-                        showDebugLogs = (state & MF_CHECKED) ? 0 : 1;
-                        
-                        if (showDebugLogs) {
-                            /* Enable debug logging */
-                            CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_CHECKED);
-                            addGameLog("Debug logging enabled");
-                            addDebugLog("Debug logging initialized");
-                        } else {
-                            /* Disable debug logging */
-                            CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_UNCHECKED);
-                            addGameLog("Debug logging disabled");
-                        }
+
+                case IDM_VIEW_DEBUG_LOGS: {
+                    HMENU hMenu = GetMenu(hwnd);
+                    HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                    UINT state = GetMenuState(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND);
+
+                    /* Toggle debug logging */
+                    showDebugLogs = (state & MF_CHECKED) ? 0 : 1;
+
+                    if (showDebugLogs) {
+                        /* Enable debug logging */
+                        CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_CHECKED);
+                        addGameLog("Debug logging enabled");
+                        addDebugLog("Debug logging initialized");
+                    } else {
+                        /* Disable debug logging */
+                        CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_UNCHECKED);
+                        addGameLog("Debug logging disabled");
                     }
-                    return 0;
-                    
-                case IDM_VIEW_POWER_OVERLAY:
-                    {
-                        HMENU hMenu = GetMenu(hwnd);
-                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
-                        UINT state = GetMenuState(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND);
-                        
-                        /* Toggle power overlay */
-                        powerOverlayEnabled = (state & MF_CHECKED) ? 0 : 1;
-                        
-                        if (powerOverlayEnabled) {
-                            /* Enable power overlay */
-                            CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_CHECKED);
-                        } else {
-                            /* Disable power overlay */
-                            CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_UNCHECKED);
-                        }
-                        
-                        /* Force a redraw to show/hide the overlay */
-                        InvalidateRect(hwnd, NULL, TRUE);
+                }
+                return 0;
+
+                case IDM_VIEW_POWER_OVERLAY: {
+                    HMENU hMenu = GetMenu(hwnd);
+                    HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                    UINT state = GetMenuState(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND);
+
+                    /* Toggle power overlay */
+                    powerOverlayEnabled = (state & MF_CHECKED) ? 0 : 1;
+
+                    if (powerOverlayEnabled) {
+                        /* Enable power overlay */
+                        CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_CHECKED);
+                    } else {
+                        /* Disable power overlay */
+                        CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_UNCHECKED);
                     }
-                    return 0;
+
+                    /* Force a redraw to show/hide the overlay */
+                    InvalidateRect(hwnd, NULL, TRUE);
+                }
+                return 0;
 
                 /* Tool menu items */
                 case IDM_TOOL_BULLDOZER:
                     SelectTool(bulldozerState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_BULLDOZER, MF_BYCOMMAND);
+                        IDM_TOOL_BULLDOZER, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -985,7 +965,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(roadState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_ROAD, MF_BYCOMMAND);
+                        IDM_TOOL_ROAD, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -993,7 +973,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(railState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_RAIL, MF_BYCOMMAND);
+                        IDM_TOOL_RAIL, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1001,7 +981,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(wireState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_WIRE, MF_BYCOMMAND);
+                        IDM_TOOL_WIRE, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1009,7 +989,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(parkState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_PARK, MF_BYCOMMAND);
+                        IDM_TOOL_PARK, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1017,7 +997,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(residentialState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_RESIDENTIAL, MF_BYCOMMAND);
+                        IDM_TOOL_RESIDENTIAL, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1025,7 +1005,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(commercialState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_COMMERCIAL, MF_BYCOMMAND);
+                        IDM_TOOL_COMMERCIAL, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1033,7 +1013,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(industrialState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_INDUSTRIAL, MF_BYCOMMAND);
+                        IDM_TOOL_INDUSTRIAL, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1041,7 +1021,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(fireState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_FIRESTATION, MF_BYCOMMAND);
+                        IDM_TOOL_FIRESTATION, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1049,7 +1029,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(policeState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_POLICESTATION, MF_BYCOMMAND);
+                        IDM_TOOL_POLICESTATION, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1057,7 +1037,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(stadiumState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_STADIUM, MF_BYCOMMAND);
+                        IDM_TOOL_STADIUM, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1065,7 +1045,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(seaportState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_SEAPORT, MF_BYCOMMAND);
+                        IDM_TOOL_SEAPORT, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1073,7 +1053,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(powerState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_POWERPLANT, MF_BYCOMMAND);
+                        IDM_TOOL_POWERPLANT, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1081,7 +1061,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(nuclearState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_NUCLEAR, MF_BYCOMMAND);
+                        IDM_TOOL_NUCLEAR, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1089,7 +1069,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(airportState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_AIRPORT, MF_BYCOMMAND);
+                        IDM_TOOL_AIRPORT, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
@@ -1097,13 +1077,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SelectTool(queryState);
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
-                                      IDM_TOOL_QUERY, MF_BYCOMMAND);
+                        IDM_TOOL_QUERY, MF_BYCOMMAND);
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
 
                 default:
-                    if (LOWORD(wParam) >= IDM_TILESET_BASE && LOWORD(wParam) < IDM_TILESET_MAX)
-                    {
+                    if (LOWORD(wParam) >= IDM_TILESET_BASE && LOWORD(wParam) < IDM_TILESET_MAX) {
                         int index;
                         char tilesetName[MAX_PATH];
 
@@ -1112,10 +1091,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         /* Compatible with Windows NT 4.0 */
                         GetMenuString(hTilesetMenu, LOWORD(wParam), tilesetName, MAX_PATH - 1, MF_BYCOMMAND);
 
-                        if (changeTileset(hwnd, tilesetName))
-                        {
+                        if (changeTileset(hwnd, tilesetName)) {
                             CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu)-1,
-                                            index, MF_BYPOSITION);
+                                index, MF_BYPOSITION);
                         }
                         return 0;
                     }
@@ -1140,11 +1118,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             break;
 
-        case WM_QUERYNEWPALETTE:
-        {
+        case WM_QUERYNEWPALETTE: {
             /* Realize the palette when window gets focus */
-            if (hPalette != NULL)
-            {
+            if (hPalette != NULL) {
                 HDC hdc = GetDC(hwnd);
                 SelectPalette(hdc, hPalette, FALSE);
                 RealizePalette(hdc);
@@ -1155,11 +1131,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return FALSE;
         }
 
-        case WM_PALETTECHANGED:
-        {
+        case WM_PALETTECHANGED: {
             /* Realize palette if it was changed by another window */
-            if ((HWND)wParam != hwnd && hPalette != NULL)
-            {
+            if ((HWND)wParam != hwnd && hPalette != NULL) {
                 HDC hdc = GetDC(hwnd);
                 SelectPalette(hdc, hPalette, FALSE);
                 RealizePalette(hdc);
@@ -1169,25 +1143,21 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_PAINT:
-        {
+        case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc;
 
             hdc = BeginPaint(hwnd, &ps);
 
             /* Select and realize palette for proper 8-bit color rendering */
-            if (hPalette)
-            {
+            if (hPalette) {
                 SelectPalette(hdc, hPalette, FALSE);
                 RealizePalette(hdc);
             }
 
-            if (hbmBuffer)
-            {
+            if (hbmBuffer) {
                 /* Draw everything to our offscreen buffer with the correct palette */
-                if (hPalette)
-                {
+                if (hPalette) {
                     SelectPalette(hdcBuffer, hPalette, FALSE);
                     RealizePalette(hdcBuffer);
                 }
@@ -1197,45 +1167,35 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 /* Copy the buffer to the screen with offset for toolbar */
                 BitBlt(hdc, toolbarWidth, 0, cxClient - toolbarWidth, cyClient,
-                       hdcBuffer, 0, 0, SRCCOPY);
+                    hdcBuffer, 0, 0, SRCCOPY);
             }
 
             EndPaint(hwnd, &ps);
             return 0;
         }
 
-        case WM_LBUTTONDOWN:
-        {
+        case WM_LBUTTONDOWN: {
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
 
             /* Skip toolbar area */
-            if (xPos < toolbarWidth)
-            {
+            if (xPos < toolbarWidth) {
                 return 0;
             }
 
-            if (isToolActive)
-            {
+            if (isToolActive) {
                 /* Apply the tool at this position */
                 int result = HandleToolMouse(xPos, yPos, xOffset, yOffset);
 
                 /* Display result if needed */
-                if (result == TOOLRESULT_NO_MONEY)
-                {
+                if (result == TOOLRESULT_NO_MONEY) {
                     MessageBox(hwnd, "Not enough money!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
-                }
-                else if (result == TOOLRESULT_NEED_BULLDOZE)
-                {
+                } else if (result == TOOLRESULT_NEED_BULLDOZE) {
                     MessageBox(hwnd, "You need to bulldoze this area first!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
-                }
-                else if (result == TOOLRESULT_FAILED)
-                {
+                } else if (result == TOOLRESULT_FAILED) {
                     MessageBox(hwnd, "Can't build there!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
                 }
-            }
-            else
-            {
+            } else {
                 /* Regular map dragging */
                 isMouseDown = TRUE;
                 lastMouseX = xPos;
@@ -1247,36 +1207,30 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_MOUSEMOVE:
-        {
+        case WM_MOUSEMOVE: {
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
             int mapX, mapY;
 
             /* Skip toolbar area */
-            if (xPos < toolbarWidth)
-            {
+            if (xPos < toolbarWidth) {
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
                 return 0;
             }
 
-            if (isMouseDown)
-            {
+            if (isMouseDown) {
                 int dx = lastMouseX - xPos;
                 int dy = lastMouseY - yPos;
 
                 lastMouseX = xPos;
                 lastMouseY = yPos;
 
-                if (dx != 0 || dy != 0)
-                {
+                if (dx != 0 || dy != 0) {
                     scrollView(dx, dy);
                 }
 
                 SetCursor(LoadCursor(NULL, IDC_SIZEALL));
-            }
-            else if (isToolActive)
-            {
+            } else if (isToolActive) {
                 /* Convert mouse position to map coordinates for tool hover */
                 ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
 
@@ -1292,16 +1246,13 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     updateRect.bottom = cyClient;
                     InvalidateRect(hwnd, &updateRect, FALSE);
                 }
-            }
-            else
-            {
+            } else {
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
             }
             return 0;
         }
 
-        case WM_LBUTTONUP:
-        {
+        case WM_LBUTTONUP: {
             isMouseDown = FALSE;
             ReleaseCapture();
 
@@ -1310,14 +1261,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_RBUTTONDOWN:
-        {
+        case WM_RBUTTONDOWN: {
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
 
             /* Skip toolbar area */
-            if (xPos < toolbarWidth)
-            {
+            if (xPos < toolbarWidth) {
                 return 0;
             }
 
@@ -1331,8 +1280,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_RBUTTONUP:
-        {
+        case WM_RBUTTONUP: {
             isMouseDown = FALSE;
             ReleaseCapture();
 
@@ -1341,23 +1289,21 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_SETCURSOR:
-        {
-            if (LOWORD(lParam) == HTCLIENT)
-            {
-                if (isMouseDown)
+        case WM_SETCURSOR: {
+            if (LOWORD(lParam) == HTCLIENT) {
+                if (isMouseDown) {
                     SetCursor(LoadCursor(NULL, IDC_SIZEALL));
-                else if (isToolActive)
+                } else if (isToolActive) {
                     SetCursor(LoadCursor(NULL, IDC_ARROW)); /* Use normal cursor instead of cross */
-                else
+                } else {
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
+                }
                 return TRUE;
             }
             break;
         }
 
-        case WM_SIZE:
-        {
+        case WM_SIZE: {
             RECT rcClient;
             HWND hwndToolbarWnd;
 
@@ -1369,12 +1315,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hwndToolbarWnd = FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL);
 
             /* If the toolbar exists, adjust its position */
-            if (hwndToolbarWnd)
-            {
+            if (hwndToolbarWnd) {
                 MoveWindow(hwndToolbarWnd, 0, 0, toolbarWidth, cyClient, TRUE);
-            }
-            else
-            {
+            } else {
                 /* Create the toolbar if it doesn't exist yet */
                 CreateToolbar(hwnd, 0, 0, toolbarWidth, cyClient);
             }
@@ -1388,10 +1331,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_KEYDOWN:
-        {
-            switch(wParam)
-            {
+        case WM_KEYDOWN: {
+            switch (wParam) {
                 case VK_LEFT:
                     scrollView(-TILE_SIZE, 0);
                     break;
@@ -1409,29 +1350,25 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     break;
 
                 case 'O':
-                    if (GetKeyState(VK_CONTROL) < 0)
-                    {
+                    if (GetKeyState(VK_CONTROL) < 0) {
                         openCityDialog(hwnd);
                     }
                     break;
 
                 case 'Q':
-                    if (GetKeyState(VK_CONTROL) < 0)
-                    {
+                    if (GetKeyState(VK_CONTROL) < 0) {
                         PostMessage(hwnd, WM_CLOSE, 0, 0);
                     }
                     break;
 
                 case 'I':
-                    if (hbmTiles)
-                    {
+                    if (hbmTiles) {
                         BITMAP bm;
                         char debugMsg[256];
 
-                        if (GetObject(hbmTiles, sizeof(BITMAP), &bm))
-                        {
+                        if (GetObject(hbmTiles, sizeof(BITMAP), &bm)) {
                             wsprintf(debugMsg, "Bitmap Info:\nDimensions: %dx%d\nBits/pixel: %d",
-                                     bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
+                                bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
                             MessageBox(hwnd, debugMsg, "Bitmap Information", MB_OK);
                         }
                     }
@@ -1445,8 +1382,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             cleanupGraphics();
 
             /* Clean up toolbar */
-            if (FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL))
-            {
+            if (FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL)) {
                 DestroyWindow(FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL));
             }
 
@@ -1465,8 +1401,7 @@ void swapShorts(short *buf, int len)
 {
     int i;
 
-    for (i = 0; i < len; i++)
-    {
+    for (i = 0; i < len; i++) {
         buf[i] = ((buf[i] & 0xFF) << 8) | ((buf[i] & 0xFF00) >> 8);
     }
 }
@@ -1480,47 +1415,92 @@ HPALETTE createSystemPalette(void)
     PALETTEENTRY sysColors[16];
 
     /* Setup the standard 16 colors */
-    sysColors[0].peRed = 0;    sysColors[0].peGreen = 0;    sysColors[0].peBlue = 0;    sysColors[0].peFlags = 0;      /* Black */
-    sysColors[1].peRed = 128;  sysColors[1].peGreen = 0;    sysColors[1].peBlue = 0;    sysColors[1].peFlags = 0;      /* Dark Red */
-    sysColors[2].peRed = 0;    sysColors[2].peGreen = 128;  sysColors[2].peBlue = 0;    sysColors[2].peFlags = 0;      /* Dark Green */
-    sysColors[3].peRed = 128;  sysColors[3].peGreen = 128;  sysColors[3].peBlue = 0;    sysColors[3].peFlags = 0;      /* Dark Yellow */
-    sysColors[4].peRed = 0;    sysColors[4].peGreen = 0;    sysColors[4].peBlue = 128;  sysColors[4].peFlags = 0;      /* Dark Blue */
-    sysColors[5].peRed = 128;  sysColors[5].peGreen = 0;    sysColors[5].peBlue = 128;  sysColors[5].peFlags = 0;      /* Dark Magenta */
-    sysColors[6].peRed = 0;    sysColors[6].peGreen = 128;  sysColors[6].peBlue = 128;  sysColors[6].peFlags = 0;      /* Dark Cyan */
-    sysColors[7].peRed = 192;  sysColors[7].peGreen = 192;  sysColors[7].peBlue = 192;  sysColors[7].peFlags = 0;      /* Light Gray */
-    sysColors[8].peRed = 128;  sysColors[8].peGreen = 128;  sysColors[8].peBlue = 128;  sysColors[8].peFlags = 0;      /* Dark Gray */
-    sysColors[9].peRed = 255;  sysColors[9].peGreen = 0;    sysColors[9].peBlue = 0;    sysColors[9].peFlags = 0;      /* Red */
-    sysColors[10].peRed = 0;   sysColors[10].peGreen = 255; sysColors[10].peBlue = 0;   sysColors[10].peFlags = 0;     /* Green */
-    sysColors[11].peRed = 255; sysColors[11].peGreen = 255; sysColors[11].peBlue = 0;   sysColors[11].peFlags = 0;     /* Yellow */
-    sysColors[12].peRed = 0;   sysColors[12].peGreen = 0;   sysColors[12].peBlue = 255; sysColors[12].peFlags = 0;     /* Blue */
-    sysColors[13].peRed = 255; sysColors[13].peGreen = 0;   sysColors[13].peBlue = 255; sysColors[13].peFlags = 0;     /* Magenta */
-    sysColors[14].peRed = 0;   sysColors[14].peGreen = 255; sysColors[14].peBlue = 255; sysColors[14].peFlags = 0;     /* Cyan */
-    sysColors[15].peRed = 255; sysColors[15].peGreen = 255; sysColors[15].peBlue = 255; sysColors[15].peFlags = 0;     /* White */
+    sysColors[0].peRed = 0;
+    sysColors[0].peGreen = 0;
+    sysColors[0].peBlue = 0;
+    sysColors[0].peFlags = 0;  /* Black */
+    sysColors[1].peRed = 128;
+    sysColors[1].peGreen = 0;
+    sysColors[1].peBlue = 0;
+    sysColors[1].peFlags = 0;  /* Dark Red */
+    sysColors[2].peRed = 0;
+    sysColors[2].peGreen = 128;
+    sysColors[2].peBlue = 0;
+    sysColors[2].peFlags = 0;  /* Dark Green */
+    sysColors[3].peRed = 128;
+    sysColors[3].peGreen = 128;
+    sysColors[3].peBlue = 0;
+    sysColors[3].peFlags = 0;  /* Dark Yellow */
+    sysColors[4].peRed = 0;
+    sysColors[4].peGreen = 0;
+    sysColors[4].peBlue = 128;
+    sysColors[4].peFlags = 0;  /* Dark Blue */
+    sysColors[5].peRed = 128;
+    sysColors[5].peGreen = 0;
+    sysColors[5].peBlue = 128;
+    sysColors[5].peFlags = 0;  /* Dark Magenta */
+    sysColors[6].peRed = 0;
+    sysColors[6].peGreen = 128;
+    sysColors[6].peBlue = 128;
+    sysColors[6].peFlags = 0;  /* Dark Cyan */
+    sysColors[7].peRed = 192;
+    sysColors[7].peGreen = 192;
+    sysColors[7].peBlue = 192;
+    sysColors[7].peFlags = 0;  /* Light Gray */
+    sysColors[8].peRed = 128;
+    sysColors[8].peGreen = 128;
+    sysColors[8].peBlue = 128;
+    sysColors[8].peFlags = 0;  /* Dark Gray */
+    sysColors[9].peRed = 255;
+    sysColors[9].peGreen = 0;
+    sysColors[9].peBlue = 0;
+    sysColors[9].peFlags = 0;  /* Red */
+    sysColors[10].peRed = 0;
+    sysColors[10].peGreen = 255;
+    sysColors[10].peBlue = 0;
+    sysColors[10].peFlags = 0; /* Green */
+    sysColors[11].peRed = 255;
+    sysColors[11].peGreen = 255;
+    sysColors[11].peBlue = 0;
+    sysColors[11].peFlags = 0; /* Yellow */
+    sysColors[12].peRed = 0;
+    sysColors[12].peGreen = 0;
+    sysColors[12].peBlue = 255;
+    sysColors[12].peFlags = 0; /* Blue */
+    sysColors[13].peRed = 255;
+    sysColors[13].peGreen = 0;
+    sysColors[13].peBlue = 255;
+    sysColors[13].peFlags = 0; /* Magenta */
+    sysColors[14].peRed = 0;
+    sysColors[14].peGreen = 255;
+    sysColors[14].peBlue = 255;
+    sysColors[14].peFlags = 0; /* Cyan */
+    sysColors[15].peRed = 255;
+    sysColors[15].peGreen = 255;
+    sysColors[15].peBlue = 255;
+    sysColors[15].peFlags = 0; /* White */
 
     /* Allocate memory for 256 color entries */
     pLogPal = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + 255 * sizeof(PALETTEENTRY));
-    if (!pLogPal)
+    if (!pLogPal) {
         return NULL;
+    }
 
     pLogPal->palVersion = 0x300; /* Windows 3.0 */
     pLogPal->palNumEntries = 256; /* 256 colors (8-bit) */
 
     /* Copy system colors */
-    for (i = 0; i < 16; i++)
-    {
+    for (i = 0; i < 16; i++) {
         pLogPal->palPalEntry[i] = sysColors[i];
     }
 
     /* Create a 6x6x6 color cube for the next 216 entries (6 levels each for R, G, B) */
     /* This is similar to the "Web Safe" palette */
     i = 16; /* Start after system colors */
-    for (r = 0; r < 6; r++)
-    {
-        for (g = 0; g < 6; g++)
-        {
-            for (b = 0; b < 6; b++)
-            {
-                pLogPal->palPalEntry[i].peRed = r * 51;    /* 51 is 255/5 */
+    for (r = 0; r < 6; r++) {
+        for (g = 0; g < 6; g++) {
+            for (b = 0; b < 6; b++) {
+                pLogPal->palPalEntry[i].peRed = r * 51; /* 51 is 255/5 */
                 pLogPal->palPalEntry[i].peGreen = g * 51;
                 pLogPal->palPalEntry[i].peBlue = b * 51;
                 pLogPal->palPalEntry[i].peFlags = 0;
@@ -1530,10 +1510,11 @@ HPALETTE createSystemPalette(void)
     }
 
     /* Fill the remaining entries with grayscale values */
-    for (; i < 256; i++)
-    {
+    for (; i < 256; i++) {
         gray = (i - 232) * 10 + 8; /* 24 grayscale entries, from light gray to near-white */
-        if (gray > 255) gray = 255;
+        if (gray > 255) {
+            gray = 255;
+        }
 
         pLogPal->palPalEntry[i].peRed = gray;
         pLogPal->palPalEntry[i].peGreen = gray;
@@ -1563,25 +1544,20 @@ void initializeGraphics(HWND hwnd)
     hdc = GetDC(hwnd);
 
     /* Create our 256-color palette */
-    if (hPalette == NULL)
-    {
+    if (hPalette == NULL) {
         hPalette = createSystemPalette();
 
-        if (hPalette)
-        {
+        if (hPalette) {
             SelectPalette(hdc, hPalette, FALSE);
             RealizePalette(hdc);
-        }
-        else
-        {
+        } else {
             OutputDebugString("Failed to create palette!");
         }
     }
 
     hdcBuffer = CreateCompatibleDC(hdc);
 
-    if (hPalette)
-    {
+    if (hPalette) {
         SelectPalette(hdcBuffer, hPalette, FALSE);
         RealizePalette(hdcBuffer);
     }
@@ -1599,13 +1575,12 @@ void initializeGraphics(HWND hwnd)
     bi.biWidth = width;
     bi.biHeight = -height; /* Negative for top-down DIB */
     bi.biPlanes = 1;
-    bi.biBitCount = 8;     /* 8 bits = 256 colors */
+    bi.biBitCount = 8; /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
 
     hbmBuffer = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
 
-    if (hbmBuffer == NULL)
-    {
+    if (hbmBuffer == NULL) {
         error = GetLastError();
 
         wsprintf(errorMsg, "Failed to create buffer DIB Section: Error %d", error);
@@ -1624,8 +1599,7 @@ void initializeGraphics(HWND hwnd)
     wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
 
     /* Load the tileset with our 8-bit palette */
-    if (!loadTileset(tilePath))
-    {
+    if (!loadTileset(tilePath)) {
         OutputDebugString("Failed to load default tileset!");
     }
 
@@ -1642,10 +1616,9 @@ HBITMAP loadBitmapFile(const char* filename)
        selected into a memory DC. Using this flag makes the bitmap
        compatible with our 8-bit/256 color rendering. */
     hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0,
-                        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
-    if (hBitmap == NULL)
-    {
+    if (hBitmap == NULL) {
         /* Debug output to help diagnose bitmap loading errors */
         error = GetLastError();
 
@@ -1664,23 +1637,20 @@ int loadTileset(const char* filename)
     BITMAP bm;
     char debugMsg[256];
 
-    if (hdcTiles)
-    {
+    if (hdcTiles) {
         DeleteDC(hdcTiles);
         hdcTiles = NULL;
     }
 
-    if (hbmTiles)
-    {
+    if (hbmTiles) {
         DeleteObject(hbmTiles);
         hbmTiles = NULL;
     }
 
     hbmTiles = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0,
-                         LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
-    if (hbmTiles == NULL)
-    {
+    if (hbmTiles == NULL) {
         /* Output debug message */
         error = GetLastError();
 
@@ -1690,17 +1660,15 @@ int loadTileset(const char* filename)
     }
 
     /* Verify that the bitmap was loaded properly */
-    if (GetObject(hbmTiles, sizeof(BITMAP), &bm))
-    {
+    if (GetObject(hbmTiles, sizeof(BITMAP), &bm)) {
         wsprintf(debugMsg, "Tileset Info: %dx%d, %d bits/pixel",
-                 bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
+            bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
         OutputDebugString(debugMsg);
 
         /* Warn if the bitmap is not 8-bit */
-        if (bm.bmBitsPixel != 8)
-        {
+        if (bm.bmBitsPixel != 8) {
             wsprintf(debugMsg, "WARNING: Tileset is not 8-bit color (%d bits)",
-                     bm.bmBitsPixel);
+                bm.bmBitsPixel);
             OutputDebugString(debugMsg);
         }
     }
@@ -1709,8 +1677,7 @@ int loadTileset(const char* filename)
     hdcTiles = CreateCompatibleDC(hdc);
 
     /* Apply our palette to the tileset */
-    if (hPalette)
-    {
+    if (hPalette) {
         SelectPalette(hdcTiles, hPalette, FALSE);
         RealizePalette(hdcTiles);
     }
@@ -1733,23 +1700,20 @@ int changeTileset(HWND hwnd, const char* tilesetName)
 
     wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
 
-    if (hdcTiles)
-    {
+    if (hdcTiles) {
         DeleteDC(hdcTiles);
         hdcTiles = NULL;
     }
 
-    if (hbmTiles)
-    {
+    if (hbmTiles) {
         DeleteObject(hbmTiles);
         hbmTiles = NULL;
     }
 
     hbmTiles = LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0,
-                       LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
-    if (hbmTiles == NULL)
-    {
+    if (hbmTiles == NULL) {
         /* Output debug message */
         error = GetLastError();
 
@@ -1759,10 +1723,9 @@ int changeTileset(HWND hwnd, const char* tilesetName)
     }
 
     /* Verify that the bitmap was loaded properly */
-    if (GetObject(hbmTiles, sizeof(BITMAP), &bm))
-    {
+    if (GetObject(hbmTiles, sizeof(BITMAP), &bm)) {
         wsprintf(debugMsg, "Changed Tileset Info: %dx%d, %d bits/pixel",
-                 bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
+            bm.bmWidth, bm.bmHeight, bm.bmBitsPixel);
         OutputDebugString(debugMsg);
     }
 
@@ -1770,8 +1733,7 @@ int changeTileset(HWND hwnd, const char* tilesetName)
     hdcTiles = CreateCompatibleDC(hdc);
 
     /* Apply our palette to the tileset */
-    if (hPalette)
-    {
+    if (hPalette) {
         SelectPalette(hdcTiles, hPalette, FALSE);
         RealizePalette(hdcTiles);
     }
@@ -1792,32 +1754,27 @@ int changeTileset(HWND hwnd, const char* tilesetName)
 
 void cleanupGraphics(void)
 {
-    if (hbmBuffer)
-    {
+    if (hbmBuffer) {
         DeleteObject(hbmBuffer);
         hbmBuffer = NULL;
     }
 
-    if (hdcBuffer)
-    {
+    if (hdcBuffer) {
         DeleteDC(hdcBuffer);
         hdcBuffer = NULL;
     }
 
-    if (hbmTiles)
-    {
+    if (hbmTiles) {
         DeleteObject(hbmTiles);
         hbmTiles = NULL;
     }
 
-    if (hdcTiles)
-    {
+    if (hdcTiles) {
         DeleteDC(hdcTiles);
         hdcTiles = NULL;
     }
 
-    if (hPalette)
-    {
+    if (hPalette) {
         DeleteObject(hPalette);
         hPalette = NULL;
     }
@@ -1833,14 +1790,14 @@ void resizeBuffer(int cx, int cy)
     char errorMsg[256];
     DWORD error;
 
-    if (cx <= 0 || cy <= 0)
+    if (cx <= 0 || cy <= 0) {
         return;
+    }
 
     hdc = GetDC(hwndMain);
 
     /* Make sure our palette is selected into the DC */
-    if (hPalette)
-    {
+    if (hPalette) {
         SelectPalette(hdc, hPalette, FALSE);
         RealizePalette(hdc);
     }
@@ -1856,8 +1813,7 @@ void resizeBuffer(int cx, int cy)
     /* Create DIB section with our palette */
     hbmNew = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
 
-    if (hbmNew == NULL)
-    {
+    if (hbmNew == NULL) {
         /* Debug output for DIB creation failure */
         error = GetLastError();
 
@@ -1867,15 +1823,15 @@ void resizeBuffer(int cx, int cy)
         return;
     }
 
-    if (hbmBuffer)
+    if (hbmBuffer) {
         DeleteObject(hbmBuffer);
+    }
 
     hbmBuffer = hbmNew;
     SelectObject(hdcBuffer, hbmBuffer);
 
     /* Apply the palette to our buffer */
-    if (hPalette)
-    {
+    if (hPalette) {
         SelectPalette(hdcBuffer, hPalette, FALSE);
         RealizePalette(hdcBuffer);
     }
@@ -1902,19 +1858,23 @@ void scrollView(int dx, int dy)
     yOffset += dy;
 
     /* Enforce bounds */
-    if (xOffset < 0)
+    if (xOffset < 0) {
         xOffset = 0;
-    if (yOffset < 0)
+    }
+    if (yOffset < 0) {
         yOffset = 0;
+    }
 
-    if (xOffset > WORLD_X * TILE_SIZE - cxClient)
+    if (xOffset > WORLD_X * TILE_SIZE - cxClient) {
         xOffset = WORLD_X * TILE_SIZE - cxClient;
-    if (yOffset > WORLD_Y * TILE_SIZE - cyClient)
+    }
+    if (yOffset > WORLD_Y * TILE_SIZE - cyClient) {
         yOffset = WORLD_Y * TILE_SIZE - cyClient;
+    }
 
     /* Get client area without toolbar */
     GetClientRect(hwndMain, &rcClient);
-    rcClient.left = toolbarWidth;  /* Skip toolbar area */
+    rcClient.left = toolbarWidth; /* Skip toolbar area */
 
     /* Create update region for the map area only */
     hRgn = CreateRectRgnIndirect(&rcClient);
@@ -1932,8 +1892,7 @@ int loadFile(char *filename)
     size_t readResult;
 
     f = fopen(filename, "rb");
-    if (f == NULL)
-    {
+    if (f == NULL) {
         return 0;
     }
 
@@ -1942,38 +1901,51 @@ int loadFile(char *filename)
     fseek(f, 0L, SEEK_SET);
 
     /* The original Micropolis city files are 27120 bytes */
-    if (size != 27120)
-    {
+    if (size != 27120) {
         fclose(f);
         return 0;
     }
 
     readResult = fread(ResHis, sizeof(short), HISTLEN/2, f);
-    if (readResult != HISTLEN/2) goto read_error;
+    if (readResult != HISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(ResHis, HISTLEN/2);
 
     readResult = fread(ComHis, sizeof(short), HISTLEN/2, f);
-    if (readResult != HISTLEN/2) goto read_error;
+    if (readResult != HISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(ComHis, HISTLEN/2);
 
     readResult = fread(IndHis, sizeof(short), HISTLEN/2, f);
-    if (readResult != HISTLEN/2) goto read_error;
+    if (readResult != HISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(IndHis, HISTLEN/2);
 
     readResult = fread(CrimeHis, sizeof(short), HISTLEN/2, f);
-    if (readResult != HISTLEN/2) goto read_error;
+    if (readResult != HISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(CrimeHis, HISTLEN/2);
 
     readResult = fread(PollutionHis, sizeof(short), HISTLEN/2, f);
-    if (readResult != HISTLEN/2) goto read_error;
+    if (readResult != HISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(PollutionHis, HISTLEN/2);
 
     readResult = fread(MoneyHis, sizeof(short), HISTLEN/2, f);
-    if (readResult != HISTLEN/2) goto read_error;
+    if (readResult != HISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(MoneyHis, HISTLEN/2);
 
     readResult = fread(MiscHis, sizeof(short), MISCHISTLEN/2, f);
-    if (readResult != MISCHISTLEN/2) goto read_error;
+    if (readResult != MISCHISTLEN/2) {
+        goto read_error;
+    }
     swapShorts(MiscHis, MISCHISTLEN/2);
 
     /* Original Micropolis stores map transposed compared to our array convention */
@@ -1982,7 +1954,9 @@ int loadFile(char *filename)
         int x, y;
 
         readResult = fread(&tmpMap[0][0], sizeof(short), WORLD_X * WORLD_Y, f);
-        if (readResult != WORLD_X * WORLD_Y) goto read_error;
+        if (readResult != WORLD_X * WORLD_Y) {
+            goto read_error;
+        }
 
         swapShorts((short*)tmpMap, WORLD_X * WORLD_Y);
 
@@ -2033,20 +2007,16 @@ void ForceFullCensus(void)
                 if (zoneTile >= RESBASE && zoneTile <= LASTRES) {
                     /* Residential zone */
                     ResPop += calcResPop(zoneTile);
-                }
-                else if (zoneTile >= COMBASE && zoneTile <= LASTCOM) {
+                } else if (zoneTile >= COMBASE && zoneTile <= LASTCOM) {
                     /* Commercial zone */
                     ComPop += calcComPop(zoneTile);
-                }
-                else if (zoneTile >= INDBASE && zoneTile <= LASTIND) {
+                } else if (zoneTile >= INDBASE && zoneTile <= LASTIND) {
                     /* Industrial zone */
                     IndPop += calcIndPop(zoneTile);
-                }
-                else if (zoneTile == HOSPITAL) {
+                } else if (zoneTile == HOSPITAL) {
                     /* Hospital contributes to residential population */
                     ResPop += 30;
-                }
-                else if (zoneTile == CHURCH) {
+                } else if (zoneTile == CHURCH) {
                     /* Church contributes to residential population */
                     ResPop += 10;
                 }
@@ -2054,26 +2024,21 @@ void ForceFullCensus(void)
                 /* Count other special zones */
                 if (zoneTile == FIRESTATION) {
                     FirePop++;
-                }
-                else if (zoneTile == POLICESTATION) {
+                } else if (zoneTile == POLICESTATION) {
                     PolicePop++;
-                }
-                else if (zoneTile == STADIUM) {
+                } else if (zoneTile == STADIUM) {
                     StadiumPop++;
                     /* Stadium contributes to commercial population */
                     ComPop += 50;
-                }
-                else if (zoneTile == PORT) {
+                } else if (zoneTile == PORT) {
                     PortPop++;
                     /* Port contributes to industrial population */
                     IndPop += 40;
-                }
-                else if (zoneTile == AIRPORT) {
+                } else if (zoneTile == AIRPORT) {
                     APortPop++;
                     /* Airport contributes to industrial population */
                     IndPop += 40;
-                }
-                else if (zoneTile == NUCLEAR) {
+                } else if (zoneTile == NUCLEAR) {
                     NuclearPop++;
                 }
                 /* Note: We don't count power plants here since CountSpecialTiles() in evaluation.c handles it */
@@ -2089,8 +2054,7 @@ void ForceFullCensus(void)
             /* Count infrastructure */
             if ((tile & LOMASK) >= ROADBASE && (tile & LOMASK) <= LASTROAD) {
                 RoadTotal++;
-            }
-            else if ((tile & LOMASK) >= RAILBASE && (tile & LOMASK) <= LASTRAIL) {
+            } else if ((tile & LOMASK) >= RAILBASE && (tile & LOMASK) <= LASTRAIL) {
                 RailTotal++;
             }
         }
@@ -2103,12 +2067,22 @@ void ForceFullCensus(void)
     CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
 
     /* Determine city class based on population */
-    CityClass = 0;                /* Village */
-    if (CityPop > 2000)  CityClass++; /* Town */
-    if (CityPop > 10000) CityClass++; /* City */
-    if (CityPop > 50000) CityClass++; /* Capital */
-    if (CityPop > 100000) CityClass++; /* Metropolis */
-    if (CityPop > 500000) CityClass++; /* Megalopolis */
+    CityClass = 0;            /* Village */
+    if (CityPop > 2000) {
+        CityClass++; /* Town */
+    }
+    if (CityPop > 10000) {
+        CityClass++; /* City */
+    }
+    if (CityPop > 50000) {
+        CityClass++; /* Capital */
+    }
+    if (CityPop > 100000) {
+        CityClass++; /* Metropolis */
+    }
+    if (CityPop > 500000) {
+        CityClass++; /* Megalopolis */
+    }
 
     /* Count special buildings for city evaluation */
     CountSpecialTiles();
@@ -2141,16 +2115,19 @@ int loadCity(char *filename)
 
     lstrcpy(cityFileName, filename);
 
-    if (!loadFile(filename))
-    {
+    if (!loadFile(filename)) {
         MessageBox(hwndMain, "Failed to load city file", "Error", MB_ICONERROR | MB_OK);
         return 0;
     }
 
     xOffset = (WORLD_X * TILE_SIZE - cxClient) / 2;
     yOffset = (WORLD_Y * TILE_SIZE - cyClient) / 2;
-    if (xOffset < 0) xOffset = 0;
-    if (yOffset < 0) yOffset = 0;
+    if (xOffset < 0) {
+        xOffset = 0;
+    }
+    if (yOffset < 0) {
+        yOffset = 0;
+    }
 
     /* First run a full census to calculate initial city population */
     ForceFullCensus();
@@ -2165,12 +2142,22 @@ int loadCity(char *filename)
         CityPop = oldCityPop;
 
         /* Update city class based on restored population */
-        CityClass = 0;                /* Village */
-        if (CityPop > 2000)  CityClass++; /* Town */
-        if (CityPop > 10000) CityClass++; /* City */
-        if (CityPop > 50000) CityClass++; /* Capital */
-        if (CityPop > 100000) CityClass++; /* Metropolis */
-        if (CityPop > 500000) CityClass++; /* Megalopolis */
+        CityClass = 0;        /* Village */
+        if (CityPop > 2000) {
+            CityClass++; /* Town */
+        }
+        if (CityPop > 10000) {
+            CityClass++; /* City */
+        }
+        if (CityPop > 50000) {
+            CityClass++; /* Capital */
+        }
+        if (CityPop > 100000) {
+            CityClass++; /* Metropolis */
+        }
+        if (CityPop > 500000) {
+            CityClass++; /* Megalopolis */
+        }
     }
 
     /* Now we can initialize the simulation but preserve population */
@@ -2190,40 +2177,45 @@ int loadCity(char *filename)
 
         baseName = cityFileName;
 
-        if (strrchr(baseName, '\\'))
+        if (strrchr(baseName, '\\')) {
             baseName = strrchr(baseName, '\\') + 1;
-        if (strrchr(baseName, '/'))
+        }
+        if (strrchr(baseName, '/')) {
             baseName = strrchr(baseName, '/') + 1;
+        }
 
         lstrcpy(windowTitle, "MicropolisNT - ");
         lstrcat(windowTitle, baseName);
 
         /* Remove the extension if present */
         dot = strrchr(windowTitle, '.');
-        if (dot)
+        if (dot) {
             *dot = '\0';
+        }
 
         SetWindowText(hwndMain, windowTitle);
     }
 
     InvalidateRect(hwndMain, NULL, FALSE);
-    
+
     /* Log the city load event */
     {
         char *baseName;
-        
+
         baseName = cityFileName;
-        
-        if (strrchr(baseName, '\\'))
+
+        if (strrchr(baseName, '\\')) {
             baseName = strrchr(baseName, '\\') + 1;
-        if (strrchr(baseName, '/'))
+        }
+        if (strrchr(baseName, '/')) {
             baseName = strrchr(baseName, '/') + 1;
-            
+        }
+
         /* Log the city loading information */
         addGameLog("City loaded: %s", baseName);
         addGameLog("City stats - Population: %d, Funds: $%d", (int)CityPop, (int)TotalFunds);
-        addDebugLog("City class: %s, Year: %d, Month: %d", 
-                   GetCityClassName(), CityYear, CityMonth + 1);
+        addDebugLog("City class: %s, Year: %d, Month: %d",
+            GetCityClassName(), CityYear, CityMonth + 1);
         addDebugLog("R-C-I population: %d, %d, %d", ResPop, ComPop, IndPop);
     }
 
@@ -2234,38 +2226,49 @@ int getBaseFromTile(short tile)
 {
     tile &= LOMASK;
 
-    if (tile >= TILE_WATER_LOW && tile <= TILE_WATER_HIGH)
+    if (tile >= TILE_WATER_LOW && tile <= TILE_WATER_HIGH) {
         return TILE_RIVER;
+    }
 
-    if (tile >= TILE_WOODS_LOW && tile <= TILE_WOODS_HIGH)
+    if (tile >= TILE_WOODS_LOW && tile <= TILE_WOODS_HIGH) {
         return TILE_TREEBASE;
+    }
 
-    if (tile >= TILE_ROADBASE && tile <= TILE_LASTROAD)
+    if (tile >= TILE_ROADBASE && tile <= TILE_LASTROAD) {
         return TILE_ROADBASE;
+    }
 
-    if (tile >= TILE_POWERBASE && tile <= TILE_LASTPOWER)
+    if (tile >= TILE_POWERBASE && tile <= TILE_LASTPOWER) {
         return TILE_POWERBASE;
+    }
 
-    if (tile >= TILE_RAILBASE && tile <= TILE_LASTRAIL)
+    if (tile >= TILE_RAILBASE && tile <= TILE_LASTRAIL) {
         return TILE_RAILBASE;
+    }
 
-    if (tile >= TILE_RESBASE && tile <= TILE_LASTRES)
+    if (tile >= TILE_RESBASE && tile <= TILE_LASTRES) {
         return TILE_RESBASE;
+    }
 
-    if (tile >= TILE_COMBASE && tile <= TILE_LASTCOM)
+    if (tile >= TILE_COMBASE && tile <= TILE_LASTCOM) {
         return TILE_COMBASE;
+    }
 
-    if (tile >= TILE_INDBASE && tile <= TILE_LASTIND)
+    if (tile >= TILE_INDBASE && tile <= TILE_LASTIND) {
         return TILE_INDBASE;
+    }
 
-    if (tile >= TILE_FIREBASE && tile <= TILE_LASTFIRE)
+    if (tile >= TILE_FIREBASE && tile <= TILE_LASTFIRE) {
         return TILE_FIREBASE;
+    }
 
-    if (tile >= TILE_FLOOD && tile <= TILE_LASTFLOOD)
+    if (tile >= TILE_FLOOD && tile <= TILE_LASTFLOOD) {
         return TILE_FLOOD;
+    }
 
-    if (tile >= TILE_RUBBLE && tile <= TILE_LASTRUBBLE)
+    if (tile >= TILE_RUBBLE && tile <= TILE_LASTRUBBLE) {
         return TILE_RUBBLE;
+    }
 
     return TILE_DIRT;
 }
@@ -2286,8 +2289,7 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
 
     tileIndex = tileValue & LOMASK;
 
-    if (tileIndex >= TILE_TOTAL_COUNT)
-    {
+    if (tileIndex >= TILE_TOTAL_COUNT) {
         tileIndex = 0;
     }
 
@@ -2303,15 +2305,23 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
                - Tiles 96-111 are frame 2 (use when frame=2)
                - Tiles 112-127 are frame 3 (use when frame=3)
                - Tiles 128-143 are frame 0 (use when frame=0)
-            */
-            int baseOffset = tileIndex & 0xF;  /* Base road layout (0-15) */
+             */
+            int baseOffset = tileIndex & 0xF; /* Base road layout (0-15) */
 
             /* Get correct frame tiles */
             switch (frame) {
-                case 0: tileIndex = 128 + baseOffset; break; /* Frame 0 */
-                case 1: tileIndex = 80 + baseOffset; break;  /* Frame 1 */
-                case 2: tileIndex = 96 + baseOffset; break;  /* Frame 2 */
-                case 3: tileIndex = 112 + baseOffset; break; /* Frame 3 */
+                case 0:
+                    tileIndex = 128 + baseOffset;
+                    break; /* Frame 0 */
+                case 1:
+                    tileIndex = 80 + baseOffset;
+                    break; /* Frame 1 */
+                case 2:
+                    tileIndex = 96 + baseOffset;
+                    break; /* Frame 2 */
+                case 3:
+                    tileIndex = 112 + baseOffset;
+                    break; /* Frame 3 */
             }
         }
 
@@ -2322,15 +2332,23 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
                - Tiles 160-175 are frame 2 (use when frame=2)
                - Tiles 176-191 are frame 3 (use when frame=3)
                - Tiles 192-207 are frame 0 (use when frame=0)
-            */
-            int baseOffset = tileIndex & 0xF;  /* Base road layout (0-15) */
+             */
+            int baseOffset = tileIndex & 0xF; /* Base road layout (0-15) */
 
             /* Get correct frame tiles */
             switch (frame) {
-                case 0: tileIndex = 192 + baseOffset; break; /* Frame 0 */
-                case 1: tileIndex = 144 + baseOffset; break; /* Frame 1 */
-                case 2: tileIndex = 160 + baseOffset; break; /* Frame 2 */
-                case 3: tileIndex = 176 + baseOffset; break; /* Frame 3 */
+                case 0:
+                    tileIndex = 192 + baseOffset;
+                    break; /* Frame 0 */
+                case 1:
+                    tileIndex = 144 + baseOffset;
+                    break; /* Frame 1 */
+                case 2:
+                    tileIndex = 160 + baseOffset;
+                    break; /* Frame 2 */
+                case 3:
+                    tileIndex = 176 + baseOffset;
+                    break; /* Frame 3 */
             }
         }
     }
@@ -2340,18 +2358,14 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
     rect.right = x + TILE_SIZE;
     rect.bottom = y + TILE_SIZE;
 
-    if (hdcTiles && hbmTiles)
-    {
+    if (hdcTiles && hbmTiles) {
         srcX = (tileIndex % TILES_IN_ROW) * TILE_SIZE;
         srcY = (tileIndex / TILES_IN_ROW) * TILE_SIZE;
 
         BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE,
-               hdcTiles, srcX, srcY, SRCCOPY);
-    }
-    else
-    {
-        switch (getBaseFromTile(tileValue))
-        {
+            hdcTiles, srcX, srcY, SRCCOPY);
+    } else {
+        switch (getBaseFromTile(tileValue)) {
             case TILE_RIVER:
                 color = RGB(0, 0, 128); /* Dark blue */
                 break;
@@ -2402,28 +2416,26 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
 
     /* Removed white frame for all zones to improve visual appearance */
 
-    if ((tileValue & ZONEBIT) && !(tileValue & POWERBIT))
-    {
+    if ((tileValue & ZONEBIT) && !(tileValue & POWERBIT)) {
         /* Unpowered zones get a yellow frame */
         hBrush = CreateSolidBrush(RGB(255, 255, 0));
         FrameRect(hdc, &rect, hBrush);
         DeleteObject(hBrush);
 
         /* Draw the lightning bolt power indicator in the center of the tile */
-        if (hdcTiles && hbmTiles)
-        {
+        if (hdcTiles && hbmTiles) {
             int srcX = (LIGHTNINGBOLT % TILES_IN_ROW) * TILE_SIZE;
             int srcY = (LIGHTNINGBOLT / TILES_IN_ROW) * TILE_SIZE;
 
             BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE,
-                   hdcTiles, srcX, srcY, SRCCOPY);
+                hdcTiles, srcX, srcY, SRCCOPY);
         }
     }
     /* Removed green frame for powered zones to improve visual appearance */
 
     /* Commented out power indicator dots for cleaner display
-    else if ((tileValue & CONDBIT) && (tileValue & POWERBIT))
-    {
+       else if ((tileValue & CONDBIT) && (tileValue & POWERBIT))
+       {
         // Power lines and other conductors with power get a cyan dot
         int dotSize = 4;
         RECT dotRect;
@@ -2436,11 +2448,11 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
         hBrush = CreateSolidBrush(RGB(0, 255, 255));
         FillRect(hdc, &dotRect, hBrush);
         DeleteObject(hBrush);
-    }
-    */
+       }
+     */
 
     /* Commented out traffic visualization dots for cleaner display
-    {
+       {
         int tileBase = tileValue & LOMASK;
         Byte trafficLevel;
 
@@ -2479,8 +2491,8 @@ void drawTile(HDC hdc, int x, int y, short tileValue)
                 DeleteObject(hBrush);
             }
         }
-    }
-    */
+       }
+     */
 }
 
 void drawCity(HDC hdc)
@@ -2538,10 +2550,18 @@ void drawCity(HDC hdc)
     endY = startY + (cyClient / TILE_SIZE) + 1;
 
     /* Bounds check */
-    if (startX < 0) startX = 0;
-    if (startY < 0) startY = 0;
-    if (endX > WORLD_X) endX = WORLD_X;
-    if (endY > WORLD_Y) endY = WORLD_Y;
+    if (startX < 0) {
+        startX = 0;
+    }
+    if (startY < 0) {
+        startY = 0;
+    }
+    if (endX > WORLD_X) {
+        endX = WORLD_X;
+    }
+    if (endY > WORLD_Y) {
+        endY = WORLD_Y;
+    }
 
     /* Clear the background */
     rcClient.left = 0;
@@ -2551,48 +2571,40 @@ void drawCity(HDC hdc)
     FillRect(hdc, &rcClient, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
     /* Draw the map tiles */
-    for (y = startY; y < endY; y++)
-    {
-        for (x = startX; x < endX; x++)
-        {
+    for (y = startY; y < endY; y++) {
+        for (x = startX; x < endX; x++) {
             screenX = x * TILE_SIZE - xOffset;
             screenY = y * TILE_SIZE - yOffset;
 
             drawTile(hdc, screenX, screenY, Map[y][x]);
-            
+
             /* If power overlay is enabled, show power status with a transparent color overlay */
-            if (powerOverlayEnabled)
-            {
+            if (powerOverlayEnabled) {
                 RECT tileRect;
                 HBRUSH hOverlayBrush;
-                
+
                 tileRect.left = screenX;
                 tileRect.top = screenY;
                 tileRect.right = screenX + TILE_SIZE;
                 tileRect.bottom = screenY + TILE_SIZE;
-                
+
                 /* Skip power plants themselves */
-                if ((Map[y][x] & LOMASK) != POWERPLANT && (Map[y][x] & LOMASK) != NUCLEAR)
-                {
+                if ((Map[y][x] & LOMASK) != POWERPLANT && (Map[y][x] & LOMASK) != NUCLEAR) {
                     /* Create overlay effect - use red for unpowered zones and green for powered */
-                    if (Map[y][x] & ZONEBIT)
-                    {
-                        if (Map[y][x] & POWERBIT)
-                        {
+                    if (Map[y][x] & ZONEBIT) {
+                        if (Map[y][x] & POWERBIT) {
                             /* Powered zones - bright green border */
                             hOverlayBrush = CreateSolidBrush(RGB(0, 255, 0));
                             /* Draw a thick green border for powered zones */
                             FrameRect(hdc, &tileRect, hOverlayBrush);
                             /* Add a small green power indicator in the corner */
-                            Rectangle(hdc, 
-                                    tileRect.left + 2, 
-                                    tileRect.top + 2,
-                                    tileRect.left + 6, 
-                                    tileRect.top + 6);
+                            Rectangle(hdc,
+                                tileRect.left + 2,
+                                tileRect.top + 2,
+                                tileRect.left + 6,
+                                tileRect.top + 6);
                             DeleteObject(hOverlayBrush);
-                        }
-                        else
-                        {
+                        } else {
                             /* Unpowered zones - red overlay */
                             hOverlayBrush = CreateSolidBrush(RGB(255, 0, 0));
                             /* Draw a thick red border for unpowered zones */
@@ -2604,9 +2616,7 @@ void drawCity(HDC hdc)
                             LineTo(hdc, tileRect.left + 2, tileRect.top + 6);
                             DeleteObject(hOverlayBrush);
                         }
-                    }
-                    else if (PowerMap[y][x] == 1)
-                    {
+                    } else if (PowerMap[y][x] == 1) {
                         /* Show power conducting elements (power lines, roads, etc.) clearly */
                         hOverlayBrush = CreateSolidBrush(RGB(0, 200, 0));
                         /* Show the power path with an overlay */
@@ -2623,32 +2633,31 @@ void drawCity(HDC hdc)
                             DeleteObject(hPen);
                         } else {
                             /* Other conductive tiles - highlight them */
-                            Rectangle(hdc, 
-                                    tileRect.left + (TILE_SIZE/2) - 1, 
-                                    tileRect.top + (TILE_SIZE/2) - 1,
-                                    tileRect.left + (TILE_SIZE/2) + 2, 
-                                    tileRect.top + (TILE_SIZE/2) + 2);
+                            Rectangle(hdc,
+                                tileRect.left + (TILE_SIZE/2) - 1,
+                                tileRect.top + (TILE_SIZE/2) - 1,
+                                tileRect.left + (TILE_SIZE/2) + 2,
+                                tileRect.top + (TILE_SIZE/2) + 2);
                         }
                         DeleteObject(hOverlayBrush);
                     }
                 }
-                
+
                 /* Mark power plants with a yellow circle */
-                if ((Map[y][x] & LOMASK) == POWERPLANT || (Map[y][x] & LOMASK) == NUCLEAR)
-                {
+                if ((Map[y][x] & LOMASK) == POWERPLANT || (Map[y][x] & LOMASK) == NUCLEAR) {
                     HPEN hPen;
                     HPEN hOldPen;
                     HBRUSH hOldBrush;
-                    
+
                     hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
                     hOldPen = SelectObject(hdc, hPen);
                     hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
-                    
+
                     /* Draw a circle around the power plant */
-                    Ellipse(hdc, 
-                            screenX + 2, screenY + 2, 
-                            screenX + TILE_SIZE - 2, screenY + TILE_SIZE - 2);
-                    
+                    Ellipse(hdc,
+                        screenX + 2, screenY + 2,
+                        screenX + TILE_SIZE - 2, screenY + TILE_SIZE - 2);
+
                     SelectObject(hdc, hOldPen);
                     SelectObject(hdc, hOldBrush);
                     DeleteObject(hPen);
@@ -2658,8 +2667,7 @@ void drawCity(HDC hdc)
     }
 
     /* Show legend for power overlay if enabled */
-    if (powerOverlayEnabled)
-    {
+    if (powerOverlayEnabled) {
         RECT legendRect;
         RECT legendBackground;
         HBRUSH hLegendBrush;
@@ -2669,25 +2677,25 @@ void drawCity(HDC hdc)
         int legendY = 10;
         int legendWidth = 150;
         int legendHeight = 120;
-        
+
         /* Create semi-transparent background for the legend */
         legendBackground.left = legendX - 5;
         legendBackground.top = legendY - 5;
         legendBackground.right = legendX + legendWidth;
         legendBackground.bottom = legendY + legendHeight;
-        
+
         hBackgroundBrush = CreateSolidBrush(RGB(50, 50, 50));
         FillRect(hdc, &legendBackground, hBackgroundBrush);
         DeleteObject(hBackgroundBrush);
-        
+
         /* Set up text for legend */
         SetBkMode(hdc, TRANSPARENT);
         oldTextColor = SetTextColor(hdc, RGB(255, 255, 255));
-        
+
         /* Header */
         TextOut(hdc, legendX, legendY, "Power Overlay Legend:", 21);
         legendY += 20;
-        
+
         /* Powered zones */
         legendRect.left = legendX;
         legendRect.top = legendY;
@@ -2696,13 +2704,13 @@ void drawCity(HDC hdc)
         hLegendBrush = CreateSolidBrush(RGB(0, 255, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
         /* Add the green power indicator in corner */
-        Rectangle(hdc, 
-                legendX + 2, legendY + 2,
-                legendX + 6, legendY + 6);
+        Rectangle(hdc,
+            legendX + 2, legendY + 2,
+            legendX + 6, legendY + 6);
         DeleteObject(hLegendBrush);
         TextOut(hdc, legendX + 20, legendY, "Powered Zones", 13);
         legendY += 20;
-        
+
         /* Unpowered zones */
         legendRect.left = legendX;
         legendRect.top = legendY;
@@ -2718,7 +2726,7 @@ void drawCity(HDC hdc)
         DeleteObject(hLegendBrush);
         TextOut(hdc, legendX + 20, legendY, "Unpowered Zones", 15);
         legendY += 20;
-        
+
         /* Power lines */
         legendRect.left = legendX;
         legendRect.top = legendY;
@@ -2726,7 +2734,7 @@ void drawCity(HDC hdc)
         legendRect.bottom = legendY + 15;
         hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
-        
+
         /* Draw a cross through the tile to indicate power flow */
         {
             HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
@@ -2738,11 +2746,11 @@ void drawCity(HDC hdc)
             SelectObject(hdc, hOldPen);
             DeleteObject(hPen);
         }
-        
+
         DeleteObject(hLegendBrush);
         TextOut(hdc, legendX + 20, legendY, "Power Lines", 11);
         legendY += 20;
-        
+
         /* Other powered grid connections */
         legendRect.left = legendX;
         legendRect.top = legendY;
@@ -2751,13 +2759,13 @@ void drawCity(HDC hdc)
         hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
         /* Draw a dot in the center */
-        Rectangle(hdc, 
-                legendX + 6, legendY + 6,
-                legendX + 10, legendY + 10);
+        Rectangle(hdc,
+            legendX + 6, legendY + 6,
+            legendX + 10, legendY + 10);
         DeleteObject(hLegendBrush);
         TextOut(hdc, legendX + 20, legendY, "Power Grid", 10);
         legendY += 20;
-        
+
         /* Power plants */
         legendRect.left = legendX;
         legendRect.top = legendY;
@@ -2767,35 +2775,34 @@ void drawCity(HDC hdc)
         hLegendBrush = CreateSolidBrush(RGB(0, 0, 0));
         FrameRect(hdc, &legendRect, hLegendBrush);
         DeleteObject(hLegendBrush);
-        
+
         /* Draw a yellow circle for power plants */
         {
             HPEN hPen;
             HPEN hOldPen;
             HBRUSH hOldBrush;
-            
+
             hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
             hOldPen = SelectObject(hdc, hPen);
             hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
-            
-            Ellipse(hdc, 
-                    legendX + 2, legendY + 2, 
-                    legendX + 13, legendY + 13);
-            
+
+            Ellipse(hdc,
+                legendX + 2, legendY + 2,
+                legendX + 13, legendY + 13);
+
             SelectObject(hdc, hOldPen);
             SelectObject(hdc, hOldBrush);
             DeleteObject(hPen);
         }
-        
+
         TextOut(hdc, legendX + 20, legendY, "Power Plants", 12);
-        
+
         /* Restore text color */
         SetTextColor(hdc, oldTextColor);
     }
-    
+
     /* Draw tool hover highlight if a tool is active */
-    if (isToolActive)
-    {
+    if (isToolActive) {
         /* Get mouse position */
         POINT mousePos;
         int mapX, mapY;
@@ -2804,8 +2811,7 @@ void drawCity(HDC hdc)
         ScreenToClient(hwndMain, &mousePos);
 
         /* Skip if mouse is outside client area or in toolbar */
-        if (mousePos.x >= toolbarWidth && mousePos.y >= 0 && mousePos.x < cxClient && mousePos.y < cyClient)
-        {
+        if (mousePos.x >= toolbarWidth && mousePos.y >= 0 && mousePos.x < cxClient && mousePos.y < cyClient) {
             /* Convert to map coordinates */
             ScreenToMap(mousePos.x, mousePos.y, &mapX, &mapY, xOffset, yOffset);
 
@@ -2839,8 +2845,7 @@ void openCityDialog(HWND hwnd)
     ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
     ofn.lpstrDefExt = "cty";
 
-    if(GetOpenFileName(&ofn))
-    {
+    if (GetOpenFileName(&ofn)) {
         loadCity(szFileName);
     }
 }
@@ -2957,29 +2962,29 @@ void populateTilesetMenu(HMENU hSubMenu)
 
     hFind = FindFirstFile(searchPath, &findData);
 
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
+    if (hFind != INVALID_HANDLE_VALUE) {
         do {
-            if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0)
+            if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) {
                 continue;
+            }
 
             strcpy(fileName, findData.cFileName);
             dot = strrchr(fileName, '.');
-            if (dot != NULL)
+            if (dot != NULL) {
                 *dot = '\0';
+            }
 
             menuFlags = MF_STRING;
-            if (strcmp(fileName, currentTileset) == 0)
+            if (strcmp(fileName, currentTileset) == 0) {
                 menuFlags |= MF_CHECKED;
+            }
 
             AppendMenu(hSubMenu, menuFlags, menuId++, fileName);
 
         } while (FindNextFile(hFind, &findData) && menuId < IDM_TILESET_MAX);
 
         FindClose(hFind);
-    }
-    else
-    {
+    } else {
         AppendMenu(hSubMenu, MF_GRAYED, 0, "No tilesets found");
     }
 }

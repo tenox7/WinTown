@@ -41,12 +41,12 @@ static void SetTrafMem(void);
 static int RoadTest(int x)
 {
     x = x & LOMASK;
-    if (x < ROADBASE)
+
+    /* Not a road or rail if it's outside the valid ranges */
+    if (x < ROADBASE || x > LASTRAIL || (x >= POWERBASE && x < RAILBASE)) {
         return 0;
-    if (x > LASTRAIL)
-        return 0;
-    if ((x >= POWERBASE) && (x < RAILBASE))
-        return 0;
+    }
+
     return 1;
 }
 
@@ -55,22 +55,18 @@ static int GetFromMap(int x)
 {
     switch (x) {
         case 0: /* North */
-            if (SMapY > 0)
-                return (Map[SMapY - 1][SMapX] & LOMASK);
-            return 0;
+            return (SMapY > 0) ? (Map[SMapY - 1][SMapX] & LOMASK) : 0;
+
         case 1: /* East */
-            if (SMapX < (WORLD_X - 1))
-                return (Map[SMapY][SMapX + 1] & LOMASK);
-            return 0;
+            return (SMapX < (WORLD_X - 1)) ? (Map[SMapY][SMapX + 1] & LOMASK) : 0;
+
         case 2: /* South */
-            if (SMapY < (WORLD_Y - 1))
-                return (Map[SMapY + 1][SMapX] & LOMASK);
-            return 0;
+            return (SMapY < (WORLD_Y - 1)) ? (Map[SMapY + 1][SMapX] & LOMASK) : 0;
+
         case 3: /* West */
-            if (SMapX > 0)
-                return (Map[SMapY][SMapX - 1] & LOMASK);
-            return 0;
-        default: 
+            return (SMapX > 0) ? (Map[SMapY][SMapX - 1] & LOMASK) : 0;
+
+        default:
             return 0;
     }
 }
@@ -95,7 +91,7 @@ static void PullPos(void)
 static int FindPRoad(void)
 {
     int tx, ty, z;
-    
+
     for (z = 0; z < 12; z++) {
         tx = SMapX + PerimX[z];
         ty = SMapY + PerimY[z];
@@ -116,32 +112,42 @@ static int DriveDone(void)
     static short TARGL[3] = {COMBASE, INDBASE, RESBASE}; /* Destinations (low range) */
     static short TARGH[3] = {LASTCOM, LASTIND, LASTRES}; /* Destinations (high range) */
     int z, l, h;
-    
+
     l = TARGL[Zsource];
     h = TARGH[Zsource];
-    
-    /* Check all four directions */
+
+    /* Check north */
     if (SMapY > 0) {
         z = Map[SMapY - 1][SMapX] & LOMASK;
-        if ((z >= l) && (z <= h))
+        if ((z >= l) && (z <= h)) {
             return 1;
+        }
     }
+
+    /* Check east */
     if (SMapX < (WORLD_X - 1)) {
         z = Map[SMapY][SMapX + 1] & LOMASK;
-        if ((z >= l) && (z <= h))
+        if ((z >= l) && (z <= h)) {
             return 1;
+        }
     }
+
+    /* Check south */
     if (SMapY < (WORLD_Y - 1)) {
         z = Map[SMapY + 1][SMapX] & LOMASK;
-        if ((z >= l) && (z <= h))
+        if ((z >= l) && (z <= h)) {
             return 1;
+        }
     }
+
+    /* Check west */
     if (SMapX > 0) {
         z = Map[SMapY][SMapX - 1] & LOMASK;
-        if ((z >= l) && (z <= h))
+        if ((z >= l) && (z <= h)) {
             return 1;
+        }
     }
-    
+
     return 0;
 }
 
@@ -149,32 +155,51 @@ static int DriveDone(void)
 static int TryGo(int z)
 {
     int x, rdir, realdir;
-    
+
     /* Start in a random direction */
     rdir = SimRandom(4);
-    
-    for (x = rdir; x < (rdir + 4); x++) {
-        realdir = x & 3;
-        if (realdir == LDir) 
-            continue; /* Skip last direction (don't go back) */
-            
-        if (RoadTest(GetFromMap(realdir))) {
-            /* Move in this direction */
-            switch (realdir) {
-                case 0: SMapY--; break;
-                case 1: SMapX++; break;
-                case 2: SMapY++; break;
-                case 3: SMapX--; break;
-            }
-            
-            LDir = (realdir + 2) & 3; /* Remember the direction we came from */
-            
-            if (z & 1) /* Save position every other move */
-                PushPos();
-                
-            return 1;
+
+    /* Try all four directions, starting at random */
+    for (x = 0; x < 4; x++) {
+        realdir = (rdir + x) & 3;
+
+        /* Skip last direction (don't go back) */
+        if (realdir == LDir) {
+            continue;
         }
+
+        /* Check if we can move in this direction */
+        if (!RoadTest(GetFromMap(realdir))) {
+            continue;
+        }
+
+        /* Move in this direction */
+        switch (realdir) {
+            case 0:
+                SMapY--;
+                break;
+            case 1:
+                SMapX++;
+                break;
+            case 2:
+                SMapY++;
+                break;
+            case 3:
+                SMapX--;
+                break;
+        }
+
+        /* Remember the direction we came from */
+        LDir = (realdir + 2) & 3;
+
+        /* Save position every other move */
+        if (z & 1) {
+            PushPos();
+        }
+
+        return 1;
     }
+
     return 0;
 }
 
@@ -182,24 +207,37 @@ static int TryGo(int z)
 static int TryDrive(void)
 {
     int z;
-    
-    LDir = 5; /* Invalid direction to start with */
-    
+
+    /* Invalid direction to start with */
+    LDir = 5;
+
+    /* Try to drive for maximum distance */
     for (z = 0; z < MAXDIS; z++) {
+        /* Try to make a move */
         if (TryGo(z)) {
-            if (DriveDone()) /* If we reached a destination */
+            /* Check if we've reached the destination */
+            if (DriveDone()) {
                 return 1;
-        } 
-        else {
-            if (PosStackN) { /* At a dead end, back up */
-                PosStackN--;
-                z += 3;
             }
-            else
-                return 0; /* Give up at start */
+
+            /* Continue to next step */
+            continue;
         }
+
+        /* Handle dead end */
+        if (PosStackN) {
+            /* Back up and skip a few steps */
+            PosStackN--;
+            z += 3;
+            continue;
+        }
+
+        /* Give up at start if can't move */
+        return 0;
     }
-    return 0; /* Gone maximum distance without success */
+
+    /* Gone maximum distance without success */
+    return 0;
 }
 
 /* Set traffic density along the path taken */
@@ -207,7 +245,7 @@ static void SetTrafMem(void)
 {
     int x, z;
     int tx, ty;
-    
+
     for (x = PosStackN; x > 0; x--) {
         PullPos();
         if (TestBounds(SMapX, SMapY)) {
@@ -217,11 +255,11 @@ static void SetTrafMem(void)
                    map is half the size of the main map */
                 tx = SMapX >> 1;
                 ty = SMapY >> 1;
-                
+
                 /* Increase traffic density */
                 z = TrfDensity[ty][tx];
                 z += 50;
-                
+
                 /* Cap at maximum value */
                 if (z > 240) {
                     z = 240;
@@ -229,7 +267,7 @@ static void SetTrafMem(void)
                     TrafMaxY = SMapY;
                     /* TODO: Add police car sprite at congestion point */
                 }
-                
+
                 TrfDensity[ty][tx] = (Byte)z;
             }
         }
@@ -240,23 +278,23 @@ static void SetTrafMem(void)
 int MakeTraffic(int zoneType)
 {
     short xtem, ytem;
-    
+
     /* Check for valid zone type (0=res, 1=com, 2=ind) */
     if (zoneType < 0 || zoneType > 2) {
         return -1;
     }
-    
+
     /* Check coordinates for map bounds */
     if (!TestBounds(SMapX, SMapY)) {
         return -1;
     }
-    
+
     /* Save original position */
     xtem = SMapX;
     ytem = SMapY;
     Zsource = zoneType;
     PosStackN = 0;
-    
+
     /* Look for a road on the zone perimeter */
     if (FindPRoad()) {
         /* Attempt to drive somewhere */
@@ -270,41 +308,41 @@ int MakeTraffic(int zoneType)
         SMapX = xtem;
         SMapY = ytem;
         return 0; /* Traffic failed */
-    }
-    else 
+    } else {
         return -1; /* No road found */
+    }
 }
 
 /* Decrease traffic values over time */
 void DecTrafficMap(void)
 {
     int x, y;
-    int fullX, fullY;  /* Full-sized map coordinates */
-    int dx, dy;        /* Offsets within density cell */
-    int mapX, mapY;    /* Actual map coordinates */
-    int tile;          /* Tile value */
-    
+    int fullX, fullY; /* Full-sized map coordinates */
+    int dx, dy;    /* Offsets within density cell */
+    int mapX, mapY; /* Actual map coordinates */
+    int tile;      /* Tile value */
+
     for (y = 0; y < WORLD_Y/2; y++) {
         for (x = 0; x < WORLD_X/2; x++) {
             if (TrfDensity[y][x] > 0) {
                 /* Gradually decrease traffic */
-                TrfDensity[y][x] = (Byte)(TrfDensity[y][x] - 
-                                        (TrfDensity[y][x] / 8 + 1));
-                
+                TrfDensity[y][x] = (Byte)(TrfDensity[y][x] -
+                    (TrfDensity[y][x] / 8 + 1));
+
                 /* If traffic decreases to zero, make sure to remove animation bits */
                 if (TrfDensity[y][x] == 0) {
                     /* Clear animation bits in corresponding full-size map tiles */
                     fullX = x * 2;
                     fullY = y * 2;
-                    
+
                     for (dy = 0; dy < 2; dy++) {
                         for (dx = 0; dx < 2; dx++) {
                             mapX = fullX + dx;
                             mapY = fullY + dy;
-                            
+
                             if (mapX < WORLD_X && mapY < WORLD_Y) {
                                 tile = Map[mapY][mapX] & LOMASK;
-                                
+
                                 /* Only update road tiles */
                                 if (tile >= ROADBASE && tile <= LASTROAD) {
                                     /* If this is a heavy traffic tile, convert back to normal road */
@@ -330,30 +368,30 @@ void CalcTrafficAverage(void)
     int x, y;
     long total = 0;
     int count = 0;
-    int fullX, fullY;  /* Full-sized map coordinates */
-    int dx, dy;        /* Offsets within density cell */
-    int mapX, mapY;    /* Actual map coordinates */
-    int tile;          /* Tile value */
-    
+    int fullX, fullY; /* Full-sized map coordinates */
+    int dx, dy;    /* Offsets within density cell */
+    int mapX, mapY; /* Actual map coordinates */
+    int tile;      /* Tile value */
+
     for (y = 0; y < WORLD_Y/2; y++) {
         for (x = 0; x < WORLD_X/2; x++) {
             if (TrfDensity[y][x] > 0) {
                 total += TrfDensity[y][x];
                 count++;
-                
+
                 /* Apply animation bit to corresponding map tiles with traffic */
-                fullX = x * 2; 
+                fullX = x * 2;
                 fullY = y * 2;
-                
+
                 /* Check all four tiles in the full-size map that this density tile covers */
                 for (dy = 0; dy < 2; dy++) {
                     for (dx = 0; dx < 2; dx++) {
                         mapX = fullX + dx;
                         mapY = fullY + dy;
-                        
+
                         if (mapX < WORLD_X && mapY < WORLD_Y) {
                             tile = Map[mapY][mapX] & LOMASK;
-                            
+
                             /* Only set ANIMBIT on road tiles */
                             if (tile >= ROADBASE && tile <= LASTROAD) {
                                 /* Heavy traffic */
@@ -378,9 +416,10 @@ void CalcTrafficAverage(void)
             }
         }
     }
-    
-    if (count > 0)
+
+    if (count > 0) {
         TrafficAverage = (int)(total / count);
-    else
+    } else {
         TrafficAverage = 0;
+    }
 }
