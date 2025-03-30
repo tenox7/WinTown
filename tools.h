@@ -34,6 +34,12 @@ extern int isToolActive;
 #define TOOL_AIRPORT_COST       10000
 #define TOOL_NETWORK_COST       1000
 
+/* Tool size constants */
+#define TOOL_SIZE_1X1           1  /* Single tile tools (road, rail, wire, etc.) */
+#define TOOL_SIZE_3X3           3  /* 3x3 zone tools (residential, commercial, industrial, etc.) */
+#define TOOL_SIZE_4X4           4  /* 4x4 building tools (stadium, power plant, etc.) */
+#define TOOL_SIZE_6X6           6  /* 6x6 building tools (airport) */
+
 /* Functions for tool management */
 void CreateToolbar(HWND hwndParent, int x, int y, int width, int height);
 void SelectTool(int toolType);
@@ -41,11 +47,13 @@ int ApplyTool(int mapX, int mapY);
 int GetCurrentTool(void);
 int GetToolResult(void);
 int GetToolCost(void);
+int GetToolSize(int toolType);
 void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected);
 void LoadToolbarBitmaps(void);
 void CleanupToolbarBitmaps(void);
 void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset);
 int HandleToolMouse(int mouseX, int mouseY, int xOffset, int yOffset);
+void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int yOffset);
 
 /* Individual tool functions */
 int DoBulldozer(int mapX, int mapY);

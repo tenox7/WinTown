@@ -427,7 +427,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_BULLDOZER, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_ROAD:
@@ -435,7 +435,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_ROAD, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_RAIL:
@@ -443,7 +443,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_RAIL, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_WIRE:
@@ -451,7 +451,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_WIRE, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_PARK:
@@ -459,7 +459,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_PARK, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_RESIDENTIAL:
@@ -467,7 +467,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_RESIDENTIAL, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_COMMERCIAL:
@@ -475,7 +475,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_COMMERCIAL, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_INDUSTRIAL:
@@ -483,7 +483,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_INDUSTRIAL, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_FIRESTATION:
@@ -491,7 +491,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_FIRESTATION, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_POLICESTATION:
@@ -499,7 +499,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_POLICESTATION, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_STADIUM:
@@ -507,7 +507,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_STADIUM, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_SEAPORT:
@@ -515,7 +515,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_SEAPORT, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_POWERPLANT:
@@ -523,7 +523,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_POWERPLANT, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_NUCLEAR:
@@ -531,7 +531,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_NUCLEAR, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_AIRPORT:
@@ -539,7 +539,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_AIRPORT, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 case IDM_TOOL_QUERY:
@@ -547,7 +547,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     isToolActive = TRUE;
                     CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, 
                                       IDM_TOOL_QUERY, MF_BYCOMMAND);
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     return 0;
                     
                 default:
@@ -700,6 +700,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             int xPos = LOWORD(lParam);
             int yPos = HIWORD(lParam);
+            int mapX, mapY;
             
             /* Skip toolbar area */
             if (xPos < xOffset)
@@ -725,8 +726,14 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             else if (isToolActive)
             {
-                /* Show cross cursor when tool is active */
-                SetCursor(LoadCursor(NULL, IDC_CROSS));
+                /* Convert mouse position to map coordinates */
+                ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
+                
+                /* Use normal cursor instead of crosshair */
+                SetCursor(LoadCursor(NULL, IDC_ARROW));
+                
+                /* Force a redraw to show hover effect */
+                InvalidateRect(hwnd, NULL, FALSE);
             }
             else
             {
@@ -740,14 +747,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             isMouseDown = FALSE;
             ReleaseCapture();
             
-            if (isToolActive)
-            {
-                SetCursor(LoadCursor(NULL, IDC_CROSS));
-            }
-            else
-            {
-                SetCursor(LoadCursor(NULL, IDC_ARROW));
-            }
+            /* Always use arrow cursor */
+            SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
         }
         
@@ -775,7 +776,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 if (isMouseDown)
                     SetCursor(LoadCursor(NULL, IDC_SIZEALL));
                 else if (isToolActive)
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    SetCursor(LoadCursor(NULL, IDC_ARROW)); /* Use normal cursor instead of cross */
                 else
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                 return TRUE;
@@ -1795,6 +1796,27 @@ void drawCity(HDC hdc)
             screenY = y * TILE_SIZE - yOffset;
             
             drawTile(hdc, screenX, screenY, Map[y][x]);
+        }
+    }
+    
+    /* Draw tool hover highlight if a tool is active */
+    if (isToolActive)
+    {
+        /* Get mouse position */
+        POINT mousePos;
+        int mapX, mapY;
+        
+        GetCursorPos(&mousePos);
+        ScreenToClient(hwndMain, &mousePos);
+        
+        /* Skip if mouse is outside client area or in toolbar */
+        if (mousePos.x >= xOffset && mousePos.y >= 0 && mousePos.x < cxClient && mousePos.y < cyClient)
+        {
+            /* Convert to map coordinates */
+            ScreenToMap(mousePos.x, mousePos.y, &mapX, &mapY, xOffset, yOffset);
+            
+            /* Draw the highlight box */
+            DrawToolHover(hdc, mapX, mapY, GetCurrentTool(), xOffset, yOffset);
         }
     }
     

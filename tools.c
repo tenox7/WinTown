@@ -1154,9 +1154,12 @@ void FixSingle(int x, int y)
 
 /* Toolbar state variables */
 static int currentTool = bulldozerState;
-static int toolSize = 1;        /* 1x1, 3x3, or 5x5 */
 static int toolResult = TOOLRESULT_OK;
 static int toolCost = 0;
+
+/* Last mouse position for hover effect */
+static int lastMouseMapX = -1;
+static int lastMouseMapY = -1;
 
 /* Mapping of toolbar indices to tool states - this maps from toolbar position (0-15) to the simulation.h tool state constants */
 static const int toolbarToStateMapping[16] = {
@@ -1328,27 +1331,26 @@ static int toolbarWidth = 96;    /* Width of the toolbar (3 columns) */
 static int toolbarColumns = 3;   /* Number of tool columns */
 
 /* Tool bitmap handles */
-static HBITMAP hToolBitmaps[16];        /* Normal state bitmaps */
-static HBITMAP hToolBitmapsSelected[16]; /* Selected state bitmaps */
+static HBITMAP hToolBitmaps[16];        /* Tool bitmaps */
 
 /* File names for tool bitmaps - order matches toolbar position */
 static const char* toolBitmapFiles[16] = {
-    "icres",  /* 0 - Residential */
-    "iccom",  /* 1 - Commercial */
-    "icind",  /* 2 - Industrial */
-    "icfire", /* 3 - Fire Station */
-    "icpol",  /* 4 - Police Station */
-    "icwire", /* 5 - Wire */
-    "icroad", /* 6 - Road */
-    "icrail", /* 7 - Rail */
-    "icpark", /* 8 - Park */
-    "icstad", /* 9 - Stadium */
-    "icseap", /* 10 - Seaport */
-    "iccoal", /* 11 - Coal Power Plant */
-    "icnuc",  /* 12 - Nuclear Power Plant */
-    "icairp", /* 13 - Airport */
-    "icdozr", /* 14 - Bulldozer */
-    "icqry"   /* 15 - Query */
+    "residential",  /* 0 - Residential */
+    "commercial",   /* 1 - Commercial */
+    "industrial",   /* 2 - Industrial */
+    "firestation",  /* 3 - Fire Station */
+    "policestation",/* 4 - Police Station */
+    "powerline",    /* 5 - Wire */
+    "road",         /* 6 - Road */
+    "rail",         /* 7 - Rail */
+    "park",         /* 8 - Park */
+    "stadium",      /* 9 - Stadium */
+    "seaport",      /* 10 - Seaport */
+    "powerplant",   /* 11 - Coal Power Plant */
+    "nuclear",      /* 12 - Nuclear Power Plant */
+    "airport",      /* 13 - Airport */
+    "bulldozer",    /* 14 - Bulldozer */
+    "query"         /* 15 - Query */
 };
 
 /* Function to process toolbar button clicks */
@@ -1395,17 +1397,11 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 /* Determine if this button is selected */
                 isSelected = (GetCurrentTool() == toolbarToStateMapping[i]);
                 
-                /* Draw the button with 3D effect */
-                if (isSelected)
-                {
-                    /* Selected button - sunken */
-                    DrawEdge(hdc, &rect, EDGE_SUNKEN, BF_RECT);
-                }
-                else
-                {
-                    /* Unselected button - raised */
-                    DrawEdge(hdc, &rect, EDGE_RAISED, BF_RECT);
-                }
+                /* Create a flat gray background for all buttons */
+                FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
+                
+                /* Draw a thin dark gray border */
+                FrameRect(hdc, &rect, (HBRUSH)GetStockObject(DKGRAY_BRUSH));
                 
                 /* Draw the tool icon */
                 DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
@@ -1444,8 +1440,8 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     /* Redraw the toolbar */
                     InvalidateRect(hwnd, NULL, TRUE);
                     
-                    /* Set the main window cursor to cross */
-                    SetCursor(LoadCursor(NULL, IDC_CROSS));
+                    /* Set the main window cursor to arrow instead of cross */
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
                     
                     /* Set the tool active flag */
                     isToolActive = 1;  /* TRUE */
@@ -1468,28 +1464,20 @@ void LoadToolbarBitmaps(void)
     int i;
     char filename[MAX_PATH];
     
-    /* Load normal and selected state bitmaps for each tool */
+    /* Load the renamed bitmaps directly from the images folder */
     for (i = 0; i < 16; i++)
     {
-        /* Normal state bitmap */
+        /* Use only the new bitmap files with descriptive names */
         wsprintf(filename, "images\\%s.bmp", toolBitmapFiles[i]);
+        
+        /* Load the bitmap */
         hToolBitmaps[i] = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
-                                    LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+                                   LR_LOADFROMFILE | LR_CREATEDIBSECTION);
         
         if (hToolBitmaps[i] == NULL)
         {
-            OutputDebugString("Failed to load toolbar bitmap: ");
-            OutputDebugString(filename);
-        }
-        
-        /* Selected state bitmap */
-        wsprintf(filename, "images\\%shi.bmp", toolBitmapFiles[i]);
-        hToolBitmapsSelected[i] = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
-                                          LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-        
-        if (hToolBitmapsSelected[i] == NULL)
-        {
-            OutputDebugString("Failed to load toolbar selected bitmap: ");
+            /* Log error if bitmap loading fails */
+            OutputDebugString("Failed to load bitmap: ");
             OutputDebugString(filename);
         }
     }
@@ -1508,12 +1496,6 @@ void CleanupToolbarBitmaps(void)
             DeleteObject(hToolBitmaps[i]);
             hToolBitmaps[i] = NULL;
         }
-        
-        if (hToolBitmapsSelected[i])
-        {
-            DeleteObject(hToolBitmapsSelected[i]);
-            hToolBitmapsSelected[i] = NULL;
-        }
     }
 }
 
@@ -1525,6 +1507,13 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     int toolIndex;
     BITMAP bm;
     int width, height;
+    int centerX, centerY;
+    RECT toolRect;
+    HPEN hYellowPen;
+    HPEN hOldPen;
+    char debugMsg[100];
+    char indexStr[8];
+    RECT rect;
     
     /* Get the toolbar index using the reverse mapping */
     if (toolType >= 0 && toolType < 17)
@@ -1545,25 +1534,28 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     /* Create a memory DC */
     hdcMem = CreateCompatibleDC(hdc);
     
-    /* Select the appropriate bitmap */
-    if (isSelected && hToolBitmapsSelected[toolIndex])
-    {
-        hbmOld = SelectObject(hdcMem, hToolBitmapsSelected[toolIndex]);
-        
-        /* Get the bitmap dimensions */
-        GetObject(hToolBitmapsSelected[toolIndex], sizeof(BITMAP), &bm);
-    }
-    else if (hToolBitmaps[toolIndex])
+    /* Select the bitmap (we only have one version now) */
+    if (hToolBitmaps[toolIndex])
     {
         hbmOld = SelectObject(hdcMem, hToolBitmaps[toolIndex]);
         
         /* Get the bitmap dimensions */
-        GetObject(hToolBitmaps[toolIndex], sizeof(BITMAP), &bm);
+        if (GetObject(hToolBitmaps[toolIndex], sizeof(BITMAP), &bm) == 0)
+        {
+            /* If GetObject fails, use default dimensions */
+            bm.bmWidth = 24;
+            bm.bmHeight = 24;
+            
+            /* Log the error */
+            wsprintf(debugMsg, "GetObject failed for bitmap %d", toolIndex);
+            OutputDebugString(debugMsg);
+        }
     }
     else
     {
-        /* Failed to load bitmap - fall back to drawing a rectangle */
-        RECT rect;
+        /* Failed to load bitmap - fall back to drawing a rectangle with tool name */
+        wsprintf(debugMsg, "No bitmap for tool %d", toolIndex);
+        OutputDebugString(debugMsg);
         
         rect.left = x + 4;
         rect.top = y + 4;
@@ -1572,6 +1564,12 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
         
         Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
         
+        /* Show tool index as a visual indicator */
+        wsprintf(indexStr, "%d", toolIndex);
+        SetTextColor(hdc, RGB(0, 0, 0));
+        SetBkMode(hdc, TRANSPARENT);
+        TextOut(hdc, x + 12, y + 12, indexStr, lstrlen(indexStr));
+        
         DeleteDC(hdcMem);
         return;
     }
@@ -1579,22 +1577,38 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     width = bm.bmWidth;
     height = bm.bmHeight;
     
-    /* Calculate centering position if needed */
-    if (width < toolButtonSize)
-    {
-        x += (toolButtonSize - width) / 2;
-    }
+    /* Calculate centering position within the button */
+    centerX = x + (toolButtonSize - width) / 2;
+    centerY = y + (toolButtonSize - height) / 2;
     
-    if (height < toolButtonSize)
-    {
-        y += (toolButtonSize - height) / 2;
-    }
+    /* Make sure we don't have negative positions */
+    if (centerX < x) centerX = x;
+    if (centerY < y) centerY = y;
     
     /* Draw the bitmap */
-    BitBlt(hdc, x, y, 
-           (width < toolButtonSize) ? width : toolButtonSize, 
-           (height < toolButtonSize) ? height : toolButtonSize,
-           hdcMem, 0, 0, SRCCOPY);
+    BitBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, SRCCOPY);
+    
+    /* If this tool is selected, draw a thick yellow box around it */
+    if (isSelected)
+    {
+        /* Draw the highlight box using the BUTTON boundaries, not the icon */
+        toolRect.left = x + 2;
+        toolRect.top = y + 2;
+        toolRect.right = x + toolButtonSize - 2;
+        toolRect.bottom = y + toolButtonSize - 2;
+        
+        /* Create a yellow pen for the outline */
+        hYellowPen = CreatePen(PS_SOLID, 3, RGB(255, 255, 0));
+        hOldPen = SelectObject(hdc, hYellowPen);
+        
+        /* Draw the rectangle */
+        SelectObject(hdc, GetStockObject(NULL_BRUSH)); /* Transparent interior */
+        Rectangle(hdc, toolRect.left, toolRect.top, toolRect.right, toolRect.bottom);
+        
+        /* Clean up the pen */
+        SelectObject(hdc, hOldPen);
+        DeleteObject(hYellowPen);
+    }
     
     /* Clean up */
     SelectObject(hdcMem, hbmOld);
@@ -2430,6 +2444,115 @@ int GetToolResult(void)
 int GetToolCost(void)
 {
     return toolCost;
+}
+
+/* Get the size of a tool (1x1, 3x3, 4x4, or 6x6) */
+int GetToolSize(int toolType)
+{
+    switch (toolType)
+    {
+        case residentialState:
+        case commercialState:
+        case industrialState:
+        case fireState:
+        case policeState:
+            return TOOL_SIZE_3X3;  /* 3x3 zones */
+            
+        case stadiumState:
+        case seaportState:
+        case powerState:
+        case nuclearState:
+            return TOOL_SIZE_4X4;  /* 4x4 buildings */
+            
+        case airportState:
+            return TOOL_SIZE_6X6;  /* 6x6 buildings */
+            
+        case roadState:
+        case railState: 
+        case wireState:
+        case parkState:
+        case bulldozerState:
+        case queryState:
+        default:
+            return TOOL_SIZE_1X1;  /* Single tile tools */
+    }
+}
+
+/* Draw the tool hover highlight at the given map position */
+void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int yOffset)
+{
+    int size = GetToolSize(toolType);
+    int screenX, screenY;
+    int startX, startY;
+    int width, height;
+    HPEN hPen;
+    HPEN hOldPen;
+    HBRUSH hOldBrush;
+    
+    /* Calculate the starting position based on tool size */
+    switch (size)
+    {
+        case TOOL_SIZE_3X3:
+            /* Center 3x3 highlight at cursor */
+            startX = mapX - 1;
+            startY = mapY - 1;
+            width = 3;
+            height = 3;
+            break;
+            
+        case TOOL_SIZE_4X4:
+            /* Center 4x4 highlight at cursor */
+            startX = mapX - 1;
+            startY = mapY - 1;
+            width = 4;
+            height = 4;
+            break;
+            
+        case TOOL_SIZE_6X6:
+            /* Center 6x6 highlight at cursor */
+            startX = mapX - 2;
+            startY = mapY - 2;
+            width = 6;
+            height = 6;
+            break;
+            
+        case TOOL_SIZE_1X1:
+        default:
+            /* Single tile highlight */
+            startX = mapX;
+            startY = mapY;
+            width = 1;
+            height = 1;
+            break;
+    }
+    
+    /* Convert map coordinates to screen coordinates */
+    screenX = (startX * TILE_SIZE) - xOffset;
+    screenY = (startY * TILE_SIZE) - yOffset;
+    
+    /* Create a white pen for the outline */
+    hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+    
+    if (!hPen)
+        return;
+        
+    /* Select pen and null brush (for hollow rectangle) */
+    hOldPen = SelectObject(hdc, hPen);
+    hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
+    
+    /* Draw the rectangle */
+    Rectangle(hdc, screenX, screenY, 
+              screenX + (width * TILE_SIZE), 
+              screenY + (height * TILE_SIZE));
+    
+    /* Clean up */
+    SelectObject(hdc, hOldPen);
+    SelectObject(hdc, hOldBrush);
+    DeleteObject(hPen);
+    
+    /* Save the last position for efficiency */
+    lastMouseMapX = mapX;
+    lastMouseMapY = mapY;
 }
 
 /* Convert screen coordinates to map coordinates */
