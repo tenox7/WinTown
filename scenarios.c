@@ -26,6 +26,9 @@ extern void makeMonster(void);            /* Monster attack disaster */
 extern void makeExplosion(int x, int y);  /* Explosion at specific location */
 extern void makeMeltdown(void);           /* Nuclear meltdown disaster */
 
+/* External functions from main.c */
+extern void ForceFullCensus(void);        /* Census calculation function */
+
 /* External variables */
 extern HWND hwndMain;
 extern char cityFileName[MAX_PATH];
@@ -170,6 +173,9 @@ int loadScenario(int scenarioId)
     /* Set speed to medium and init sim */
     SimSpeed = SPEED_MEDIUM;
     DoSimInit();
+    
+    /* Force population census calculation for the loaded scenario */
+    ForceFullCensus();
     
     /* Redraw screen */
     InvalidateRect(hwndMain, NULL, TRUE);

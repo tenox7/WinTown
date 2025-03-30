@@ -365,6 +365,9 @@ static void DoIndustrial(int x, int y)
     /* Get actual zone population */
     pop = calcIndPop(zone);
     
+    /* Add to total industrial population for the census */
+    IndPop += pop;
+    
     /* Generate traffic from industrial zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
         /* Industrial zones (2) try to generate traffic to residential zones */
@@ -419,6 +422,9 @@ static void DoCommercial(int x, int y)
     
     /* Get actual zone population */
     pop = calcComPop(zone);
+    
+    /* Add to total commercial population for the census */
+    ComPop += pop;
     
     /* Generate traffic from commercial zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
@@ -476,6 +482,9 @@ static void DoResidential(int x, int y)
     
     /* Get actual zone population */
     pop = calcResPop(zone);
+    
+    /* Add to total residential population for the census */
+    ResPop += pop;
     
     /* Generate traffic from residential zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {

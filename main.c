@@ -250,6 +250,7 @@ HPALETTE createSystemPalette(void);
 HMENU createMainMenu(void);
 void populateTilesetMenu(HMENU hSubMenu);
 int changeTileset(HWND hwnd, const char* tilesetName);
+void ForceFullCensus(void);
 
 /* External functions - defined in simulation.c */
 extern int SimRandom(int range);
@@ -1451,6 +1452,99 @@ read_error:
     return 0;
 }
 
+/* External function declarations */
+extern int calcResPop(int zone);   /* Calculate residential zone population - from zone.c */
+extern int calcComPop(int zone);   /* Calculate commercial zone population - from zone.c */
+extern int calcIndPop(int zone);   /* Calculate industrial zone population - from zone.c */
+extern void ClearCensus(void);     /* Reset census counters - from simulation.c */
+extern void CityEvaluation(void);  /* Update city evaluation - from evaluation.c */
+extern void TakeCensus(void);      /* Take a census - from simulation.c */
+extern void CountSpecialTiles(void); /* Count special buildings - from evaluation.c */
+
+/* Force a census calculation of the entire map */
+void ForceFullCensus(void)
+{
+    int x, y;
+    short tile;
+
+    /* Reset census counts */
+    ClearCensus();
+    
+    /* Scan entire map to count populations */
+    for (y = 0; y < WORLD_Y; y++) {
+        for (x = 0; x < WORLD_X; x++) {
+            tile = Map[y][x];
+            
+            /* Check if this is a zone center */
+            if (tile & ZONEBIT) {
+                int zoneTile = tile & LOMASK;
+                
+                /* Check zone type and add population accordingly */
+                if (zoneTile >= RESBASE && zoneTile <= LASTRES) {
+                    /* Residential zone */
+                    ResPop += calcResPop(zoneTile);
+                }
+                else if (zoneTile >= COMBASE && zoneTile <= LASTCOM) {
+                    /* Commercial zone */
+                    ComPop += calcComPop(zoneTile);
+                }
+                else if (zoneTile >= INDBASE && zoneTile <= LASTIND) {
+                    /* Industrial zone */
+                    IndPop += calcIndPop(zoneTile);
+                }
+                
+                /* Count other special zones */
+                if (zoneTile == FIRESTATION) {
+                    FirePop++;
+                }
+                else if (zoneTile == POLICESTATION) {
+                    PolicePop++;
+                }
+                else if (zoneTile == STADIUM) {
+                    StadiumPop++;
+                }
+                else if (zoneTile == PORT) {
+                    PortPop++;
+                }
+                else if (zoneTile == AIRPORT) {
+                    APortPop++;
+                }
+                else if (zoneTile == NUCLEAR) {
+                    NuclearPop++;
+                }
+                /* Note: We don't count power plants here since CountSpecialTiles() in evaluation.c handles it */
+                
+                /* Count powered/unpowered zones */
+                if (tile & POWERBIT) {
+                    PwrdZCnt++;
+                } else {
+                    UnpwrdZCnt++;
+                }
+            }
+            
+            /* Count infrastructure */
+            if ((tile & LOMASK) >= ROADBASE && (tile & LOMASK) <= LASTROAD) {
+                RoadTotal++;
+            }
+            else if ((tile & LOMASK) >= RAILBASE && (tile & LOMASK) <= LASTRAIL) {
+                RailTotal++;
+            }
+        }
+    }
+    
+    /* Calculate total population */
+    TotalPop = (ResPop + ComPop + IndPop) * 8;
+    
+    /* Count special buildings for city evaluation */
+    CountSpecialTiles();
+    
+    /* Update the city evaluation based on the new population */
+    CityEvaluation();
+    
+    /* Take census to update history graphs */
+    TakeCensus();
+}
+
 int loadCity(char *filename)
 {
     /* Reset scenario ID */
@@ -1473,6 +1567,9 @@ int loadCity(char *filename)
     
     /* Initialize the simulation with the new city data */
     DoSimInit();
+    
+    /* Force population census calculation for the loaded city */
+    ForceFullCensus();
     
     /* Unpause simulation at medium speed */
     SetSimulationSpeed(hwndMain, SPEED_MEDIUM);

@@ -470,6 +470,9 @@ void ClearCensus(void)
     NuclearPop = 0;
     PwrdZCnt = 0;
     UnpwrdZCnt = 0;
+    
+    /* Reset total population to ensure clean census */
+    TotalPop = 0;
 }
 
 void TakeCensus(void)
