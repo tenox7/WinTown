@@ -146,6 +146,53 @@ void makeFire(int x, int y)
     InvalidateRect(hwndMain, NULL, FALSE);
 }
 
+/* Check for and spread fires - called from simulation loop */
+void spreadFire(void)
+{
+    int x, y, dir, tx, ty;
+    int i;
+    short tileValue;
+    
+    /* Process a limited number of random locations */
+    for (i = 0; i < 20; i++) {
+        /* Pick a random position */
+        x = SimRandom(WORLD_X);
+        y = SimRandom(WORLD_Y);
+        
+        /* Skip if out of bounds */
+        if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y)
+            continue;
+            
+        tileValue = Map[y][x] & LOMASK;
+        
+        /* Check if it's a fire tile */
+        if (tileValue >= FIRE && tileValue < (FIRE + 8)) {
+            /* It's a fire! Chance to spread to adjacent tiles */
+            if (SimRandom(10) < 3) { /* 30% chance to spread */
+                /* Pick a random direction */
+                dir = SimRandom(4);
+                tx = x + xDelta[dir];
+                ty = y + yDelta[dir];
+                
+                /* Check if the target tile is in bounds */
+                if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
+                    /* Only spread to burnable tiles */
+                    if (Map[ty][tx] & BURNBIT) {
+                        /* Create a fire with animation */
+                        Map[ty][tx] = (FIRE + ANIMBIT) + (SimRandom(8));
+                    }
+                }
+            }
+            
+            /* Small chance for fire to burn out */
+            if (SimRandom(10) == 0) { /* 10% chance to burn out */
+                /* Convert to rubble */
+                Map[y][x] = RUBBLE + BULLBIT + (SimRandom(4));
+            }
+        }
+    }
+}
+
 /* Create a monster (Godzilla-like) disaster */
 void makeMonster(void)
 {

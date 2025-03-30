@@ -310,11 +310,22 @@ void scenarioDisaster(void);             /* Process scenario disasters */
 void doEarthquake(void);                 /* Create an earthquake */
 void makeFlood(void);                    /* Create a flood */
 void makeFire(int x, int y);             /* Start a fire */
+void spreadFire(void);                   /* Check for and spread fires */
 void makeMonster(void);                  /* Create a monster */
 void makeExplosion(int x, int y);        /* Create an explosion */
 void makeMeltdown(void);                 /* Create a nuclear meltdown */
 
 /* File I/O functions (main.c) */
 int loadFile(char *filename);    /* Load city file data */
+
+/* Animation functions (animation.c) */
+void AnimateTiles(void);            /* Process animations for the entire map */
+void SetAnimationEnabled(int enabled);  /* Enable or disable animations */
+int GetAnimationEnabled(void);      /* Get animation enabled status */
+void SetSmoke(int x, int y);        /* Set smoke animation for coal plants */
+void UpdateFire(int x, int y);      /* Update fire animations */
+void UpdateNuclearPower(int x, int y);  /* Update nuclear power plant animations */
+void UpdateAirportRadar(int x, int y);  /* Update airport radar animation */
+void UpdateSpecialAnimations(void); /* Update all special animations */
 
 #endif /* _SIMULATION_H */

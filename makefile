@@ -1,7 +1,7 @@
 # Simple makefile for MicropolisNT
 
-all: main.obj simulation.obj zone.obj power.obj traffic.obj scanner.obj evaluation.obj budget.obj scenarios.obj disasters.obj tools.obj
-	link.exe /NOLOGO /SUBSYSTEM:WINDOWS main.obj simulation.obj zone.obj power.obj traffic.obj scanner.obj evaluation.obj budget.obj scenarios.obj disasters.obj tools.obj user32.lib gdi32.lib comdlg32.lib /OUT:MicropolisNT.exe
+all: main.obj simulation.obj zone.obj power.obj traffic.obj scanner.obj evaluation.obj budget.obj scenarios.obj disasters.obj tools.obj animation.obj
+	link.exe /NOLOGO /SUBSYSTEM:WINDOWS main.obj simulation.obj zone.obj power.obj traffic.obj scanner.obj evaluation.obj budget.obj scenarios.obj disasters.obj tools.obj animation.obj user32.lib gdi32.lib comdlg32.lib /OUT:MicropolisNT.exe
 
 main.obj: main.c simulation.h tools.h
 	cl.exe /O2 /nologo /c main.c
@@ -35,6 +35,9 @@ disasters.obj: disasters.c simulation.h
 	
 tools.obj: tools.c simulation.h tools.h
 	cl.exe /O2 /nologo /c tools.c
+	
+animation.obj: animation.c simulation.h animtab.h
+	cl.exe /O2 /nologo /c animation.c
 
 clean:
 	del *.obj

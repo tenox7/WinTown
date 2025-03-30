@@ -46,7 +46,7 @@ static void DoCommercial(int x, int y);
 static void DoIndustrial(int x, int y);
 static void DoHospChur(int x, int y);
 static void DoSPZ(int x, int y);
-static void SetSmoke(int x, int y);
+/* SetSmoke function is now external from animation.c */
 static int EvalLot(int x, int y);
 static void BuildHouse(int x, int y, int value);
 static void ResPlop(int x, int y, int value);
@@ -345,43 +345,8 @@ static void DoSPZ(int x, int y)
 }
 
 /* Industrial pollution handler */
-static void SetSmoke(int x, int y)
-{
-    int dx;
-    int dy;
-    int xx;
-    int yy;
-    int zz;
-    
-    /* Skip most of the time for performance */
-    if ((CityTime & 15) || ZoneRandom(5))
-        return;
-    
-    xx = x - 1;
-    yy = y - 1;
-    
-    if (TestBounds(xx, yy)) {
-        zz = Map[yy][xx];
-        if ((zz & LOMASK) == HPOWER || (zz & LOMASK) == LPOWER) {
-            dx = 0;
-            dy = 0;
-            
-            /* Choose random smoke direction from the coal plant */
-            switch (ZoneRandom(8)) {
-                case 0: dx = 0; dy = -1; break;
-                case 1: dx = 1; dy = -1; break;
-                case 2: dx = 1; dy = 0; break;
-                case 3: dx = 1; dy = 1; break;
-                case 4: dx = 0; dy = 1; break;
-                case 5: dx = -1; dy = 1; break;
-                case 6: dx = -1; dy = 0; break;
-                case 7: dx = -1; dy = -1; break;
-            }
-            
-            /* Would add smoke animation here */
-        }
-    }
-}
+/* Forward declaration of the SetSmoke function from animation.c */
+extern void SetSmoke(int x, int y);
 
 /* Process industrial zone */
 static void DoIndustrial(int x, int y)

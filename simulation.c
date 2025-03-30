@@ -300,6 +300,9 @@ void Simulate(int mod16)
             /* DIRECT FIX: Run the power scan at the start of each major cycle
                to ensure power distribution happens frequently enough */
             DoPowerScan();
+            
+            /* Process tile animations */
+            AnimateTiles();
             break;
             
         case 1:
@@ -350,6 +353,9 @@ void Simulate(int mod16)
             
             /* Update city population more frequently than just at census time */
             CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+            
+            /* Run animations for smoother motion */
+            AnimateTiles();
             break;
             
         case 11:
@@ -378,6 +384,14 @@ void Simulate(int mod16)
             if ((Scycle % 16) == 0) {
                 PTLScan(); /* Do pollution, terrain, and land value */
             }
+            
+            /* Update special animations (power plants, etc.) - increased frequency for faster animations */
+            if ((Scycle % 2) == 0) {
+                UpdateSpecialAnimations();
+            }
+            
+            /* Process tile animations more frequently for smoother motion */
+            AnimateTiles();
             break;
             
         case 13:
@@ -398,7 +412,8 @@ void Simulate(int mod16)
         case 15:
             /* Process fire analysis and disasters (at a reduced rate) */
             if ((Scycle % 4) == 0) {
-                /* ToDo: DoFireAnalysis(); */
+                /* Process fire spreading */
+                spreadFire();
             }
             
             /* Process disasters */
@@ -406,6 +421,9 @@ void Simulate(int mod16)
                 /* Process scenario-based disasters */
                 scenarioDisaster();
             }
+            
+            /* Process tile animations again at the end of the cycle */
+            AnimateTiles();
             break;
     }
 }
