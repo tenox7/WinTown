@@ -2,12 +2,12 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include <windows.h>
+#include "tools.h"
+#include "simulation.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "simulation.h"
-#include "tools.h"
+#include <windows.h>
 
 /* External reference to the toolbar width */
 extern int toolbarWidth;
@@ -30,120 +30,113 @@ extern HWND hwndMain;
 extern short Map[WORLD_Y][WORLD_X];
 
 /* Tile connection tables for road, rail, and wire */
-static short RoadTable[16] = {
-    ROADS, ROADS + 1, ROADS + 2, ROADS + 3,
-    ROADS + 4, ROADS + 5, ROADS + 6, ROADS + 7,
-    ROADS + 8, ROADS + 9, ROADS + 10, ROADS + 11,
-    ROADS + 12, ROADS + 13, ROADS + 14, ROADS + 15
-};
+static short RoadTable[16] = {ROADS,      ROADS + 1,  ROADS + 2,  ROADS + 3, ROADS + 4,  ROADS + 5,
+                              ROADS + 6,  ROADS + 7,  ROADS + 8,  ROADS + 9, ROADS + 10, ROADS + 11,
+                              ROADS + 12, ROADS + 13, ROADS + 14, ROADS + 15};
 
-static short RailTable[16] = {
-    RAILBASE, RAILBASE + 1, RAILBASE + 2, RAILBASE + 3,
-    RAILBASE + 4, RAILBASE + 5, RAILBASE + 6, RAILBASE + 7,
-    RAILBASE + 8, RAILBASE + 9, RAILBASE + 10, RAILBASE + 11,
-    RAILBASE + 12, RAILBASE + 13, RAILBASE + 14, RAILBASE + 15
-};
+static short RailTable[16] = {RAILBASE,      RAILBASE + 1,  RAILBASE + 2,  RAILBASE + 3,
+                              RAILBASE + 4,  RAILBASE + 5,  RAILBASE + 6,  RAILBASE + 7,
+                              RAILBASE + 8,  RAILBASE + 9,  RAILBASE + 10, RAILBASE + 11,
+                              RAILBASE + 12, RAILBASE + 13, RAILBASE + 14, RAILBASE + 15};
 
 /* Cannot use LHPOWER and LVPOWER in initializer for C89, define numeric values */
-static short WireTable[16] = {
-    POWERBASE, POWERBASE + 1, POWERBASE + 2, POWERBASE + 3,
-    POWERBASE + 4, POWERBASE + 5, POWERBASE + 6, POWERBASE + 7,
-    POWERBASE + 8, POWERBASE + 9, POWERBASE + 10, POWERBASE + 11,
-    210, 211, POWERBASE + 14, POWERBASE + 15
-};
+static short WireTable[16] = {POWERBASE,     POWERBASE + 1, POWERBASE + 2,  POWERBASE + 3,
+                              POWERBASE + 4, POWERBASE + 5, POWERBASE + 6,  POWERBASE + 7,
+                              POWERBASE + 8, POWERBASE + 9, POWERBASE + 10, POWERBASE + 11,
+                              210,           211,           POWERBASE + 14, POWERBASE + 15};
 
 /* Tool cost constants */
-#define TOOL_BULLDOZER_COST     1
-#define TOOL_ROAD_COST          10
-#define TOOL_RAIL_COST          20
-#define TOOL_WIRE_COST          5
-#define TOOL_PARK_COST          10
-#define TOOL_RESIDENTIAL_COST   100
-#define TOOL_COMMERCIAL_COST    100
-#define TOOL_INDUSTRIAL_COST    100
-#define TOOL_FIRESTATION_COST   500
+#define TOOL_BULLDOZER_COST 1
+#define TOOL_ROAD_COST 10
+#define TOOL_RAIL_COST 20
+#define TOOL_WIRE_COST 5
+#define TOOL_PARK_COST 10
+#define TOOL_RESIDENTIAL_COST 100
+#define TOOL_COMMERCIAL_COST 100
+#define TOOL_INDUSTRIAL_COST 100
+#define TOOL_FIRESTATION_COST 500
 #define TOOL_POLICESTATION_COST 500
-#define TOOL_STADIUM_COST       5000
-#define TOOL_SEAPORT_COST       3000
-#define TOOL_POWERPLANT_COST    3000
-#define TOOL_NUCLEAR_COST       5000
-#define TOOL_AIRPORT_COST       10000
-#define TOOL_NETWORK_COST       1000
+#define TOOL_STADIUM_COST 5000
+#define TOOL_SEAPORT_COST 3000
+#define TOOL_POWERPLANT_COST 3000
+#define TOOL_NUCLEAR_COST 5000
+#define TOOL_AIRPORT_COST 10000
+#define TOOL_NETWORK_COST 1000
 
 /* Road and bridge cost constants */
-#define ROAD_COST               10
-#define BRIDGE_COST             50
-#define RAIL_COST               20
-#define TUNNEL_COST             100
-#define WIRE_COST               5
-#define UNDERWATER_WIRE_COST    25
+#define ROAD_COST 10
+#define BRIDGE_COST 50
+#define RAIL_COST 20
+#define TUNNEL_COST 100
+#define WIRE_COST 5
+#define UNDERWATER_WIRE_COST 25
 
 /* Tool result constants */
-#define TOOLRESULT_OK           0
-#define TOOLRESULT_FAILED       1
-#define TOOLRESULT_NO_MONEY     2
+#define TOOLRESULT_OK 0
+#define TOOLRESULT_FAILED 1
+#define TOOLRESULT_NO_MONEY 2
 #define TOOLRESULT_NEED_BULLDOZE 3
 
 /* Missing tile definitions */
-#define TINYEXP           624
-#define LASTTINYEXP       627
-#define SOMETINYEXP       625  /* A specific tiny explosion tile */
-#define LASTTILE          960  /* Last possible tile value */
-#define DIRT              0    /* Clear tile */
-#define RIVER             2    /* River tiles */
-#define REDGE             3    /* River edge */
-#define CHANNEL           4    /* Channel tile */
-#define HANDBALL          5    /* No idea what these bridge helper tiles are */
-#define LHBALL            6
-#define BRWH              7
-#define BRWV              8
-#define HBRIDGE           64   /* Horizontal bridge */
-#define VBRIDGE           65   /* Vertical bridge */
-#define VRAILROAD         75   /* Vertical rail/road crossing */
-#define LHPOWER           210  /* L-shaped power (horizontal) */
-#define LVPOWER           211  /* L-shaped power (vertical) */
-#define HRAIL             224  /* Horizontal rail */
-#define VRAIL             225  /* Vertical rail */
-#define RUBBLE            44   /* Rubble base */
-#define LASTRUBBLE        47   /* Last rubble tile */
-#define TREEBASE          21   /* Base for trees */
-#define LASTTREE          36   /* Last tree tile */
-#define LASTPOWER         222  /* Last power line tile */
-#define LASTFIRE          63   /* Last fire tile */
-#define FLOOD             48   /* Flood base */
-#define LASTFLOOD         51   /* Last flood tile */
-#define TILE_SIZE         16   /* Size of each tile in pixels */
+#define TINYEXP 624
+#define LASTTINYEXP 627
+#define SOMETINYEXP 625 /* A specific tiny explosion tile */
+#define LASTTILE 960    /* Last possible tile value */
+#define DIRT 0          /* Clear tile */
+#define RIVER 2         /* River tiles */
+#define REDGE 3         /* River edge */
+#define CHANNEL 4       /* Channel tile */
+#define HANDBALL 5      /* No idea what these bridge helper tiles are */
+#define LHBALL 6
+#define BRWH 7
+#define BRWV 8
+#define HBRIDGE 64    /* Horizontal bridge */
+#define VBRIDGE 65    /* Vertical bridge */
+#define VRAILROAD 75  /* Vertical rail/road crossing */
+#define LHPOWER 210   /* L-shaped power (horizontal) */
+#define LVPOWER 211   /* L-shaped power (vertical) */
+#define HRAIL 224     /* Horizontal rail */
+#define VRAIL 225     /* Vertical rail */
+#define RUBBLE 44     /* Rubble base */
+#define LASTRUBBLE 47 /* Last rubble tile */
+#define TREEBASE 21   /* Base for trees */
+#define LASTTREE 36   /* Last tree tile */
+#define LASTPOWER 222 /* Last power line tile */
+#define LASTFIRE 63   /* Last fire tile */
+#define FLOOD 48      /* Flood base */
+#define LASTFLOOD 51  /* Last flood tile */
+#define TILE_SIZE 16  /* Size of each tile in pixels */
 
 /* Define constants for buildings not in simulation.h */
-#define TILE_WOODS        37
-#define TILE_FIRESTBASE   761
-#define TILE_FIRESTATION  765
+#define TILE_WOODS 37
+#define TILE_FIRESTBASE 761
+#define TILE_FIRESTATION 765
 #define TILE_POLICESTBASE 770
 #define TILE_POLICESTATION 774
-#define TILE_COALBASE     745
-#define TILE_POWERPLANT   750
-#define TILE_NUCLEARBASE  811
-#define TILE_NUCLEAR      816
-#define TILE_STADIUMBASE  779
-#define TILE_STADIUM      784
-#define TILE_PORTBASE     693
-#define TILE_PORT         698
-#define TILE_AIRPORTBASE  709
-#define TILE_AIRPORT      716
+#define TILE_COALBASE 745
+#define TILE_POWERPLANT 750
+#define TILE_NUCLEARBASE 811
+#define TILE_NUCLEAR 816
+#define TILE_STADIUMBASE 779
+#define TILE_STADIUM 784
+#define TILE_PORTBASE 693
+#define TILE_PORT 698
+#define TILE_AIRPORTBASE 709
+#define TILE_AIRPORT 716
 
 /* Additional constants for zone ranges */
-#define AIRPORTBASE       TILE_AIRPORTBASE
-#define LASTAIRPORT       744
-#define COALBASE          TILE_COALBASE
-#define LASTPOWERPLANT    760
-#define NUCLEARBASE       TILE_NUCLEARBASE
-#define LASTNUCLEAR       826
-#define FIRESTBASE        TILE_FIRESTBASE
-#define LASTFIRESTATION   769
-#define POLICESTBASE      TILE_POLICESTBASE
+#define AIRPORTBASE TILE_AIRPORTBASE
+#define LASTAIRPORT 744
+#define COALBASE TILE_COALBASE
+#define LASTPOWERPLANT 760
+#define NUCLEARBASE TILE_NUCLEARBASE
+#define LASTNUCLEAR 826
+#define FIRESTBASE TILE_FIRESTBASE
+#define LASTFIRESTATION 769
+#define POLICESTBASE TILE_POLICESTBASE
 #define LASTPOLICESTATION 778
-#define STADIUMBASE       TILE_STADIUMBASE
-#define LASTSTADIUM       799
+#define STADIUMBASE TILE_STADIUMBASE
+#define LASTSTADIUM 799
 
 /* Forward declarations for tile connection functions */
 int ConnectTile(int x, int y, short *tilePtr, int command);
@@ -162,8 +155,7 @@ void put4x4Rubble(int x, int y);
 void put6x6Rubble(int x, int y);
 
 /* Main connection function used for roads, rails, and wires */
-int ConnectTile(int x, int y, short *tilePtr, int command)
-{
+int ConnectTile(int x, int y, short *tilePtr, int command) {
     short tile;
     int result = 1;
 
@@ -187,37 +179,36 @@ int ConnectTile(int x, int y, short *tilePtr, int command)
 
     /* Execute the appropriate command and fix zone */
     switch (command) {
-        case 0:    /* Fix zone */
-            FixZone(x, y, tilePtr);
-            break;
+    case 0: /* Fix zone */
+        FixZone(x, y, tilePtr);
+        break;
 
-        case 1:    /* Bulldoze */
-            result = LayDoze(x, y, tilePtr);
-            FixZone(x, y, tilePtr);
-            break;
+    case 1: /* Bulldoze */
+        result = LayDoze(x, y, tilePtr);
+        FixZone(x, y, tilePtr);
+        break;
 
-        case 2:    /* Lay Road */
-            result = LayRoad(x, y, tilePtr);
-            FixZone(x, y, tilePtr);
-            break;
+    case 2: /* Lay Road */
+        result = LayRoad(x, y, tilePtr);
+        FixZone(x, y, tilePtr);
+        break;
 
-        case 3:    /* Lay Rail */
-            result = LayRail(x, y, tilePtr);
-            FixZone(x, y, tilePtr);
-            break;
+    case 3: /* Lay Rail */
+        result = LayRail(x, y, tilePtr);
+        FixZone(x, y, tilePtr);
+        break;
 
-        case 4:    /* Lay Wire */
-            result = LayWire(x, y, tilePtr);
-            FixZone(x, y, tilePtr);
-            break;
+    case 4: /* Lay Wire */
+        result = LayWire(x, y, tilePtr);
+        FixZone(x, y, tilePtr);
+        break;
     }
 
     return result;
 }
 
 /* Check size of a zone centered at this tile */
-int checkSize(short tileValue)
-{
+int checkSize(short tileValue) {
     /* Check for the normal com, resl, ind 3x3 zones & the fireDept & PoliceDept */
     if ((tileValue >= (RESBASE - 1) && tileValue <= (PORTBASE - 1)) ||
         (tileValue >= (LASTPOWERPLANT + 1) && tileValue <= (POLICESTATION + 4))) {
@@ -240,22 +231,21 @@ int checkSize(short tileValue)
 }
 
 /* Check if this tile is part of a big zone and find its center */
-int checkBigZone(short id, int *deltaHPtr, int *deltaVPtr)
-{
+int checkBigZone(short id, int *deltaHPtr, int *deltaVPtr) {
     /* Handle zone center tiles */
     switch (id) {
-        case 750: /* POWERPLANT / TILE_POWERPLANT */
-        case 698: /* PORT / TILE_PORT */
-        case 816: /* NUCLEAR / TILE_NUCLEAR */
-        case 785: /* STADIUM / TILE_STADIUM */
-            *deltaHPtr = 0;
-            *deltaVPtr = 0;
-            return 4;
+    case 750: /* POWERPLANT / TILE_POWERPLANT */
+    case 698: /* PORT / TILE_PORT */
+    case 816: /* NUCLEAR / TILE_NUCLEAR */
+    case 785: /* STADIUM / TILE_STADIUM */
+        *deltaHPtr = 0;
+        *deltaVPtr = 0;
+        return 4;
 
-        case 716: /* AIRPORT / TILE_AIRPORT */
-            *deltaHPtr = 0;
-            *deltaVPtr = 0;
-            return 6;
+    case 716: /* AIRPORT / TILE_AIRPORT */
+        *deltaHPtr = 0;
+        *deltaVPtr = 0;
+        return 6;
     }
 
     /* Coal power plant parts (745-754) */
@@ -560,8 +550,7 @@ int checkBigZone(short id, int *deltaHPtr, int *deltaVPtr)
 }
 
 /* Create 3x3 rubble */
-void put3x3Rubble(int x, int y)
-{
+void put3x3Rubble(int x, int y) {
     int xx, yy;
     short zz;
     short mask;
@@ -591,8 +580,7 @@ void put3x3Rubble(int x, int y)
 }
 
 /* Create 4x4 rubble */
-void put4x4Rubble(int x, int y)
-{
+void put4x4Rubble(int x, int y) {
     int xx, yy;
     short zz;
     short mask;
@@ -622,8 +610,7 @@ void put4x4Rubble(int x, int y)
 }
 
 /* Create 6x6 rubble */
-void put6x6Rubble(int x, int y)
-{
+void put6x6Rubble(int x, int y) {
     int xx, yy;
     short zz;
     short mask;
@@ -653,8 +640,7 @@ void put6x6Rubble(int x, int y)
 }
 
 /* Bulldoze a tile */
-int LayDoze(int x, int y, short *tilePtr)
-{
+int LayDoze(int x, int y, short *tilePtr) {
     short tile;
     int zoneSize = 0;
     int deltaH = 0;
@@ -678,8 +664,8 @@ int LayDoze(int x, int y, short *tilePtr)
     }
 
     /* Special case for water-related structures which cost more */
-    if ((tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
-        tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
+    if ((tile == HANDBALL || tile == LHBALL || tile == HBRIDGE || tile == VBRIDGE || tile == BRWH ||
+         tile == BRWV) &&
         TotalFunds < 5) {
         return 0;
     }
@@ -690,29 +676,29 @@ int LayDoze(int x, int y, short *tilePtr)
         zoneSize = checkSize(tile);
 
         switch (zoneSize) {
-            case 3:
-                /* Small 3x3 zone */
-                Spend(1);
-                put3x3Rubble(x, y);
-                return 1;
+        case 3:
+            /* Small 3x3 zone */
+            Spend(1);
+            put3x3Rubble(x, y);
+            return 1;
 
-            case 4:
-                /* Medium 4x4 zone */
-                Spend(1);
-                put4x4Rubble(x, y);
-                return 1;
+        case 4:
+            /* Medium 4x4 zone */
+            Spend(1);
+            put4x4Rubble(x, y);
+            return 1;
 
-            case 6:
-                /* Large 6x6 zone (airport) */
-                Spend(1);
-                put6x6Rubble(x, y);
-                return 1;
+        case 6:
+            /* Large 6x6 zone (airport) */
+            Spend(1);
+            put6x6Rubble(x, y);
+            return 1;
 
-            default:
-                /* Unknown zone type - convert to rubble instead of just clearing */
-                Spend(1);
-                *tilePtr = RUBBLE | BULLBIT;
-                return 1;
+        default:
+            /* Unknown zone type - convert to rubble instead of just clearing */
+            Spend(1);
+            *tilePtr = RUBBLE | BULLBIT;
+            return 1;
         }
     }
     /* If not a zone center, check if it's part of a big zone */
@@ -724,39 +710,36 @@ int LayDoze(int x, int y, short *tilePtr)
         /* Verify new coords are in bounds */
         if (TestBounds(centerX, centerY)) {
             switch (zoneSize) {
-                case 3:
-                    Spend(1);
-                    put3x3Rubble(centerX, centerY);
-                    return 1;
+            case 3:
+                Spend(1);
+                put3x3Rubble(centerX, centerY);
+                return 1;
 
-                case 4:
-                    Spend(1);
-                    put4x4Rubble(centerX, centerY);
-                    return 1;
+            case 4:
+                Spend(1);
+                put4x4Rubble(centerX, centerY);
+                return 1;
 
-                case 6:
-                    Spend(1);
-                    put6x6Rubble(centerX, centerY);
-                    return 1;
+            case 6:
+                Spend(1);
+                put6x6Rubble(centerX, centerY);
+                return 1;
 
-                default:
-                    /* For unknown zone size types, just bulldoze normally */
-                    break;
+            default:
+                /* For unknown zone size types, just bulldoze normally */
+                break;
             }
         }
     }
 
     /* Can't bulldoze lakes, rivers, radiated tiles */
-    if ((tile == RIVER) ||
-        (tile == REDGE) ||
-        (tile == CHANNEL) ||
-        (tile == RADTILE)) {
+    if ((tile == RIVER) || (tile == REDGE) || (tile == CHANNEL) || (tile == RADTILE)) {
         return 0;
     }
 
     /* Bulldoze water-related structures back to water */
-    if (tile == HANDBALL || tile == LHBALL || tile == HBRIDGE || tile == VBRIDGE ||
-        tile == BRWH || tile == BRWV) {
+    if (tile == HANDBALL || tile == LHBALL || tile == HBRIDGE || tile == VBRIDGE || tile == BRWH ||
+        tile == BRWV) {
         Spend(5);
         *tilePtr = RIVER;
         return 1;
@@ -769,8 +752,7 @@ int LayDoze(int x, int y, short *tilePtr)
 }
 
 /* Lay road */
-int LayRoad(int x, int y, short *tilePtr)
-{
+int LayRoad(int x, int y, short *tilePtr) {
     short cost;
     short tile = *tilePtr & LOMASK;
 
@@ -783,8 +765,8 @@ int LayRoad(int x, int y, short *tilePtr)
         }
 
         Spend(cost);
-        if (((y > 0) && (Map[y-1][x] & LOMASK) == VRAIL) ||
-            ((y < WORLD_Y - 1) && (Map[y+1][x] & LOMASK) == VRAIL)) {
+        if (((y > 0) && (Map[y - 1][x] & LOMASK) == VRAIL) ||
+            ((y < WORLD_Y - 1) && (Map[y + 1][x] & LOMASK) == VRAIL)) {
             *tilePtr = VRAILROAD | BULLBIT;
         } else {
             *tilePtr = HBRIDGE | BULLBIT;
@@ -810,8 +792,7 @@ int LayRoad(int x, int y, short *tilePtr)
 }
 
 /* Lay rail */
-int LayRail(int x, int y, short *tilePtr)
-{
+int LayRail(int x, int y, short *tilePtr) {
     short cost;
     short tile = *tilePtr & LOMASK;
 
@@ -846,8 +827,7 @@ int LayRail(int x, int y, short *tilePtr)
 }
 
 /* Lay power lines */
-int LayWire(int x, int y, short *tilePtr)
-{
+int LayWire(int x, int y, short *tilePtr) {
     short cost;
     short tile = *tilePtr & LOMASK;
 
@@ -882,8 +862,7 @@ int LayWire(int x, int y, short *tilePtr)
 }
 
 /* Fix zone - update connections of surrounding tiles */
-void FixZone(int x, int y, short *tilePtr)
-{
+void FixZone(int x, int y, short *tilePtr) {
     /* Check that coordinates are valid */
     if (!TestBounds(x, y)) {
         return;
@@ -891,26 +870,25 @@ void FixZone(int x, int y, short *tilePtr)
 
     FixSingle(x, y);
 
-    if (TestBounds(x-1, y)) {
-        FixSingle(x-1, y);
+    if (TestBounds(x - 1, y)) {
+        FixSingle(x - 1, y);
     }
 
-    if (TestBounds(x+1, y)) {
-        FixSingle(x+1, y);
+    if (TestBounds(x + 1, y)) {
+        FixSingle(x + 1, y);
     }
 
-    if (TestBounds(x, y-1)) {
-        FixSingle(x, y-1);
+    if (TestBounds(x, y - 1)) {
+        FixSingle(x, y - 1);
     }
 
-    if (TestBounds(x, y+1)) {
-        FixSingle(x, y+1);
+    if (TestBounds(x, y + 1)) {
+        FixSingle(x, y + 1);
     }
 }
 
 /* Fix a single tile - update its connections */
-void FixSingle(int x, int y)
-{
+void FixSingle(int x, int y) {
     short tile;
     int bitIndex;
     short connectMask;
@@ -935,7 +913,7 @@ void FixSingle(int x, int y)
     if (tile >= ROADBASE && tile <= LASTROAD) {
         /* Check the north side */
         if (y > 0) {
-            mapValue = Map[y-1][x] & LOMASK;
+            mapValue = Map[y - 1][x] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL)) {
                 connectMask |= 1;
@@ -944,7 +922,7 @@ void FixSingle(int x, int y)
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
-            mapValue = Map[y][x+1] & LOMASK;
+            mapValue = Map[y][x + 1] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL)) {
                 connectMask |= 2;
@@ -953,7 +931,7 @@ void FixSingle(int x, int y)
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
-            mapValue = Map[y+1][x] & LOMASK;
+            mapValue = Map[y + 1][x] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL)) {
                 connectMask |= 4;
@@ -962,7 +940,7 @@ void FixSingle(int x, int y)
 
         /* Check the west side */
         if (x > 0) {
-            mapValue = Map[y][x-1] & LOMASK;
+            mapValue = Map[y][x - 1] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL)) {
                 connectMask |= 8;
@@ -983,7 +961,7 @@ void FixSingle(int x, int y)
     if (tile >= RAILBASE && tile <= LASTRAIL) {
         /* Check the north side */
         if (y > 0) {
-            mapValue = Map[y-1][x] & LOMASK;
+            mapValue = Map[y - 1][x] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD)) {
                 connectMask |= 1;
@@ -992,7 +970,7 @@ void FixSingle(int x, int y)
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
-            mapValue = Map[y][x+1] & LOMASK;
+            mapValue = Map[y][x + 1] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD)) {
                 connectMask |= 2;
@@ -1001,7 +979,7 @@ void FixSingle(int x, int y)
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
-            mapValue = Map[y+1][x] & LOMASK;
+            mapValue = Map[y + 1][x] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD)) {
                 connectMask |= 4;
@@ -1010,7 +988,7 @@ void FixSingle(int x, int y)
 
         /* Check the west side */
         if (x > 0) {
-            mapValue = Map[y][x-1] & LOMASK;
+            mapValue = Map[y][x - 1] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD)) {
                 connectMask |= 8;
@@ -1031,36 +1009,36 @@ void FixSingle(int x, int y)
     if (tile >= POWERBASE && tile <= LASTPOWER) {
         /* Check the north side */
         if (y > 0) {
-            mapValue = Map[y-1][x] & LOMASK;
+            mapValue = Map[y - 1][x] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y-1][x] & CONDBIT) != 0)) {
+                ((Map[y - 1][x] & CONDBIT) != 0)) {
                 connectMask |= 1;
             }
         }
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
-            mapValue = Map[y][x+1] & LOMASK;
+            mapValue = Map[y][x + 1] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y][x+1] & CONDBIT) != 0)) {
+                ((Map[y][x + 1] & CONDBIT) != 0)) {
                 connectMask |= 2;
             }
         }
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
-            mapValue = Map[y+1][x] & LOMASK;
+            mapValue = Map[y + 1][x] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y+1][x] & CONDBIT) != 0)) {
+                ((Map[y + 1][x] & CONDBIT) != 0)) {
                 connectMask |= 4;
             }
         }
 
         /* Check the west side */
         if (x > 0) {
-            mapValue = Map[y][x-1] & LOMASK;
+            mapValue = Map[y][x - 1] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y][x-1] & CONDBIT) != 0)) {
+                ((Map[y][x - 1] & CONDBIT) != 0)) {
                 connectMask |= 8;
             }
         }
@@ -1085,56 +1063,56 @@ static int toolCost = 0;
 static int lastMouseMapX = -1;
 static int lastMouseMapY = -1;
 
-/* Mapping of toolbar indices to tool states - this maps from toolbar position (0-17) to the simulation.h tool state constants */
+/* Mapping of toolbar indices to tool states - this maps from toolbar position (0-17) to the
+ * simulation.h tool state constants */
 static const int toolbarToStateMapping[17] = {
     residentialState, /* 0 - Residential in toolbar position 0 */
-    commercialState, /* 1 - Commercial in toolbar position 1 */
-    industrialState, /* 2 - Industrial in toolbar position 2 */
-    fireState,     /* 3 - Fire Station in toolbar position 3 */
-    policeState,   /* 4 - Police Station in toolbar position 4 */
-    wireState,     /* 5 - Wire in toolbar position 5 */
-    roadState,     /* 6 - Road in toolbar position 6 */
-    railState,     /* 7 - Rail in toolbar position 7 */
-    parkState,     /* 8 - Park in toolbar position 8 */
-    stadiumState,  /* 9 - Stadium in toolbar position 9 */
-    seaportState,  /* 10 - Seaport in toolbar position 10 */
-    powerState,    /* 11 - Power Plant in toolbar position 11 */
-    nuclearState,  /* 12 - Nuclear Plant in toolbar position 12 */
-    airportState,  /* 13 - Airport in toolbar position 13 */
-    bulldozerState, /* 14 - Bulldozer in toolbar position 14 */
-    queryState,    /* 15 - Query in toolbar position 15 */
-    noToolState    /* 16 - No Tool in toolbar position 16 */
+    commercialState,  /* 1 - Commercial in toolbar position 1 */
+    industrialState,  /* 2 - Industrial in toolbar position 2 */
+    fireState,        /* 3 - Fire Station in toolbar position 3 */
+    policeState,      /* 4 - Police Station in toolbar position 4 */
+    wireState,        /* 5 - Wire in toolbar position 5 */
+    roadState,        /* 6 - Road in toolbar position 6 */
+    railState,        /* 7 - Rail in toolbar position 7 */
+    parkState,        /* 8 - Park in toolbar position 8 */
+    stadiumState,     /* 9 - Stadium in toolbar position 9 */
+    seaportState,     /* 10 - Seaport in toolbar position 10 */
+    powerState,       /* 11 - Power Plant in toolbar position 11 */
+    nuclearState,     /* 12 - Nuclear Plant in toolbar position 12 */
+    airportState,     /* 13 - Airport in toolbar position 13 */
+    bulldozerState,   /* 14 - Bulldozer in toolbar position 14 */
+    queryState,       /* 15 - Query in toolbar position 15 */
+    noToolState       /* 16 - No Tool in toolbar position 16 */
 };
 
 /* Reverse mapping from tool state to toolbar position for fast lookups */
 static const int stateToToolbarMapping[19] = {
-    0, /* residentialState (0) -> position 0 */
-    1, /* commercialState (1) -> position 1 */
-    2, /* industrialState (2) -> position 2 */
-    3, /* fireState (3) -> position 3 */
-    4, /* policeState (4) -> position 4 */
-    5, /* wireState (5) -> position 5 */
-    6, /* roadState (6) -> position 6 */
-    7, /* railState (7) -> position 7 */
-    8, /* parkState (8) -> position 8 */
-    9, /* stadiumState (9) -> position 9 */
+    0,  /* residentialState (0) -> position 0 */
+    1,  /* commercialState (1) -> position 1 */
+    2,  /* industrialState (2) -> position 2 */
+    3,  /* fireState (3) -> position 3 */
+    4,  /* policeState (4) -> position 4 */
+    5,  /* wireState (5) -> position 5 */
+    6,  /* roadState (6) -> position 6 */
+    7,  /* railState (7) -> position 7 */
+    8,  /* parkState (8) -> position 8 */
+    9,  /* stadiumState (9) -> position 9 */
     10, /* seaportState (10) -> position 10 */
     11, /* powerState (11) -> position 11 */
     12, /* nuclearState (12) -> position 12 */
     13, /* airportState (13) -> position 13 */
-    0, /* networkState (14) - not used in toolbar */
+    0,  /* networkState (14) - not used in toolbar */
     14, /* bulldozerState (15) -> position 14 */
     15, /* queryState (16) -> position 15 */
     16, /* windowState (17) - not used in toolbar */
-    16 /* noToolState (18) -> position 16 */
+    16  /* noToolState (18) -> position 16 */
 };
 
 /* Tool active flag - needs to be exportable to main.c */
-int isToolActive = 0;  /* 0 = FALSE, 1 = TRUE */
+int isToolActive = 0; /* 0 = FALSE, 1 = TRUE */
 
 /* Helper function to check 3x3 area for zone placement */
-int Check3x3Area(int x, int y, int *cost)
-{
+int Check3x3Area(int x, int y, int *cost) {
     int dx, dy;
     short tile;
     int clearCost = 0;
@@ -1167,8 +1145,7 @@ int Check3x3Area(int x, int y, int *cost)
 }
 
 /* Helper function to check 4x4 area for zone placement */
-int Check4x4Area(int x, int y, int *cost)
-{
+int Check4x4Area(int x, int y, int *cost) {
     int dx, dy;
     short tile;
     int clearCost = 0;
@@ -1201,8 +1178,7 @@ int Check4x4Area(int x, int y, int *cost)
 }
 
 /* Helper function to check 6x6 area for zone placement */
-int Check6x6Area(int x, int y, int *cost)
-{
+int Check6x6Area(int x, int y, int *cost) {
     int dx, dy;
     short tile;
     int clearCost = 0;
@@ -1235,55 +1211,54 @@ int Check6x6Area(int x, int y, int *cost)
 }
 
 /* Toolbar button constants */
-#define TB_BULLDOZER      100
-#define TB_ROAD           101
-#define TB_RAIL           102
-#define TB_WIRE           103
-#define TB_PARK           104
-#define TB_RESIDENTIAL    105
-#define TB_COMMERCIAL     106
-#define TB_INDUSTRIAL     107
-#define TB_FIRESTATION    108
-#define TB_POLICESTATION  109
-#define TB_STADIUM        110
-#define TB_SEAPORT        111
-#define TB_POWERPLANT     112
-#define TB_NUCLEAR        113
-#define TB_AIRPORT        114
-#define TB_QUERY          115
+#define TB_BULLDOZER 100
+#define TB_ROAD 101
+#define TB_RAIL 102
+#define TB_WIRE 103
+#define TB_PARK 104
+#define TB_RESIDENTIAL 105
+#define TB_COMMERCIAL 106
+#define TB_INDUSTRIAL 107
+#define TB_FIRESTATION 108
+#define TB_POLICESTATION 109
+#define TB_STADIUM 110
+#define TB_SEAPORT 111
+#define TB_POWERPLANT 112
+#define TB_NUCLEAR 113
+#define TB_AIRPORT 114
+#define TB_QUERY 115
 
-static HWND hwndToolbar = NULL;  /* Toolbar window handle */
-static int toolButtonSize = 36;  /* Size of each tool button, increased for better spacing */
-static int toolbarWidth = 108;    /* Width of the toolbar (3 columns) */
-static int toolbarColumns = 3;   /* Number of tool columns */
+static HWND hwndToolbar = NULL; /* Toolbar window handle */
+static int toolButtonSize = 36; /* Size of each tool button, increased for better spacing */
+static int toolbarWidth = 108;  /* Width of the toolbar (3 columns) */
+static int toolbarColumns = 3;  /* Number of tool columns */
 
 /* Tool bitmap handles */
-static HBITMAP hToolBitmaps[17];        /* Tool bitmaps */
+static HBITMAP hToolBitmaps[17]; /* Tool bitmaps */
 
 /* File names for tool bitmaps - order matches toolbar position */
-static const char* toolBitmapFiles[17] = {
-    "residential", /* 0 - Residential */
-    "commercial", /* 1 - Commercial */
-    "industrial", /* 2 - Industrial */
-    "firestation", /* 3 - Fire Station */
-    "policestation",/* 4 - Police Station */
-    "powerline", /* 5 - Wire */
-    "road",     /* 6 - Road */
-    "rail",     /* 7 - Rail */
-    "park",     /* 8 - Park */
-    "stadium",  /* 9 - Stadium */
-    "seaport",  /* 10 - Seaport */
-    "powerplant", /* 11 - Coal Power Plant */
-    "nuclear",  /* 12 - Nuclear Power Plant */
-    "airport",  /* 13 - Airport */
-    "bulldozer", /* 14 - Bulldozer */
-    "query",    /* 15 - Query */
-    "bulldozer" /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
+static const char *toolBitmapFiles[17] = {
+    "residential",   /* 0 - Residential */
+    "commercial",    /* 1 - Commercial */
+    "industrial",    /* 2 - Industrial */
+    "firestation",   /* 3 - Fire Station */
+    "policestation", /* 4 - Police Station */
+    "powerline",     /* 5 - Wire */
+    "road",          /* 6 - Road */
+    "rail",          /* 7 - Rail */
+    "park",          /* 8 - Park */
+    "stadium",       /* 9 - Stadium */
+    "seaport",       /* 10 - Seaport */
+    "powerplant",    /* 11 - Coal Power Plant */
+    "nuclear",       /* 12 - Nuclear Power Plant */
+    "airport",       /* 13 - Airport */
+    "bulldozer",     /* 14 - Bulldozer */
+    "query",         /* 15 - Query */
+    "bulldozer"      /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
 };
 
 /* Function to process toolbar button clicks */
-LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     HDC hdc;
     PAINTSTRUCT ps;
     RECT rect;
@@ -1300,188 +1275,109 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HPEN hOldPen;
 
     switch (msg) {
-        case WM_CREATE:
-            return 0;
+    case WM_CREATE:
+        return 0;
 
-        case WM_PAINT:
-            hdc = BeginPaint(hwnd, &ps);
+    case WM_PAINT:
+        hdc = BeginPaint(hwnd, &ps);
 
-            /* Fill the background */
-            GetClientRect(hwnd, &rect);
+        /* Fill the background */
+        GetClientRect(hwnd, &rect);
+        FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
+
+        /* Draw the buttons in a 3-column grid */
+        for (i = 0; i < 17; i++) {
+            row = i / toolbarColumns;
+            col = i % toolbarColumns;
+            buttonX = col * toolButtonSize;
+            buttonY = row * toolButtonSize;
+
+            /* Set up button rect */
+            rect.left = buttonX;
+            rect.top = buttonY;
+            rect.right = buttonX + toolButtonSize;
+            rect.bottom = buttonY + toolButtonSize;
+
+            /* Determine if this button is selected */
+            isSelected = (GetCurrentTool() == toolbarToStateMapping[i]);
+
+            /* Create a flat gray background for all buttons */
             FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
 
-            /* Draw the buttons in a 3-column grid */
-            for (i = 0; i < 17; i++) {
-                row = i / toolbarColumns;
-                col = i % toolbarColumns;
-                buttonX = col * toolButtonSize;
-                buttonY = row * toolButtonSize;
+            /* Draw a thin dark gray border */
+            FrameRect(hdc, &rect, (HBRUSH)GetStockObject(DKGRAY_BRUSH));
 
-                /* Set up button rect */
-                rect.left = buttonX;
-                rect.top = buttonY;
-                rect.right = buttonX + toolButtonSize;
-                rect.bottom = buttonY + toolButtonSize;
+            /* Draw the tool icon, with special handling for noToolState */
+            if (toolbarToStateMapping[i] == noToolState) {
+                /* Draw the tool icon */
+                DrawToolIcon(hdc, bulldozerState, buttonX, buttonY, isSelected);
 
-                /* Determine if this button is selected */
-                isSelected = (GetCurrentTool() == toolbarToStateMapping[i]);
+                /* Add a slash symbol to indicate "no tool" */
 
-                /* Create a flat gray background for all buttons */
-                FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
+                /* Create a red pen for the slash */
+                hRedPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+                hOldPen = SelectObject(hdc, hRedPen);
 
-                /* Draw a thin dark gray border */
-                FrameRect(hdc, &rect, (HBRUSH)GetStockObject(DKGRAY_BRUSH));
+                /* Draw a diagonal line (slash) */
+                MoveToEx(hdc, buttonX + 8, buttonY + 8, NULL);
+                LineTo(hdc, buttonX + toolButtonSize - 8, buttonY + toolButtonSize - 8);
 
-                /* Draw the tool icon, with special handling for noToolState */
-                if (toolbarToStateMapping[i] == noToolState) {
-                    /* Draw the tool icon */
-                    DrawToolIcon(hdc, bulldozerState, buttonX, buttonY, isSelected);
+                /* Clean up */
+                SelectObject(hdc, hOldPen);
+                DeleteObject(hRedPen);
+            } else {
+                /* Draw the normal tool icon */
+                DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
+            }
+        }
 
-                    /* Add a slash symbol to indicate "no tool" */
+        /* Draw RCI bars below the tool buttons */
+        {
+            /* Constants for RCI display - position below the last row of tools */
+            int barWidth = 24;
+            int maxHeight = 50;
+            int spacing = 6;
+            int rciStartX = 12;          /* Center in the toolbar (108px wide) */
+            int rciStartY = 6 * 36 + 40; /* Position RCI below the last row of tools */
+            int localR, localC, localI;
+            int rHeight, cHeight, iHeight;
+            RECT rciRect;
+            HBRUSH hResBrush, hComBrush, hIndBrush;
+            HPEN hCenterPen, hOldPen;
 
-                    /* Create a red pen for the slash */
-                    hRedPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
-                    hOldPen = SelectObject(hdc, hRedPen);
+            /* Copy RCI values to local variables */
+            localR = RValve;
+            localC = CValve;
+            localI = IValve;
 
-                    /* Draw a diagonal line (slash) */
-                    MoveToEx(hdc, buttonX + 8, buttonY + 8, NULL);
-                    LineTo(hdc, buttonX + toolButtonSize - 8, buttonY + toolButtonSize - 8);
-
-                    /* Clean up */
-                    SelectObject(hdc, hOldPen);
-                    DeleteObject(hRedPen);
-                } else {
-                    /* Draw the normal tool icon */
-                    DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
-                }
+            /* Limit values to range for drawing */
+            if (localR > 2000) {
+                localR = 2000;
+            }
+            if (localR < -2000) {
+                localR = -2000;
+            }
+            if (localC > 2000) {
+                localC = 2000;
+            }
+            if (localC < -2000) {
+                localC = -2000;
+            }
+            if (localI > 2000) {
+                localI = 2000;
+            }
+            if (localI < -2000) {
+                localI = -2000;
             }
 
-            /* Draw RCI bars below the tool buttons */
-            {
-                /* Constants for RCI display - position below the last row of tools */
-                int barWidth = 24;
-                int maxHeight = 50;
-                int spacing = 6;
-                int rciStartX = 12; /* Center in the toolbar (108px wide) */
-                int rciStartY = 6 * 36 + 40; /* Position RCI below the last row of tools */
-                int localR, localC, localI;
-                int rHeight, cHeight, iHeight;
-                RECT rciRect;
-                HBRUSH hResBrush, hComBrush, hIndBrush;
-                HPEN hCenterPen, hOldPen;
+            /* Create brushes using system palette colors */
+            hResBrush = CreateSolidBrush(RGB(0, 128, 0));   /* Dark Green */
+            hComBrush = CreateSolidBrush(RGB(0, 0, 128));   /* Dark Blue */
+            hIndBrush = CreateSolidBrush(RGB(128, 128, 0)); /* Dark Yellow */
 
-
-                /* Copy RCI values to local variables */
-                localR = RValve;
-                localC = CValve;
-                localI = IValve;
-
-                /* Limit values to range for drawing */
-                if (localR > 2000) {
-                    localR = 2000;
-                }
-                if (localR < -2000) {
-                    localR = -2000;
-                }
-                if (localC > 2000) {
-                    localC = 2000;
-                }
-                if (localC < -2000) {
-                    localC = -2000;
-                }
-                if (localI > 2000) {
-                    localI = 2000;
-                }
-                if (localI < -2000) {
-                    localI = -2000;
-                }
-
-                /* Create brushes using system palette colors */
-                hResBrush = CreateSolidBrush(RGB(0, 128, 0)); /* Dark Green */
-                hComBrush = CreateSolidBrush(RGB(0, 0, 128)); /* Dark Blue */
-                hIndBrush = CreateSolidBrush(RGB(128, 128, 0)); /* Dark Yellow */
-
-                /* Error check for failed resource creation */
-                if (!hResBrush || !hComBrush || !hIndBrush) {
-                    /* Clean up any resources that were created */
-                    if (hResBrush) {
-                        DeleteObject(hResBrush);
-                    }
-                    if (hComBrush) {
-                        DeleteObject(hComBrush);
-                    }
-                    if (hIndBrush) {
-                        DeleteObject(hIndBrush);
-                    }
-                    EndPaint(hwnd, &ps);
-                    return 0;
-                }
-
-                /* Draw the horizontal center line */
-                hCenterPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-                if (hCenterPen) {
-                    hOldPen = (HPEN)SelectObject(hdc, hCenterPen);
-                    MoveToEx(hdc, rciStartX - 5, rciStartY, NULL);
-                    LineTo(hdc, rciStartX + barWidth * 3 + spacing * 2 + 5, rciStartY);
-                    SelectObject(hdc, hOldPen);
-                }
-
-                /* Residential demand bar */
-                if (localR >= 0) {
-                    rHeight = localR * maxHeight / 2000;
-                    rciRect.left = rciStartX;
-                    rciRect.right = rciStartX + barWidth;
-                    rciRect.bottom = rciStartY;
-                    rciRect.top = rciStartY - rHeight;
-                } else {
-                    rHeight = -localR * maxHeight / 2000;
-                    rciRect.left = rciStartX;
-                    rciRect.right = rciStartX + barWidth;
-                    rciRect.top = rciStartY;
-                    rciRect.bottom = rciStartY + rHeight;
-                }
-                FillRect(hdc, &rciRect, hResBrush);
-
-                /* Commercial demand bar */
-                if (localC >= 0) {
-                    cHeight = localC * maxHeight / 2000;
-                    rciRect.left = rciStartX + barWidth + spacing;
-                    rciRect.right = rciStartX + barWidth * 2 + spacing;
-                    rciRect.bottom = rciStartY;
-                    rciRect.top = rciStartY - cHeight;
-                } else {
-                    cHeight = -localC * maxHeight / 2000;
-                    rciRect.left = rciStartX + barWidth + spacing;
-                    rciRect.right = rciStartX + barWidth * 2 + spacing;
-                    rciRect.top = rciStartY;
-                    rciRect.bottom = rciStartY + cHeight;
-                }
-                FillRect(hdc, &rciRect, hComBrush);
-
-                /* Industrial demand bar */
-                if (localI >= 0) {
-                    iHeight = localI * maxHeight / 2000;
-                    rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
-                    rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
-                    rciRect.bottom = rciStartY;
-                    rciRect.top = rciStartY - iHeight;
-                } else {
-                    iHeight = -localI * maxHeight / 2000;
-                    rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
-                    rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
-                    rciRect.top = rciStartY;
-                    rciRect.bottom = rciStartY + iHeight;
-                }
-                FillRect(hdc, &rciRect, hIndBrush);
-
-                /* Add labels for RCI bars */
-                SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
-                SetBkMode(hdc, TRANSPARENT);
-                TextOut(hdc, rciStartX + (barWidth / 2) - 4, rciStartY + 5, "R", 1);
-                TextOut(hdc, rciStartX + barWidth + spacing + (barWidth / 2) - 4, rciStartY + 5, "C", 1);
-                TextOut(hdc, rciStartX + barWidth * 2 + spacing * 2 + (barWidth / 2) - 4, rciStartY + 5, "I", 1);
-
-                /* Clean up GDI resources properly */
+            /* Error check for failed resource creation */
+            if (!hResBrush || !hComBrush || !hIndBrush) {
+                /* Clean up any resources that were created */
                 if (hResBrush) {
                     DeleteObject(hResBrush);
                 }
@@ -1491,129 +1387,208 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 if (hIndBrush) {
                     DeleteObject(hIndBrush);
                 }
-                if (hCenterPen) {
-                    DeleteObject(hCenterPen);
-                }
+                EndPaint(hwnd, &ps);
+                return 0;
             }
 
-            /* Show current tool information if a tool is active */
-            if (isToolActive) {
-                const char *toolName;
-                int toolCost;
-                char buffer[256];
-                int textY = 6 * 36 + 55; /* Position below the RCI labels (rciStartY + 15) */
-
-                /* Get the tool name */
-                switch (GetCurrentTool()) {
-                    case bulldozerState:
-                        toolName = "Bulldozer";
-                        break;
-                    case roadState:
-                        toolName = "Road";
-                        break;
-                    case railState:
-                        toolName = "Rail";
-                        break;
-                    case wireState:
-                        toolName = "Wire";
-                        break;
-                    case parkState:
-                        toolName = "Park";
-                        break;
-                    case residentialState:
-                        toolName = "Residential Zone";
-                        break;
-                    case commercialState:
-                        toolName = "Commercial Zone";
-                        break;
-                    case industrialState:
-                        toolName = "Industrial Zone";
-                        break;
-                    case fireState:
-                        toolName = "Fire Station";
-                        break;
-                    case policeState:
-                        toolName = "Police Station";
-                        break;
-                    case stadiumState:
-                        toolName = "Stadium";
-                        break;
-                    case seaportState:
-                        toolName = "Seaport";
-                        break;
-                    case powerState:
-                        toolName = "Coal Power Plant";
-                        break;
-                    case nuclearState:
-                        toolName = "Nuclear Power Plant";
-                        break;
-                    case airportState:
-                        toolName = "Airport";
-                        break;
-                    case queryState:
-                        toolName = "Query";
-                        break;
-                    default:
-                        toolName = "Unknown Tool";
-                        break;
-                }
-
-                toolCost = GetToolCost();
-
-                /* Show the tool name and cost in the toolbar */
-                SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
-                SetBkMode(hdc, TRANSPARENT);
-                wsprintf(buffer, "Tool: %s", toolName);
-                TextOut(hdc, 10, textY, buffer, lstrlen(buffer));
-
-                if (toolCost > 0) {
-                    wsprintf(buffer, "Cost: $%d", toolCost);
-                    TextOut(hdc, 10, textY + 15, buffer, lstrlen(buffer));
-                }
+            /* Draw the horizontal center line */
+            hCenterPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+            if (hCenterPen) {
+                hOldPen = (HPEN)SelectObject(hdc, hCenterPen);
+                MoveToEx(hdc, rciStartX - 5, rciStartY, NULL);
+                LineTo(hdc, rciStartX + barWidth * 3 + spacing * 2 + 5, rciStartY);
+                SelectObject(hdc, hOldPen);
             }
 
-            EndPaint(hwnd, &ps);
-            return 0;
-
-        case WM_LBUTTONDOWN: {
-            /* Get mouse coordinates */
-            mouseX = LOWORD(lParam);
-            mouseY = HIWORD(lParam);
-
-            /* Calculate row and column */
-            col = mouseX / toolButtonSize;
-            row = mouseY / toolButtonSize;
-
-            /* Ensure col is within bounds */
-            if (col >= toolbarColumns) {
-                col = toolbarColumns - 1;
+            /* Residential demand bar */
+            if (localR >= 0) {
+                rHeight = localR * maxHeight / 2000;
+                rciRect.left = rciStartX;
+                rciRect.right = rciStartX + barWidth;
+                rciRect.bottom = rciStartY;
+                rciRect.top = rciStartY - rHeight;
+            } else {
+                rHeight = -localR * maxHeight / 2000;
+                rciRect.left = rciStartX;
+                rciRect.right = rciStartX + barWidth;
+                rciRect.top = rciStartY;
+                rciRect.bottom = rciStartY + rHeight;
             }
+            FillRect(hdc, &rciRect, hResBrush);
 
-            /* Calculate the tool index */
-            toolIndex = row * toolbarColumns + col;
-
-            if (toolIndex >= 0 && toolIndex < 17) {
-                /* Select the corresponding tool using the mapping */
-                SelectTool(toolbarToStateMapping[toolIndex]);
-
-                /* Redraw the toolbar */
-                InvalidateRect(hwnd, NULL, TRUE);
+            /* Commercial demand bar */
+            if (localC >= 0) {
+                cHeight = localC * maxHeight / 2000;
+                rciRect.left = rciStartX + barWidth + spacing;
+                rciRect.right = rciStartX + barWidth * 2 + spacing;
+                rciRect.bottom = rciStartY;
+                rciRect.top = rciStartY - cHeight;
+            } else {
+                cHeight = -localC * maxHeight / 2000;
+                rciRect.left = rciStartX + barWidth + spacing;
+                rciRect.right = rciStartX + barWidth * 2 + spacing;
+                rciRect.top = rciStartY;
+                rciRect.bottom = rciStartY + cHeight;
             }
-            return 0;
+            FillRect(hdc, &rciRect, hComBrush);
+
+            /* Industrial demand bar */
+            if (localI >= 0) {
+                iHeight = localI * maxHeight / 2000;
+                rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
+                rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
+                rciRect.bottom = rciStartY;
+                rciRect.top = rciStartY - iHeight;
+            } else {
+                iHeight = -localI * maxHeight / 2000;
+                rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
+                rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
+                rciRect.top = rciStartY;
+                rciRect.bottom = rciStartY + iHeight;
+            }
+            FillRect(hdc, &rciRect, hIndBrush);
+
+            /* Add labels for RCI bars */
+            SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
+            SetBkMode(hdc, TRANSPARENT);
+            TextOut(hdc, rciStartX + (barWidth / 2) - 4, rciStartY + 5, "R", 1);
+            TextOut(hdc, rciStartX + barWidth + spacing + (barWidth / 2) - 4, rciStartY + 5, "C",
+                    1);
+            TextOut(hdc, rciStartX + barWidth * 2 + spacing * 2 + (barWidth / 2) - 4, rciStartY + 5,
+                    "I", 1);
+
+            /* Clean up GDI resources properly */
+            if (hResBrush) {
+                DeleteObject(hResBrush);
+            }
+            if (hComBrush) {
+                DeleteObject(hComBrush);
+            }
+            if (hIndBrush) {
+                DeleteObject(hIndBrush);
+            }
+            if (hCenterPen) {
+                DeleteObject(hCenterPen);
+            }
         }
 
-        case WM_DESTROY:
-            hwndToolbar = NULL;
-            return 0;
+        /* Show current tool information if a tool is active */
+        if (isToolActive) {
+            const char *toolName;
+            int toolCost;
+            char buffer[256];
+            int textY = 6 * 36 + 55; /* Position below the RCI labels (rciStartY + 15) */
 
-        default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
+            /* Get the tool name */
+            switch (GetCurrentTool()) {
+            case bulldozerState:
+                toolName = "Bulldozer";
+                break;
+            case roadState:
+                toolName = "Road";
+                break;
+            case railState:
+                toolName = "Rail";
+                break;
+            case wireState:
+                toolName = "Wire";
+                break;
+            case parkState:
+                toolName = "Park";
+                break;
+            case residentialState:
+                toolName = "Residential Zone";
+                break;
+            case commercialState:
+                toolName = "Commercial Zone";
+                break;
+            case industrialState:
+                toolName = "Industrial Zone";
+                break;
+            case fireState:
+                toolName = "Fire Station";
+                break;
+            case policeState:
+                toolName = "Police Station";
+                break;
+            case stadiumState:
+                toolName = "Stadium";
+                break;
+            case seaportState:
+                toolName = "Seaport";
+                break;
+            case powerState:
+                toolName = "Coal Power Plant";
+                break;
+            case nuclearState:
+                toolName = "Nuclear Power Plant";
+                break;
+            case airportState:
+                toolName = "Airport";
+                break;
+            case queryState:
+                toolName = "Query";
+                break;
+            default:
+                toolName = "Unknown Tool";
+                break;
+            }
+
+            toolCost = GetToolCost();
+
+            /* Show the tool name and cost in the toolbar */
+            SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
+            SetBkMode(hdc, TRANSPARENT);
+            wsprintf(buffer, "Tool: %s", toolName);
+            TextOut(hdc, 10, textY, buffer, lstrlen(buffer));
+
+            if (toolCost > 0) {
+                wsprintf(buffer, "Cost: $%d", toolCost);
+                TextOut(hdc, 10, textY + 15, buffer, lstrlen(buffer));
+            }
+        }
+
+        EndPaint(hwnd, &ps);
+        return 0;
+
+    case WM_LBUTTONDOWN: {
+        /* Get mouse coordinates */
+        mouseX = LOWORD(lParam);
+        mouseY = HIWORD(lParam);
+
+        /* Calculate row and column */
+        col = mouseX / toolButtonSize;
+        row = mouseY / toolButtonSize;
+
+        /* Ensure col is within bounds */
+        if (col >= toolbarColumns) {
+            col = toolbarColumns - 1;
+        }
+
+        /* Calculate the tool index */
+        toolIndex = row * toolbarColumns + col;
+
+        if (toolIndex >= 0 && toolIndex < 17) {
+            /* Select the corresponding tool using the mapping */
+            SelectTool(toolbarToStateMapping[toolIndex]);
+
+            /* Redraw the toolbar */
+            InvalidateRect(hwnd, NULL, TRUE);
+        }
+        return 0;
+    }
+
+    case WM_DESTROY:
+        hwndToolbar = NULL;
+        return 0;
+
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 }
 
 /* Load all toolbar bitmap resources */
-void LoadToolbarBitmaps(void)
-{
+void LoadToolbarBitmaps(void) {
     int i;
     char filename[MAX_PATH];
 
@@ -1623,8 +1598,8 @@ void LoadToolbarBitmaps(void)
         wsprintf(filename, "images\\%s.bmp", toolBitmapFiles[i]);
 
         /* Load the bitmap */
-        hToolBitmaps[i] = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0,
-                LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+        hToolBitmaps[i] =
+            LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
         if (hToolBitmaps[i] == NULL) {
             /* Log error if bitmap loading fails */
@@ -1635,8 +1610,7 @@ void LoadToolbarBitmaps(void)
 }
 
 /* Clean up toolbar bitmap resources */
-void CleanupToolbarBitmaps(void)
-{
+void CleanupToolbarBitmaps(void) {
     int i;
 
     /* Delete all bitmap handles */
@@ -1649,8 +1623,7 @@ void CleanupToolbarBitmaps(void)
 }
 
 /* Draw a tool icon using bitmap resources */
-void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
-{
+void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected) {
     HDC hdcMem;
     HBITMAP hbmOld;
     int toolIndex;
@@ -1723,11 +1696,11 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     margin = 4;
 
     /* Ensure we don't exceed button size minus margin */
-    if (width > toolButtonSize - 2*margin) {
-        width = toolButtonSize - 2*margin;
+    if (width > toolButtonSize - 2 * margin) {
+        width = toolButtonSize - 2 * margin;
     }
-    if (height > toolButtonSize - 2*margin) {
-        height = toolButtonSize - 2*margin;
+    if (height > toolButtonSize - 2 * margin) {
+        height = toolButtonSize - 2 * margin;
     }
 
     /* Calculate centered position */
@@ -1743,7 +1716,8 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
     }
 
     /* Draw the bitmap with proper sizing */
-    StretchBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
+    StretchBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, bm.bmWidth, bm.bmHeight,
+               SRCCOPY);
 
     /* If this tool is selected, draw a thick yellow box around it */
     if (isSelected) {
@@ -1772,8 +1746,7 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected)
 }
 
 /* Create toolbar window */
-void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
-{
+void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
     WNDCLASSEX wc;
     RECT clientRect;
 
@@ -1782,18 +1755,18 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
 
     /* Register the toolbar window class if not already done */
     if (!GetClassInfoEx(NULL, "MicropolisToolbar", &wc)) {
-        wc.cbSize        = sizeof(WNDCLASSEX);
-        wc.style         = CS_HREDRAW | CS_VREDRAW;
-        wc.lpfnWndProc   = ToolbarProc;
-        wc.cbClsExtra    = 0;
-        wc.cbWndExtra    = 0;
-        wc.hInstance     = GetModuleHandle(NULL);
-        wc.hIcon         = NULL;
-        wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+        wc.cbSize = sizeof(WNDCLASSEX);
+        wc.style = CS_HREDRAW | CS_VREDRAW;
+        wc.lpfnWndProc = ToolbarProc;
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = 0;
+        wc.hInstance = GetModuleHandle(NULL);
+        wc.hIcon = NULL;
+        wc.hCursor = LoadCursor(NULL, IDC_ARROW);
         wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
-        wc.lpszMenuName  = NULL;
+        wc.lpszMenuName = NULL;
         wc.lpszClassName = "MicropolisToolbar";
-        wc.hIconSm       = NULL;
+        wc.hIconSm = NULL;
 
         RegisterClassEx(&wc);
     }
@@ -1802,16 +1775,11 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
     GetClientRect(hwndParent, &clientRect);
 
     hwndToolbar = CreateWindowEx(
-            WS_EX_DLGMODALFRAME,        /* Using dialog frame style for a raised appearance */
-            "MicropolisToolbar",
-            NULL,
-            WS_CHILD | WS_VISIBLE,        /* Removed WS_BORDER as DLGMODALFRAME provides its own border */
-            0, 0,        /* x, y - will be adjusted below */
-            toolbarWidth, clientRect.bottom,
-            hwndParent,
-            NULL,
-            GetModuleHandle(NULL),
-            NULL);
+        WS_EX_DLGMODALFRAME, /* Using dialog frame style for a raised appearance */
+        "MicropolisToolbar", NULL,
+        WS_CHILD | WS_VISIBLE, /* Removed WS_BORDER as DLGMODALFRAME provides its own border */
+        0, 0,                  /* x, y - will be adjusted below */
+        toolbarWidth, clientRect.bottom, hwndParent, NULL, GetModuleHandle(NULL), NULL);
 
     /* Set the tool to bulldozer by default */
     SelectTool(bulldozerState);
@@ -1823,8 +1791,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height)
 }
 
 /* Select a tool - set the current tool and activate it */
-void SelectTool(int toolType)
-{
+void SelectTool(int toolType) {
     /* Update the current tool */
     currentTool = toolType;
 
@@ -1838,79 +1805,78 @@ void SelectTool(int toolType)
 
     /* Update tool cost */
     switch (currentTool) {
-        case bulldozerState:
-            toolCost = TOOL_BULLDOZER_COST;
-            break;
+    case bulldozerState:
+        toolCost = TOOL_BULLDOZER_COST;
+        break;
 
-        case roadState:
-            toolCost = TOOL_ROAD_COST;
-            break;
+    case roadState:
+        toolCost = TOOL_ROAD_COST;
+        break;
 
-        case railState:
-            toolCost = TOOL_RAIL_COST;
-            break;
+    case railState:
+        toolCost = TOOL_RAIL_COST;
+        break;
 
-        case wireState:
-            toolCost = TOOL_WIRE_COST;
-            break;
+    case wireState:
+        toolCost = TOOL_WIRE_COST;
+        break;
 
-        case parkState:
-            toolCost = TOOL_PARK_COST;
-            break;
+    case parkState:
+        toolCost = TOOL_PARK_COST;
+        break;
 
-        case residentialState:
-            toolCost = TOOL_RESIDENTIAL_COST;
-            break;
+    case residentialState:
+        toolCost = TOOL_RESIDENTIAL_COST;
+        break;
 
-        case commercialState:
-            toolCost = TOOL_COMMERCIAL_COST;
-            break;
+    case commercialState:
+        toolCost = TOOL_COMMERCIAL_COST;
+        break;
 
-        case industrialState:
-            toolCost = TOOL_INDUSTRIAL_COST;
-            break;
+    case industrialState:
+        toolCost = TOOL_INDUSTRIAL_COST;
+        break;
 
-        case fireState:
-            toolCost = TOOL_FIRESTATION_COST;
-            break;
+    case fireState:
+        toolCost = TOOL_FIRESTATION_COST;
+        break;
 
-        case policeState:
-            toolCost = TOOL_POLICESTATION_COST;
-            break;
+    case policeState:
+        toolCost = TOOL_POLICESTATION_COST;
+        break;
 
-        case stadiumState:
-            toolCost = TOOL_STADIUM_COST;
-            break;
+    case stadiumState:
+        toolCost = TOOL_STADIUM_COST;
+        break;
 
-        case seaportState:
-            toolCost = TOOL_SEAPORT_COST;
-            break;
+    case seaportState:
+        toolCost = TOOL_SEAPORT_COST;
+        break;
 
-        case powerState:
-            toolCost = TOOL_POWERPLANT_COST;
-            break;
+    case powerState:
+        toolCost = TOOL_POWERPLANT_COST;
+        break;
 
-        case nuclearState:
-            toolCost = TOOL_NUCLEAR_COST;
-            break;
+    case nuclearState:
+        toolCost = TOOL_NUCLEAR_COST;
+        break;
 
-        case airportState:
-            toolCost = TOOL_AIRPORT_COST;
-            break;
+    case airportState:
+        toolCost = TOOL_AIRPORT_COST;
+        break;
 
-        case queryState:
-            toolCost = 0; /* Query tool is free */
-            break;
+    case queryState:
+        toolCost = 0; /* Query tool is free */
+        break;
 
-        default:
-            toolCost = 0;
-            break;
+    default:
+        toolCost = 0;
+        break;
     }
 }
 
 /* Check if we have enough funds for the current tool */
-int CheckFunds(int cost)
-{
+int CheckFunds(int cost) {
     /* Don't charge in certain situations */
     if (cost <= 0) {
         return 1;
@@ -1924,8 +1890,7 @@ int CheckFunds(int cost)
 }
 
 /* Apply the bulldozer tool */
-int DoBulldozer(int mapX, int mapY)
-{
+int DoBulldozer(int mapX, int mapY) {
     short result;
     short tile;
     int zoneSize;
@@ -1951,9 +1916,8 @@ int DoBulldozer(int mapX, int mapY)
     }
 
     /* Special case for water-related structures which cost more */
-    if ((tile == RIVER || tile == REDGE || tile == CHANNEL ||
-        tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
-        tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
+    if ((tile == RIVER || tile == REDGE || tile == CHANNEL || tile == HANDBALL || tile == LHBALL ||
+         tile == HBRIDGE || tile == VBRIDGE || tile == BRWH || tile == BRWV) &&
         TotalFunds < 5) {
         return TOOLRESULT_NO_MONEY;
     }
@@ -1963,24 +1927,24 @@ int DoBulldozer(int mapX, int mapY)
         /* Direct center-tile bulldozing */
         zoneSize = checkSize(tile);
         switch (zoneSize) {
-            case 3:
-                Spend(1);
-                put3x3Rubble(mapX, mapY);
-                return TOOLRESULT_OK;
+        case 3:
+            Spend(1);
+            put3x3Rubble(mapX, mapY);
+            return TOOLRESULT_OK;
 
-            case 4:
-                Spend(1);
-                put4x4Rubble(mapX, mapY);
-                return TOOLRESULT_OK;
+        case 4:
+            Spend(1);
+            put4x4Rubble(mapX, mapY);
+            return TOOLRESULT_OK;
 
-            case 6:
-                Spend(1);
-                put6x6Rubble(mapX, mapY);
-                return TOOLRESULT_OK;
+        case 6:
+            Spend(1);
+            put6x6Rubble(mapX, mapY);
+            return TOOLRESULT_OK;
 
-            default:
-                /* Fall through to normal bulldozing for unknown zone types */
-                break;
+        default:
+            /* Fall through to normal bulldozing for unknown zone types */
+            break;
         }
     }
     /* Check if it's part of a large zone but not the center */
@@ -1992,20 +1956,20 @@ int DoBulldozer(int mapX, int mapY)
         /* Make sure the adjusted coordinates are within bounds */
         if (TestBounds(centerX, centerY)) {
             switch (zoneSize) {
-                case 3:
-                    Spend(1);
-                    put3x3Rubble(centerX, centerY);
-                    return TOOLRESULT_OK;
+            case 3:
+                Spend(1);
+                put3x3Rubble(centerX, centerY);
+                return TOOLRESULT_OK;
 
-                case 4:
-                    Spend(1);
-                    put4x4Rubble(centerX, centerY);
-                    return TOOLRESULT_OK;
+            case 4:
+                Spend(1);
+                put4x4Rubble(centerX, centerY);
+                return TOOLRESULT_OK;
 
-                case 6:
-                    Spend(1);
-                    put6x6Rubble(centerX, centerY);
-                    return TOOLRESULT_OK;
+            case 6:
+                Spend(1);
+                put6x6Rubble(centerX, centerY);
+                return TOOLRESULT_OK;
             }
         }
     }
@@ -2014,8 +1978,8 @@ int DoBulldozer(int mapX, int mapY)
     if (tile == RIVER || tile == REDGE || tile == CHANNEL) {
         /* Can't bulldoze natural water features */
         return TOOLRESULT_FAILED;
-    } else if (tile == HANDBALL || tile == LHBALL || tile == HBRIDGE ||
-        tile == VBRIDGE || tile == BRWH || tile == BRWV) {
+    } else if (tile == HANDBALL || tile == LHBALL || tile == HBRIDGE || tile == VBRIDGE ||
+               tile == BRWH || tile == BRWV) {
         /* Water-related structures cost $5 */
         Spend(5);
         Map[mapY][mapX] = RIVER; /* Convert back to water */
@@ -2035,8 +1999,7 @@ int DoBulldozer(int mapX, int mapY)
 }
 
 /* Apply the road tool */
-int DoRoad(int mapX, int mapY)
-{
+int DoRoad(int mapX, int mapY) {
     short result;
     short baseTile;
 
@@ -2048,8 +2011,8 @@ int DoRoad(int mapX, int mapY)
     baseTile = Map[mapY][mapX] & LOMASK;
 
     /* Check if we need to bulldoze first */
-    if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE &&
-        baseTile != CHANNEL && !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
+    if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE && baseTile != CHANNEL &&
+        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
         return TOOLRESULT_NEED_BULLDOZE;
     }
 
@@ -2072,8 +2035,7 @@ int DoRoad(int mapX, int mapY)
 }
 
 /* Apply the rail tool */
-int DoRail(int mapX, int mapY)
-{
+int DoRail(int mapX, int mapY) {
     short result;
     short baseTile;
 
@@ -2085,8 +2047,8 @@ int DoRail(int mapX, int mapY)
     baseTile = Map[mapY][mapX] & LOMASK;
 
     /* Check if we need to bulldoze first */
-    if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE &&
-        baseTile != CHANNEL && !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
+    if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE && baseTile != CHANNEL &&
+        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
         return TOOLRESULT_NEED_BULLDOZE;
     }
 
@@ -2109,8 +2071,7 @@ int DoRail(int mapX, int mapY)
 }
 
 /* Apply the wire tool */
-int DoWire(int mapX, int mapY)
-{
+int DoWire(int mapX, int mapY) {
     short result;
     short baseTile;
 
@@ -2122,8 +2083,8 @@ int DoWire(int mapX, int mapY)
     baseTile = Map[mapY][mapX] & LOMASK;
 
     /* Check if we need to bulldoze first */
-    if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE &&
-        baseTile != CHANNEL && !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
+    if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE && baseTile != CHANNEL &&
+        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
         return TOOLRESULT_NEED_BULLDOZE;
     }
 
@@ -2146,8 +2107,7 @@ int DoWire(int mapX, int mapY)
 }
 
 /* Apply the park tool */
-int DoPark(int mapX, int mapY)
-{
+int DoPark(int mapX, int mapY) {
     short tile;
     int randval;
 
@@ -2180,8 +2140,7 @@ int DoPark(int mapX, int mapY)
 }
 
 /* Helper function for placing a 3x3 zone */
-int PlaceZone(int mapX, int mapY, int baseValue, int totalCost)
-{
+int PlaceZone(int mapX, int mapY, int baseValue, int totalCost) {
     int dx, dy;
     int index = 0;
     int bulldozeCost = 0;
@@ -2240,43 +2199,37 @@ int PlaceZone(int mapX, int mapY, int baseValue, int totalCost)
 }
 
 /* Apply the residential zone tool */
-int DoResidential(int mapX, int mapY)
-{
+int DoResidential(int mapX, int mapY) {
     /* Use the zone helper for residential zones */
     return PlaceZone(mapX, mapY, RESBASE, TOOL_RESIDENTIAL_COST);
 }
 
 /* Apply the commercial zone tool */
-int DoCommercial(int mapX, int mapY)
-{
+int DoCommercial(int mapX, int mapY) {
     /* Use the zone helper for commercial zones */
     return PlaceZone(mapX, mapY, COMBASE, TOOL_COMMERCIAL_COST);
 }
 
 /* Apply the industrial zone tool */
-int DoIndustrial(int mapX, int mapY)
-{
+int DoIndustrial(int mapX, int mapY) {
     /* Use the zone helper for industrial zones */
     return PlaceZone(mapX, mapY, INDBASE, TOOL_INDUSTRIAL_COST);
 }
 
 /* Apply the fire station tool */
-int DoFireStation(int mapX, int mapY)
-{
+int DoFireStation(int mapX, int mapY) {
     /* Use the zone helper for fire stations */
     return PlaceZone(mapX, mapY, TILE_FIRESTBASE, TOOL_FIRESTATION_COST);
 }
 
 /* Apply the police station tool */
-int DoPoliceStation(int mapX, int mapY)
-{
+int DoPoliceStation(int mapX, int mapY) {
     /* Use the zone helper for police stations */
     return PlaceZone(mapX, mapY, TILE_POLICESTBASE, TOOL_POLICESTATION_COST);
 }
 
 /* Helper function for placing a 4x4 building */
-int Place4x4Building(int mapX, int mapY, int baseValue, int centerTile, int totalCost)
-{
+int Place4x4Building(int mapX, int mapY, int baseValue, int centerTile, int totalCost) {
     int dx, dy;
     int index = 0;
     int bulldozeCost = 0;
@@ -2339,36 +2292,31 @@ int Place4x4Building(int mapX, int mapY, int baseValue, int centerTile, int tota
 }
 
 /* Apply the coal power plant tool */
-int DoPowerPlant(int mapX, int mapY)
-{
+int DoPowerPlant(int mapX, int mapY) {
     /* Use the building helper for power plants */
     return Place4x4Building(mapX, mapY, TILE_COALBASE, TILE_POWERPLANT, TOOL_POWERPLANT_COST);
 }
 
 /* Apply the nuclear power plant tool */
-int DoNuclearPlant(int mapX, int mapY)
-{
+int DoNuclearPlant(int mapX, int mapY) {
     /* Use the building helper for nuclear plants */
     return Place4x4Building(mapX, mapY, TILE_NUCLEARBASE, TILE_NUCLEAR, TOOL_NUCLEAR_COST);
 }
 
 /* Apply the stadium tool */
-int DoStadium(int mapX, int mapY)
-{
+int DoStadium(int mapX, int mapY) {
     /* Use the building helper for stadiums */
     return Place4x4Building(mapX, mapY, TILE_STADIUMBASE, TILE_STADIUM, TOOL_STADIUM_COST);
 }
 
 /* Apply the seaport tool */
-int DoSeaport(int mapX, int mapY)
-{
+int DoSeaport(int mapX, int mapY) {
     /* Use the building helper for seaports */
     return Place4x4Building(mapX, mapY, TILE_PORTBASE, TILE_PORT, TOOL_SEAPORT_COST);
 }
 
 /* Helper function for placing a 6x6 building like an airport */
-int Place6x6Building(int mapX, int mapY, int baseValue, int centerTile, int totalCost)
-{
+int Place6x6Building(int mapX, int mapY, int baseValue, int centerTile, int totalCost) {
     int dx, dy;
     int index = 0;
     int bulldozeCost = 0;
@@ -2431,15 +2379,13 @@ int Place6x6Building(int mapX, int mapY, int baseValue, int centerTile, int tota
 }
 
 /* Apply the airport tool */
-int DoAirport(int mapX, int mapY)
-{
+int DoAirport(int mapX, int mapY) {
     /* Use the building helper for airports */
     return Place6x6Building(mapX, mapY, TILE_AIRPORTBASE, TILE_AIRPORT, TOOL_AIRPORT_COST);
 }
 
 /* Helper function to get zone name from tile */
-const char* GetZoneName(short tile)
-{
+const char *GetZoneName(short tile) {
     short baseTile = tile & LOMASK;
 
     if (baseTile >= RESBASE && baseTile <= LASTRES) {
@@ -2486,8 +2432,7 @@ const char* GetZoneName(short tile)
 }
 
 /* Apply the query tool - shows information about the tile */
-int DoQuery(int mapX, int mapY)
-{
+int DoQuery(int mapX, int mapY) {
     short tile;
     char message[256];
     const char *zoneName;
@@ -2503,10 +2448,8 @@ int DoQuery(int mapX, int mapY)
     zoneName = GetZoneName(tile);
 
     /* Prepare message */
-    wsprintf(message, "Location: %d, %d\nTile Type: %s\nHas Power: %s",
-        mapX, mapY,
-        zoneName,
-        (tile & POWERBIT) ? "Yes" : "No");
+    wsprintf(message, "Location: %d, %d\nTile Type: %s\nHas Power: %s", mapX, mapY, zoneName,
+             (tile & POWERBIT) ? "Yes" : "No");
 
     /* Display the message box with information */
     MessageBox(hwndMain, message, "Zone Info", MB_OK | MB_ICONINFORMATION);
@@ -2515,78 +2458,77 @@ int DoQuery(int mapX, int mapY)
 }
 
 /* Apply the current tool at the given coordinates */
-int ApplyTool(int mapX, int mapY)
-{
+int ApplyTool(int mapX, int mapY) {
     int result = TOOLRESULT_FAILED;
 
     switch (currentTool) {
-        case bulldozerState:
-            result = DoBulldozer(mapX, mapY);
-            break;
+    case bulldozerState:
+        result = DoBulldozer(mapX, mapY);
+        break;
 
-        case roadState:
-            result = DoRoad(mapX, mapY);
-            break;
+    case roadState:
+        result = DoRoad(mapX, mapY);
+        break;
 
-        case railState:
-            result = DoRail(mapX, mapY);
-            break;
+    case railState:
+        result = DoRail(mapX, mapY);
+        break;
 
-        case wireState:
-            result = DoWire(mapX, mapY);
-            break;
+    case wireState:
+        result = DoWire(mapX, mapY);
+        break;
 
-        case parkState:
-            result = DoPark(mapX, mapY);
-            break;
+    case parkState:
+        result = DoPark(mapX, mapY);
+        break;
 
-        case residentialState:
-            result = DoResidential(mapX, mapY);
-            break;
+    case residentialState:
+        result = DoResidential(mapX, mapY);
+        break;
 
-        case commercialState:
-            result = DoCommercial(mapX, mapY);
-            break;
+    case commercialState:
+        result = DoCommercial(mapX, mapY);
+        break;
 
-        case industrialState:
-            result = DoIndustrial(mapX, mapY);
-            break;
+    case industrialState:
+        result = DoIndustrial(mapX, mapY);
+        break;
 
-        case fireState:
-            result = DoFireStation(mapX, mapY);
-            break;
+    case fireState:
+        result = DoFireStation(mapX, mapY);
+        break;
 
-        case policeState:
-            result = DoPoliceStation(mapX, mapY);
-            break;
+    case policeState:
+        result = DoPoliceStation(mapX, mapY);
+        break;
 
-        case stadiumState:
-            result = DoStadium(mapX, mapY);
-            break;
+    case stadiumState:
+        result = DoStadium(mapX, mapY);
+        break;
 
-        case seaportState:
-            result = DoSeaport(mapX, mapY);
-            break;
+    case seaportState:
+        result = DoSeaport(mapX, mapY);
+        break;
 
-        case powerState:
-            result = DoPowerPlant(mapX, mapY);
-            break;
+    case powerState:
+        result = DoPowerPlant(mapX, mapY);
+        break;
 
-        case nuclearState:
-            result = DoNuclearPlant(mapX, mapY);
-            break;
+    case nuclearState:
+        result = DoNuclearPlant(mapX, mapY);
+        break;
 
-        case airportState:
-            result = DoAirport(mapX, mapY);
-            break;
+    case airportState:
+        result = DoAirport(mapX, mapY);
+        break;
 
-        case queryState:
-            result = DoQuery(mapX, mapY);
-            break;
+    case queryState:
+        result = DoQuery(mapX, mapY);
+        break;
 
-        default:
-            result = TOOLRESULT_FAILED;
-            break;
+    default:
+        result = TOOLRESULT_FAILED;
+        break;
     }
 
     /* Store the result for later display */
@@ -2599,65 +2541,59 @@ int ApplyTool(int mapX, int mapY)
 }
 
 /* Get the current tool */
-int GetCurrentTool(void)
-{
+int GetCurrentTool(void) {
     return currentTool;
 }
 
 /* Function to update the toolbar display (including RCI bars) */
-void UpdateToolbar(void)
-{
+void UpdateToolbar(void) {
     if (hwndToolbar) {
         InvalidateRect(hwndToolbar, NULL, TRUE);
     }
 }
 
 /* Get the last tool result */
-int GetToolResult(void)
-{
+int GetToolResult(void) {
     return toolResult;
 }
 
 /* Get the current tool cost */
-int GetToolCost(void)
-{
+int GetToolCost(void) {
     return toolCost;
 }
 
 /* Get the size of a tool (1x1, 3x3, 4x4, or 6x6) */
-int GetToolSize(int toolType)
-{
+int GetToolSize(int toolType) {
     switch (toolType) {
-        case residentialState:
-        case commercialState:
-        case industrialState:
-        case fireState:
-        case policeState:
-            return TOOL_SIZE_3X3; /* 3x3 zones */
+    case residentialState:
+    case commercialState:
+    case industrialState:
+    case fireState:
+    case policeState:
+        return TOOL_SIZE_3X3; /* 3x3 zones */
 
-        case stadiumState:
-        case seaportState:
-        case powerState:
-        case nuclearState:
-            return TOOL_SIZE_4X4; /* 4x4 buildings */
+    case stadiumState:
+    case seaportState:
+    case powerState:
+    case nuclearState:
+        return TOOL_SIZE_4X4; /* 4x4 buildings */
 
-        case airportState:
-            return TOOL_SIZE_6X6; /* 6x6 buildings */
+    case airportState:
+        return TOOL_SIZE_6X6; /* 6x6 buildings */
 
-        case roadState:
-        case railState:
-        case wireState:
-        case parkState:
-        case bulldozerState:
-        case queryState:
-        default:
-            return TOOL_SIZE_1X1; /* Single tile tools */
+    case roadState:
+    case railState:
+    case wireState:
+    case parkState:
+    case bulldozerState:
+    case queryState:
+    default:
+        return TOOL_SIZE_1X1; /* Single tile tools */
     }
 }
 
 /* Draw the tool hover highlight at the given map position */
-void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int yOffset)
-{
+void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int yOffset) {
     int size = GetToolSize(toolType);
     int screenX, screenY;
     int startX, startY;
@@ -2668,38 +2604,38 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
 
     /* Calculate the starting position based on tool size */
     switch (size) {
-        case TOOL_SIZE_3X3:
-            /* Center 3x3 highlight at cursor */
-            startX = mapX - 1;
-            startY = mapY - 1;
-            width = 3;
-            height = 3;
-            break;
+    case TOOL_SIZE_3X3:
+        /* Center 3x3 highlight at cursor */
+        startX = mapX - 1;
+        startY = mapY - 1;
+        width = 3;
+        height = 3;
+        break;
 
-        case TOOL_SIZE_4X4:
-            /* Center 4x4 highlight at cursor */
-            startX = mapX - 1;
-            startY = mapY - 1;
-            width = 4;
-            height = 4;
-            break;
+    case TOOL_SIZE_4X4:
+        /* Center 4x4 highlight at cursor */
+        startX = mapX - 1;
+        startY = mapY - 1;
+        width = 4;
+        height = 4;
+        break;
 
-        case TOOL_SIZE_6X6:
-            /* Center 6x6 highlight at cursor */
-            startX = mapX - 2;
-            startY = mapY - 2;
-            width = 6;
-            height = 6;
-            break;
+    case TOOL_SIZE_6X6:
+        /* Center 6x6 highlight at cursor */
+        startX = mapX - 2;
+        startY = mapY - 2;
+        width = 6;
+        height = 6;
+        break;
 
-        case TOOL_SIZE_1X1:
-        default:
-            /* Single tile highlight */
-            startX = mapX;
-            startY = mapY;
-            width = 1;
-            height = 1;
-            break;
+    case TOOL_SIZE_1X1:
+    default:
+        /* Single tile highlight */
+        startX = mapX;
+        startY = mapY;
+        width = 1;
+        height = 1;
+        break;
     }
 
     /* Convert map coordinates to screen coordinates */
@@ -2718,9 +2654,7 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
     hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
     /* Draw the rectangle */
-    Rectangle(hdc, screenX, screenY,
-        screenX + (width * TILE_SIZE),
-        screenY + (height * TILE_SIZE));
+    Rectangle(hdc, screenX, screenY, screenX + (width * TILE_SIZE), screenY + (height * TILE_SIZE));
 
     /* Clean up */
     SelectObject(hdc, hOldPen);
@@ -2733,8 +2667,7 @@ void DrawToolHover(HDC hdc, int mapX, int mapY, int toolType, int xOffset, int y
 }
 
 /* Convert screen coordinates to map coordinates */
-void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset)
-{
+void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset) {
     /*
      * Convert mouse position to map coordinates.
      * Add xOffset to account for the map scrolling,
@@ -2744,9 +2677,9 @@ void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, in
     *mapY = (screenY + yOffset) / TILE_SIZE;
 }
 
-/* Mouse handler for tools - converts mouse coordinates to map coordinates and applies the current tool */
-int HandleToolMouse(int mouseX, int mouseY, int xOffset, int yOffset)
-{
+/* Mouse handler for tools - converts mouse coordinates to map coordinates and applies the current
+ * tool */
+int HandleToolMouse(int mouseX, int mouseY, int xOffset, int yOffset) {
     int mapX, mapY;
 
     /* Convert screen coordinates to map coordinates */

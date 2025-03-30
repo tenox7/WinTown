@@ -2,41 +2,41 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include <windows.h>
+#include "simulation.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "simulation.h"
+#include <windows.h>
 
 /* External log functions */
-extern void addGameLog(const char* format, ...);
-extern void addDebugLog(const char* format, ...);
+extern void addGameLog(const char *format, ...);
+extern void addDebugLog(const char *format, ...);
 
 /* Constants */
-#define PROBNUM     8   /* Number of city problems tracked */
+#define PROBNUM 8 /* Number of city problems tracked */
 
 /* Problem categories */
-#define PROB_CRIME         0
-#define PROB_POLLUTION     1
-#define PROB_HOUSING       2
-#define PROB_TAXES         3
-#define PROB_TRAFFIC       4
-#define PROB_UNEMPLOYMENT  5
-#define PROB_FIRE          6
-#define PROB_NONE          7
+#define PROB_CRIME 0
+#define PROB_POLLUTION 1
+#define PROB_HOUSING 2
+#define PROB_TAXES 3
+#define PROB_TRAFFIC 4
+#define PROB_UNEMPLOYMENT 5
+#define PROB_FIRE 6
+#define PROB_NONE 7
 
 /* Internal state variables */
-static short EvalValid;                  /* Is evaluation valid? */
-static short ProblemTable[PROBNUM];      /* Problem scores */
-static short ProblemTaken[PROBNUM];      /* Problems already processed */
-static short ProblemVotes[PROBNUM];      /* Problem votes */
-static short ProblemOrder[4];            /* Top 4 problems, in order */
-static long deltaCityPop;                /* Population change */
-static QUAD CityAssValue;                /* City assessed value */
-static short AverageCityScore;           /* Average score over time */
-static int HospPop;                      /* Hospital population count */
-static int NuclearPop;                   /* Nuclear plant count */
-static int CoalPop;                      /* Coal plant count */
+static short EvalValid;             /* Is evaluation valid? */
+static short ProblemTable[PROBNUM]; /* Problem scores */
+static short ProblemTaken[PROBNUM]; /* Problems already processed */
+static short ProblemVotes[PROBNUM]; /* Problem votes */
+static short ProblemOrder[4];       /* Top 4 problems, in order */
+static long deltaCityPop;           /* Population change */
+static QUAD CityAssValue;           /* City assessed value */
+static short AverageCityScore;      /* Average score over time */
+static int HospPop;                 /* Hospital population count */
+static int NuclearPop;              /* Nuclear plant count */
+static int CoalPop;                 /* Coal plant count */
 
 /* Function prototypes */
 static void GetAssValue(void);
@@ -50,8 +50,7 @@ static int GetUnemployment(void);
 static int GetFire(void);
 
 /* Initialize the evaluation system */
-void EvalInit(void)
-{
+void EvalInit(void) {
     int x;
     int preservePop;
     int preserveClass;
@@ -90,8 +89,7 @@ void EvalInit(void)
 }
 
 /* Calculate the assessed value of the city */
-static void GetAssValue(void)
-{
+static void GetAssValue(void) {
     QUAD z;
 
     /* Value of transportation */
@@ -117,8 +115,7 @@ static void GetAssValue(void)
 }
 
 /* Calculate population figures and city class */
-static void DoPopNum(void)
-{
+static void DoPopNum(void) {
     QUAD OldCityPop;
 
     /* Save old population */
@@ -138,7 +135,7 @@ static void DoPopNum(void)
 
     /* Determine city class based on population - also done in TakeCensus
        but repeated here for consistency */
-    CityClass = 0;            /* Village */
+    CityClass = 0; /* Village */
     if (CityPop > 2000) {
         CityClass++; /* Town */
     }
@@ -157,8 +154,7 @@ static void DoPopNum(void)
 }
 
 /* Evaluate problem levels in the city */
-static void DoProblems(void)
-{
+static void DoProblems(void) {
     int x, z;
     int ThisProb, Max;
 
@@ -209,8 +205,7 @@ static void DoProblems(void)
 }
 
 /* Calculate votes for each problem */
-static void VoteProblems(void)
-{
+static void VoteProblems(void) {
     int x, z, count;
 
     /* Clear vote counts */
@@ -243,8 +238,7 @@ static void VoteProblems(void)
 }
 
 /* Calculate average traffic */
-static int AverageTrf(void)
-{
+static int AverageTrf(void) {
     QUAD TrfTotal;
     int x, y, count;
 
@@ -252,8 +246,8 @@ static int AverageTrf(void)
     count = 1; /* Start at 1 to avoid division by zero */
 
     /* Sum up traffic in developed areas */
-    for (x = 0; x < WORLD_X/2; x++) {
-        for (y = 0; y < WORLD_Y/2; y++) {
+    for (x = 0; x < WORLD_X / 2; x++) {
+        for (y = 0; y < WORLD_Y / 2; y++) {
             if (LandValueMem[y][x]) {
                 TrfTotal += TrfDensity[y][x];
                 count++;
@@ -267,8 +261,7 @@ static int AverageTrf(void)
 }
 
 /* Calculate unemployment rate */
-static int GetUnemployment(void)
-{
+static int GetUnemployment(void) {
     float r;
     int b;
 
@@ -294,8 +287,7 @@ static int GetUnemployment(void)
 }
 
 /* Calculate fire severity */
-static int GetFire(void)
-{
+static int GetFire(void) {
     int z;
 
     /* Scale fire count to score */
@@ -310,8 +302,7 @@ static int GetFire(void)
 }
 
 /* Calculate city score */
-static void GetScore(void)
-{
+static void GetScore(void) {
     int x, z;
     short OldCityScore;
     float SM, TM;
@@ -424,8 +415,7 @@ static void GetScore(void)
 }
 
 /* Calculate vote results */
-static void DoVotes(void)
-{
+static void DoVotes(void) {
     int z;
 
     /* Reset vote counts */
@@ -444,8 +434,7 @@ static void DoVotes(void)
 }
 
 /* Perform a city evaluation */
-void CityEvaluation(void)
-{
+void CityEvaluation(void) {
     short problems[4];
     int i;
 
@@ -490,8 +479,7 @@ void CityEvaluation(void)
 }
 
 /* Count the number of each special building type */
-void CountSpecialTiles(void)
-{
+void CountSpecialTiles(void) {
     int x, y;
     short tile;
 
@@ -521,53 +509,50 @@ void CountSpecialTiles(void)
 }
 
 /* Get problem description by index */
-const char* GetProblemText(int problemIndex)
-{
+const char *GetProblemText(int problemIndex) {
     switch (problemIndex) {
-        case PROB_CRIME:
-            return "Crime";
-        case PROB_POLLUTION:
-            return "Pollution";
-        case PROB_HOUSING:
-            return "Housing";
-        case PROB_TAXES:
-            return "Taxes";
-        case PROB_TRAFFIC:
-            return "Traffic";
-        case PROB_UNEMPLOYMENT:
-            return "Unemployment";
-        case PROB_FIRE:
-            return "Fire";
-        case PROB_NONE:
-        default:
-            return "None";
+    case PROB_CRIME:
+        return "Crime";
+    case PROB_POLLUTION:
+        return "Pollution";
+    case PROB_HOUSING:
+        return "Housing";
+    case PROB_TAXES:
+        return "Taxes";
+    case PROB_TRAFFIC:
+        return "Traffic";
+    case PROB_UNEMPLOYMENT:
+        return "Unemployment";
+    case PROB_FIRE:
+        return "Fire";
+    case PROB_NONE:
+    default:
+        return "None";
     }
 }
 
 /* Get the city class description */
-const char* GetCityClassName(void)
-{
+const char *GetCityClassName(void) {
     switch (CityClass) {
-        case 0:
-            return "Village";
-        case 1:
-            return "Town";
-        case 2:
-            return "City";
-        case 3:
-            return "Capital";
-        case 4:
-            return "Metropolis";
-        case 5:
-            return "Megalopolis";
-        default:
-            return "Village";
+    case 0:
+        return "Village";
+    case 1:
+        return "Town";
+    case 2:
+        return "City";
+    case 3:
+        return "Capital";
+    case 4:
+        return "Metropolis";
+    case 5:
+        return "Megalopolis";
+    default:
+        return "Village";
     }
 }
 
 /* Get top problems array */
-void GetTopProblems(short problems[4])
-{
+void GetTopProblems(short problems[4]) {
     int i;
 
     /* Copy problem order array */
@@ -577,8 +562,7 @@ void GetTopProblems(short problems[4])
 }
 
 /* Get problem vote count for a specific problem */
-int GetProblemVotes(int problemIndex)
-{
+int GetProblemVotes(int problemIndex) {
     if (problemIndex >= 0 && problemIndex < PROBNUM) {
         return ProblemVotes[problemIndex];
     }
@@ -586,19 +570,16 @@ int GetProblemVotes(int problemIndex)
 }
 
 /* Get city assessment */
-QUAD GetCityAssessedValue(void)
-{
+QUAD GetCityAssessedValue(void) {
     return CityAssValue;
 }
 
 /* Is evaluation data valid */
-int IsEvaluationValid(void)
-{
+int IsEvaluationValid(void) {
     return EvalValid;
 }
 
 /* Get city average score */
-int GetAverageCityScore(void)
-{
+int GetAverageCityScore(void) {
     return AverageCityScore;
 }

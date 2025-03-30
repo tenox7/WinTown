@@ -2,50 +2,48 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include <windows.h>
+#include "simulation.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "simulation.h"
+#include <windows.h>
 
 /* External log functions */
-extern void addGameLog(const char* format, ...);
-extern void addDebugLog(const char* format, ...);
+extern void addGameLog(const char *format, ...);
+extern void addDebugLog(const char *format, ...);
 
 /* Scenario variables */
-short ScenarioID = 0;        /* Current scenario ID (0 = none) */
-short DisasterEvent = 0;     /* Current disaster type */
-short DisasterWait = 0;      /* Countdown to next disaster */
-short ScoreType = 0;         /* Score type for scenario */
-short ScoreWait = 0;         /* Score wait for scenario */
+short ScenarioID = 0;    /* Current scenario ID (0 = none) */
+short DisasterEvent = 0; /* Current disaster type */
+short DisasterWait = 0;  /* Countdown to next disaster */
+short ScoreType = 0;     /* Score type for scenario */
+short ScoreWait = 0;     /* Score wait for scenario */
 
 /* External functions needed from other modules */
-extern int SimRandom(int range);          /* From simulation.c */
-extern int loadFile(char *filename);      /* From main.c */
+extern int SimRandom(int range);     /* From simulation.c */
+extern int loadFile(char *filename); /* From main.c */
 
 /* Disaster functions from disasters.c */
-extern void doEarthquake(void);           /* Earthquake disaster */
-extern void makeFlood(void);              /* Flooding disaster */
-extern void makeFire(int x, int y);       /* Fire disaster at specific location */
-extern void makeMonster(void);            /* Monster attack disaster */
-extern void makeExplosion(int x, int y);  /* Explosion at specific location */
-extern void makeMeltdown(void);           /* Nuclear meltdown disaster */
+extern void doEarthquake(void);          /* Earthquake disaster */
+extern void makeFlood(void);             /* Flooding disaster */
+extern void makeFire(int x, int y);      /* Fire disaster at specific location */
+extern void makeMonster(void);           /* Monster attack disaster */
+extern void makeExplosion(int x, int y); /* Explosion at specific location */
+extern void makeMeltdown(void);          /* Nuclear meltdown disaster */
 
 /* External functions from main.c */
-extern void ForceFullCensus(void);        /* Census calculation function */
+extern void ForceFullCensus(void); /* Census calculation function */
 
 /* External variables */
 extern HWND hwndMain;
 extern char cityFileName[MAX_PATH];
 
 /* Disaster timing arrays */
-static short DisTab[9] = { 0, 2, 10, 5, 20, 3, 5, 5, 2 * 48};
-static short ScoreWaitTab[9] = { 0, 30 * 48, 5 * 48, 5 * 48, 10 * 48,
-        5 * 48, 10 * 48, 5 * 48, 10 * 48
-    };
+static short DisTab[9] = {0, 2, 10, 5, 20, 3, 5, 5, 2 * 48};
+static short ScoreWaitTab[9] = {0,      30 * 48, 5 * 48, 5 * 48, 10 * 48,
+                                5 * 48, 10 * 48, 5 * 48, 10 * 48};
 
 /* Load scenario based on ID */
-int loadScenario(int scenarioId)
-{
+int loadScenario(int scenarioId) {
     char *name = NULL;
     char *fname = NULL;
     char path[MAX_PATH];
@@ -59,107 +57,108 @@ int loadScenario(int scenarioId)
 
     /* Validate scenario ID range */
     if ((scenarioId < 1) || (scenarioId > 8)) {
-        MessageBox(hwndMain, "Invalid scenario ID! Using Dullsville (1) instead.",
-            "Warning", MB_ICONWARNING | MB_OK);
+        MessageBox(hwndMain, "Invalid scenario ID! Using Dullsville (1) instead.", "Warning",
+                   MB_ICONWARNING | MB_OK);
         scenarioId = 1;
     }
 
     /* Check if scenario files are available - construct filename based on ID */
     switch (scenarioId) {
-        case 1:
-            strcpy(path, "cities\\dullsville.scn");
-            break;
-        case 2:
-            strcpy(path, "cities\\sanfrancisco.scn");
-            break;
-        case 3:
-            strcpy(path, "cities\\hamburg.scn");
-            break;
-        case 4:
-            strcpy(path, "cities\\bern.scn");
-            break;
-        case 5:
-            strcpy(path, "cities\\tokyo.scn");
-            break;
-        case 6:
-            strcpy(path, "cities\\detroit.scn");
-            break;
-        case 7:
-            strcpy(path, "cities\\boston.scn");
-            break;
-        case 8:
-            strcpy(path, "cities\\rio.scn");
-            break;
-        default:
-            strcpy(path, "cities\\dullsville.scn");
-            break;
+    case 1:
+        strcpy(path, "cities\\dullsville.scn");
+        break;
+    case 2:
+        strcpy(path, "cities\\sanfrancisco.scn");
+        break;
+    case 3:
+        strcpy(path, "cities\\hamburg.scn");
+        break;
+    case 4:
+        strcpy(path, "cities\\bern.scn");
+        break;
+    case 5:
+        strcpy(path, "cities\\tokyo.scn");
+        break;
+    case 6:
+        strcpy(path, "cities\\detroit.scn");
+        break;
+    case 7:
+        strcpy(path, "cities\\boston.scn");
+        break;
+    case 8:
+        strcpy(path, "cities\\rio.scn");
+        break;
+    default:
+        strcpy(path, "cities\\dullsville.scn");
+        break;
     }
 
     f = fopen(path, "rb");
     if (f == NULL) {
-        MessageBox(hwndMain, "Scenario files not found!\nPlease copy scenario files to the cities directory.",
-            "Error", MB_ICONERROR | MB_OK);
+        MessageBox(hwndMain,
+                   "Scenario files not found!\nPlease copy scenario files to the cities directory.",
+                   "Error", MB_ICONERROR | MB_OK);
         return 0;
     }
     fclose(f);
 
     switch (scenarioId) {
-        case 1:
-            name = "Dullsville";
-            fname = "dullsville.scn";
-            ScenarioID = 1;
-            startYear = 1900;
-            TotalFunds = 5000;
-            break;
-        case 2:
-            name = "San Francisco";
-            fname = "sanfrancisco.scn";
-            ScenarioID = 2;
-            startYear = 1906;
-            TotalFunds = 20000;
-            break;
-        case 3:
-            name = "Hamburg";
-            fname = "hamburg.scn";
-            ScenarioID = 3;
-            startYear = 1944;
-            TotalFunds = 20000;
-            break;
-        case 4:
-            name = "Bern";
-            fname = "bern.scn";
-            ScenarioID = 4;
-            startYear = 1965;
-            TotalFunds = 20000;
-            break;
-        case 5:
-            name = "Tokyo";
-            fname = "tokyo.scn";
-            ScenarioID = 5;
-            startYear = 1957;
-            TotalFunds = 20000;
-            break;
-        case 6:
-            name = "Detroit";
-            fname = "detroit.scn";
-            ScenarioID = 6;
-            startYear = 1972;
-            TotalFunds = 20000;
-            break;
-        case 7:
-            name = "Boston";
-            fname = "boston.scn";
-            ScenarioID = 7;
-            startYear = 2010;
-            TotalFunds = 20000;
-            break;
-        case 8:
-            name = "Rio de Janeiro";
-            fname = "rio.scn";
-            ScenarioID = 8;
-            startYear = 2047;
-            TotalFunds = 20000;
-            break;
+    case 1:
+        name = "Dullsville";
+        fname = "dullsville.scn";
+        ScenarioID = 1;
+        startYear = 1900;
+        TotalFunds = 5000;
+        break;
+    case 2:
+        name = "San Francisco";
+        fname = "sanfrancisco.scn";
+        ScenarioID = 2;
+        startYear = 1906;
+        TotalFunds = 20000;
+        break;
+    case 3:
+        name = "Hamburg";
+        fname = "hamburg.scn";
+        ScenarioID = 3;
+        startYear = 1944;
+        TotalFunds = 20000;
+        break;
+    case 4:
+        name = "Bern";
+        fname = "bern.scn";
+        ScenarioID = 4;
+        startYear = 1965;
+        TotalFunds = 20000;
+        break;
+    case 5:
+        name = "Tokyo";
+        fname = "tokyo.scn";
+        ScenarioID = 5;
+        startYear = 1957;
+        TotalFunds = 20000;
+        break;
+    case 6:
+        name = "Detroit";
+        fname = "detroit.scn";
+        ScenarioID = 6;
+        startYear = 1972;
+        TotalFunds = 20000;
+        break;
+    case 7:
+        name = "Boston";
+        fname = "boston.scn";
+        ScenarioID = 7;
+        startYear = 2010;
+        TotalFunds = 20000;
+        break;
+    case 8:
+        name = "Rio de Janeiro";
+        fname = "rio.scn";
+        ScenarioID = 8;
+        startYear = 2047;
+        TotalFunds = 20000;
+        break;
     }
 
     /* Set up scenario initial conditions */
@@ -179,47 +178,46 @@ int loadScenario(int scenarioId)
 
         /* Add scenario-specific descriptions */
         switch (scenarioId) {
-            case 1:
-                addGameLog("Dullsville: A sleepy town with room to grow");
-                addDebugLog("Scenario goal: Build a bigger city");
-                break;
-            case 2:
-                addGameLog("San Francisco 1906: Earthquake-prone metropolis");
-                addGameLog("WARNING: Earthquake disaster expected!");
-                addDebugLog("Scenario goal: Recover from earthquake");
-                break;
-            case 3:
-                addGameLog("Hamburg 1944: War-torn city requires rebuilding");
-                addGameLog("WARNING: Expect fire bombing attacks!");
-                addDebugLog("Scenario goal: Rebuild after fire bombing");
-                break;
-            case 4:
-                addGameLog("Bern 1965: Beautiful Swiss capital");
-                addDebugLog("Scenario goal: Manage traffic and growth");
-                break;
-            case 5:
-                addGameLog("Tokyo 1957: Dense Japanese metropolis");
-                addGameLog("WARNING: Monster attack imminent!");
-                addDebugLog("Scenario goal: Recover from monster disaster");
-                break;
-            case 6:
-                addGameLog("Detroit 1972: Struggling with economic decline");
-                addDebugLog("Scenario goal: Reverse economic decay");
-                break;
-            case 7:
-                addGameLog("Boston 2010: Home to high-tech industry");
-                addGameLog("WARNING: Nuclear accident risk detected!");
-                addDebugLog("Scenario goal: Manage nuclear disaster");
-                break;
-            case 8:
-                addGameLog("Rio 2047: Coastal city threatened by flooding");
-                addGameLog("WARNING: Flood risk is high!");
-                addDebugLog("Scenario goal: Handle rising water levels");
-                break;
+        case 1:
+            addGameLog("Dullsville: A sleepy town with room to grow");
+            addDebugLog("Scenario goal: Build a bigger city");
+            break;
+        case 2:
+            addGameLog("San Francisco 1906: Earthquake-prone metropolis");
+            addGameLog("WARNING: Earthquake disaster expected!");
+            addDebugLog("Scenario goal: Recover from earthquake");
+            break;
+        case 3:
+            addGameLog("Hamburg 1944: War-torn city requires rebuilding");
+            addGameLog("WARNING: Expect fire bombing attacks!");
+            addDebugLog("Scenario goal: Rebuild after fire bombing");
+            break;
+        case 4:
+            addGameLog("Bern 1965: Beautiful Swiss capital");
+            addDebugLog("Scenario goal: Manage traffic and growth");
+            break;
+        case 5:
+            addGameLog("Tokyo 1957: Dense Japanese metropolis");
+            addGameLog("WARNING: Monster attack imminent!");
+            addDebugLog("Scenario goal: Recover from monster disaster");
+            break;
+        case 6:
+            addGameLog("Detroit 1972: Struggling with economic decline");
+            addDebugLog("Scenario goal: Reverse economic decay");
+            break;
+        case 7:
+            addGameLog("Boston 2010: Home to high-tech industry");
+            addGameLog("WARNING: Nuclear accident risk detected!");
+            addDebugLog("Scenario goal: Manage nuclear disaster");
+            break;
+        case 8:
+            addGameLog("Rio 2047: Coastal city threatened by flooding");
+            addGameLog("WARNING: Flood risk is high!");
+            addDebugLog("Scenario goal: Handle rising water levels");
+            break;
         }
 
-        addDebugLog("Scenario ID: %d, Starting population ~%d",
-            scenarioId, (int)CityPop);
+        addDebugLog("Scenario ID: %d, Starting population ~%d", scenarioId, (int)CityPop);
     }
 
     /* Set disaster info */
@@ -312,7 +310,7 @@ int loadScenario(int scenarioId)
         CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 25; /* Increased from 20 */
 
         /* Initialize class based on population */
-        CityClass = 0;        /* Village */
+        CityClass = 0; /* Village */
         if (CityPop > 2000) {
             CityClass++; /* Town */
         }
@@ -365,8 +363,7 @@ int loadScenario(int scenarioId)
 }
 
 /* Process scenario disasters */
-void scenarioDisaster(void)
-{
+void scenarioDisaster(void) {
     static int disasterX, disasterY;
 
     /* Early return if no disaster or waiting period is over */
@@ -381,65 +378,66 @@ void scenarioDisaster(void)
     }
 
     switch (DisasterEvent) {
-        case 1:            /* Dullsville */
-            break;
-        case 2:            /* San Francisco */
-            if (DisasterWait == 1) {
-                addGameLog("SCENARIO EVENT: San Francisco earthquake is happening now!");
-                addGameLog("Significant damage reported throughout the city!");
-                doEarthquake();
+    case 1: /* Dullsville */
+        break;
+    case 2: /* San Francisco */
+        if (DisasterWait == 1) {
+            addGameLog("SCENARIO EVENT: San Francisco earthquake is happening now!");
+            addGameLog("Significant damage reported throughout the city!");
+            doEarthquake();
+        }
+        break;
+    case 3: /* Hamburg */
+        /* Drop fire bombs */
+        if (DisasterWait % 10 == 0) {
+            disasterX = SimRandom(WORLD_X);
+            disasterY = SimRandom(WORLD_Y);
+            if (DisasterWait == 20) {
+                addGameLog("SCENARIO EVENT: Hamburg firebombing attack has begun!");
+                addGameLog("Multiple fires are breaking out across the city!");
             }
-            break;
-        case 3:            /* Hamburg */
-            /* Drop fire bombs */
-            if (DisasterWait % 10 == 0) {
-                disasterX = SimRandom(WORLD_X);
-                disasterY = SimRandom(WORLD_Y);
-                if (DisasterWait == 20) {
-                    addGameLog("SCENARIO EVENT: Hamburg firebombing attack has begun!");
-                    addGameLog("Multiple fires are breaking out across the city!");
-                }
-                addGameLog("Explosion reported at %d,%d", disasterX, disasterY);
-                addDebugLog("Firebomb at coordinates %d,%d, %d bombs remaining", disasterX, disasterY, DisasterWait/10);
-                makeExplosion(disasterX, disasterY);
+            addGameLog("Explosion reported at %d,%d", disasterX, disasterY);
+            addDebugLog("Firebomb at coordinates %d,%d, %d bombs remaining", disasterX, disasterY,
+                        DisasterWait / 10);
+            makeExplosion(disasterX, disasterY);
+        }
+        break;
+    case 4: /* Bern */
+        /* No disaster in Bern scenario */
+        break;
+    case 5: /* Tokyo */
+        if (DisasterWait == 1) {
+            addGameLog("SCENARIO EVENT: Tokyo monster attack is underway!");
+            addGameLog("Giant creature is destroying buildings in its path!");
+            makeMonster();
+        }
+        break;
+    case 6: /* Detroit */
+        /* No disaster in Detroit scenario */
+        break;
+    case 7: /* Boston */
+        if (DisasterWait == 1) {
+            addGameLog("SCENARIO EVENT: Boston nuclear meltdown is happening!");
+            addGameLog("Nuclear power plant has suffered a catastrophic failure!");
+            makeMeltdown();
+        }
+        break;
+    case 8: /* Rio */
+        if ((DisasterWait % 24) == 0) {
+            if (DisasterWait == 48) {
+                addGameLog("SCENARIO EVENT: Rio flood disaster is starting!");
+                addGameLog("Ocean levels are rising - coastal areas at risk!");
+            } else {
+                addGameLog("Flood waters continue to spread!");
             }
-            break;
-        case 4:            /* Bern */
-            /* No disaster in Bern scenario */
-            break;
-        case 5:            /* Tokyo */
-            if (DisasterWait == 1) {
-                addGameLog("SCENARIO EVENT: Tokyo monster attack is underway!");
-                addGameLog("Giant creature is destroying buildings in its path!");
-                makeMonster();
-            }
-            break;
-        case 6:            /* Detroit */
-            /* No disaster in Detroit scenario */
-            break;
-        case 7:            /* Boston */
-            if (DisasterWait == 1) {
-                addGameLog("SCENARIO EVENT: Boston nuclear meltdown is happening!");
-                addGameLog("Nuclear power plant has suffered a catastrophic failure!");
-                makeMeltdown();
-            }
-            break;
-        case 8:            /* Rio */
-            if ((DisasterWait % 24) == 0) {
-                if (DisasterWait == 48) {
-                    addGameLog("SCENARIO EVENT: Rio flood disaster is starting!");
-                    addGameLog("Ocean levels are rising - coastal areas at risk!");
-                } else {
-                    addGameLog("Flood waters continue to spread!");
-                }
-                addDebugLog("Flood event triggered - %d hours until flood peak", DisasterWait);
-                makeFlood();
-            }
-            break;
-        default:
-            /* Invalid disaster event */
-            DisasterEvent = 0;
-            return;
+            addDebugLog("Flood event triggered - %d hours until flood peak", DisasterWait);
+            makeFlood();
+        }
+        break;
+    default:
+        /* Invalid disaster event */
+        DisasterEvent = 0;
+        return;
     }
 
     if (DisasterWait) {

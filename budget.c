@@ -5,28 +5,27 @@
 #include "simulation.h"
 
 /* External log functions */
-extern void addGameLog(const char* format, ...);
-extern void addDebugLog(const char* format, ...);
+extern void addGameLog(const char *format, ...);
+extern void addDebugLog(const char *format, ...);
 
 /* Budget values */
-float RoadPercent = 1.0;    /* Road funding percentage (0.0-1.0) */
-float PolicePercent = 1.0;  /* Police funding percentage (0.0-1.0) */
-float FirePercent = 1.0;    /* Fire funding percentage (0.0-1.0) */
+float RoadPercent = 1.0;   /* Road funding percentage (0.0-1.0) */
+float PolicePercent = 1.0; /* Police funding percentage (0.0-1.0) */
+float FirePercent = 1.0;   /* Fire funding percentage (0.0-1.0) */
 
-QUAD RoadFund = 0;      /* Required road funding amount */
-QUAD PoliceFund = 0;    /* Required police funding amount */
-QUAD FireFund = 0;      /* Required fire funding amount */
+QUAD RoadFund = 0;   /* Required road funding amount */
+QUAD PoliceFund = 0; /* Required police funding amount */
+QUAD FireFund = 0;   /* Required fire funding amount */
 
-QUAD RoadSpend = 0;     /* Actual road spending */
-QUAD PoliceSpend = 0;   /* Actual police spending */
-QUAD FireSpend = 0;     /* Actual fire spending */
+QUAD RoadSpend = 0;   /* Actual road spending */
+QUAD PoliceSpend = 0; /* Actual police spending */
+QUAD FireSpend = 0;   /* Actual fire spending */
 
-QUAD TaxFund = 0;       /* Tax income for current year */
-int AutoBudget = 1;     /* Auto-budget enabled flag */
+QUAD TaxFund = 0;   /* Tax income for current year */
+int AutoBudget = 1; /* Auto-budget enabled flag */
 
 /* Budget initialization */
-void InitBudget(void)
-{
+void InitBudget(void) {
     /* Set initial percentages to 100% */
     FirePercent = 1.0;
     PolicePercent = 1.0;
@@ -50,8 +49,7 @@ void InitBudget(void)
 }
 
 /* Tax collection function - called yearly */
-void CollectTax(void)
-{
+void CollectTax(void) {
     int z;
     int taxable;
     float r;
@@ -78,16 +76,16 @@ void CollectTax(void)
 
         /* Log tax collection */
         addGameLog("Annual tax collection: $%d", (int)TaxFund);
-        addDebugLog("Tax details: Rate %d%%, Taxable pop %d, Difficulty modifier %.1f",
-            TaxRate, taxable, r);
+        addDebugLog("Tax details: Rate %d%%, Taxable pop %d, Difficulty modifier %.1f", TaxRate,
+                    taxable, r);
 
         /* Add funds to treasury */
         Spend(-TaxFund);
     }
 
     /* Calculate funding requirements */
-    RoadFund = RoadTotal * 4; /* $4 per road tile */
-    FireFund = FirePop * 100; /* $100 per fire station */
+    RoadFund = RoadTotal * 4;     /* $4 per road tile */
+    FireFund = FirePop * 100;     /* $100 per fire station */
     PoliceFund = PolicePop * 100; /* $100 per police station */
 
     /* Log funding requirements */
@@ -101,8 +99,7 @@ void CollectTax(void)
 }
 
 /* Spend money (negative means income) */
-void Spend(QUAD amount)
-{
+void Spend(QUAD amount) {
     QUAD oldFunds = TotalFunds;
 
     /* Add to treasury - negative values increase funds */
@@ -112,26 +109,23 @@ void Spend(QUAD amount)
     if (TotalFunds < 0) {
         /* Log funds depleted */
         addGameLog("FINANCIAL CRISIS: City treasury is empty!");
-        addDebugLog("Funds depleted: Attempted to spend $%d with only $%d available",
-            (int)amount, (int)oldFunds);
+        addDebugLog("Funds depleted: Attempted to spend $%d with only $%d available", (int)amount,
+                    (int)oldFunds);
         TotalFunds = 0;
     }
 
     /* Log major spending/income */
     if (amount > 10000 || amount < -10000) {
         if (amount > 0) {
-            addDebugLog("Major expense: $%d (Funds: $%d)",
-                (int)amount, (int)TotalFunds);
+            addDebugLog("Major expense: $%d (Funds: $%d)", (int)amount, (int)TotalFunds);
         } else {
-            addDebugLog("Major income: $%d (Funds: $%d)",
-                (int)-amount, (int)TotalFunds);
+            addDebugLog("Major income: $%d (Funds: $%d)", (int)-amount, (int)TotalFunds);
         }
     }
 }
 
 /* Auto-budget processing */
-void DoBudget(void)
-{
+void DoBudget(void) {
     QUAD total;
     QUAD yumDuckets;
     QUAD fireInt;
@@ -259,39 +253,33 @@ void DoBudget(void)
 }
 
 /* Gets current tax income */
-QUAD GetTaxIncome(void)
-{
+QUAD GetTaxIncome(void) {
     return TaxFund;
 }
 
 /* Gets current budget balance (after spending) */
-QUAD GetBudgetBalance(void)
-{
+QUAD GetBudgetBalance(void) {
     QUAD total = FireSpend + PoliceSpend + RoadSpend;
     return TaxFund - total;
 }
 
 /* Returns the effective road maintenance percentage */
-int GetRoadEffect(void)
-{
+int GetRoadEffect(void) {
     return RoadEffect;
 }
 
 /* Returns the effective police funding percentage */
-int GetPoliceEffect(void)
-{
+int GetPoliceEffect(void) {
     return PoliceEffect;
 }
 
 /* Returns the effective fire department funding percentage */
-int GetFireEffect(void)
-{
+int GetFireEffect(void) {
     return FireEffect;
 }
 
 /* Sets road funding percentage */
-void SetRoadPercent(float percent)
-{
+void SetRoadPercent(float percent) {
     if (percent < 0.0f) {
         percent = 0.0f;
     } else if (percent > 1.0f) {
@@ -303,8 +291,7 @@ void SetRoadPercent(float percent)
 }
 
 /* Sets police funding percentage */
-void SetPolicePercent(float percent)
-{
+void SetPolicePercent(float percent) {
     if (percent < 0.0f) {
         percent = 0.0f;
     } else if (percent > 1.0f) {
@@ -316,8 +303,7 @@ void SetPolicePercent(float percent)
 }
 
 /* Sets fire department funding percentage */
-void SetFirePercent(float percent)
-{
+void SetFirePercent(float percent) {
     if (percent < 0.0f) {
         percent = 0.0f;
     } else if (percent > 1.0f) {

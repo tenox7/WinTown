@@ -2,12 +2,12 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include <windows.h>
+#include "animtab.h"
+#include "simulation.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "simulation.h"
-#include "animtab.h"
+#include <windows.h>
 
 /* Animation state flags */
 static int AnimationEnabled = 1; /* Animation enabled by default */
@@ -16,8 +16,7 @@ static int AnimationEnabled = 1; /* Animation enabled by default */
 static void DoCoalSmoke(int x, int y);
 
 /* Process animations for the entire map */
-void AnimateTiles(void)
-{
+void AnimateTiles(void) {
     unsigned short tilevalue, tileflags;
     int x, y;
 
@@ -33,8 +32,8 @@ void AnimateTiles(void)
 
             /* Only process tiles with the animation bit set */
             if (tilevalue & ANIMBIT) {
-                tileflags = tilevalue & MASKBITS;  /* Save the flags */
-                tilevalue &= LOMASK;               /* Extract base tile value */
+                tileflags = tilevalue & MASKBITS; /* Save the flags */
+                tilevalue &= LOMASK;              /* Extract base tile value */
 
                 /* Look up the next animation frame */
                 tilevalue = aniTile[tilevalue];
@@ -50,20 +49,17 @@ void AnimateTiles(void)
 }
 
 /* Enable or disable animations */
-void SetAnimationEnabled(int enabled)
-{
+void SetAnimationEnabled(int enabled) {
     AnimationEnabled = enabled;
 }
 
 /* Get animation enabled status */
-int GetAnimationEnabled(void)
-{
+int GetAnimationEnabled(void) {
     return AnimationEnabled;
 }
 
 /* Add smoke animation to coal power plants */
-void SetSmoke(int x, int y)
-{
+void SetSmoke(int x, int y) {
     int i;
     int xx, yy;
 
@@ -87,24 +83,23 @@ void SetSmoke(int x, int y)
             /* Only set the tile if it doesn't already have the animation bit set
                or if it's not already a smoke tile. This avoids resetting the
                animation sequence and makes it flow better. */
-            if (!(Map[yy][xx] & ANIMBIT) ||
-                (Map[yy][xx] & LOMASK) < COALSMOKE1 ||
-                (Map[yy][xx] & LOMASK) > COALSMOKE4+4) {
+            if (!(Map[yy][xx] & ANIMBIT) || (Map[yy][xx] & LOMASK) < COALSMOKE1 ||
+                (Map[yy][xx] & LOMASK) > COALSMOKE4 + 4) {
 
                 /* Set the appropriate smoke tile with animation */
                 switch (i) {
-                    case 0:
-                        Map[yy][xx] = COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
-                        break;
-                    case 1:
-                        Map[yy][xx] = COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
-                        break;
-                    case 2:
-                        Map[yy][xx] = COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
-                        break;
-                    case 3:
-                        Map[yy][xx] = COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
-                        break;
+                case 0:
+                    Map[yy][xx] = COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    break;
+                case 1:
+                    Map[yy][xx] = COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    break;
+                case 2:
+                    Map[yy][xx] = COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    break;
+                case 3:
+                    Map[yy][xx] = COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    break;
                 }
             }
         }
@@ -112,23 +107,20 @@ void SetSmoke(int x, int y)
 }
 
 /* Update fire animations */
-void UpdateFire(int x, int y)
-{
+void UpdateFire(int x, int y) {
     /* Check bounds */
     if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
         return;
     }
 
     /* Set fire tiles to animate */
-    if ((Map[y][x] & LOMASK) >= FIREBASE &&
-        (Map[y][x] & LOMASK) <= (FIREBASE + 7)) {
+    if ((Map[y][x] & LOMASK) >= FIREBASE && (Map[y][x] & LOMASK) <= (FIREBASE + 7)) {
         Map[y][x] |= ANIMBIT;
     }
 }
 
 /* Update nuclear power plant animations */
-void UpdateNuclearPower(int x, int y)
-{
+void UpdateNuclearPower(int x, int y) {
     /* Check bounds */
     if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
         return;
@@ -149,8 +141,7 @@ void UpdateNuclearPower(int x, int y)
 }
 
 /* Update airport radar animation */
-void UpdateAirportRadar(int x, int y)
-{
+void UpdateAirportRadar(int x, int y) {
     /* Check bounds */
     if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
         return;
@@ -172,8 +163,7 @@ void UpdateAirportRadar(int x, int y)
 }
 
 /* Update all special animations - called periodically from simulation */
-void UpdateSpecialAnimations(void)
-{
+void UpdateSpecialAnimations(void) {
     int x, y;
     short tileValue;
 

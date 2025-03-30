@@ -2,11 +2,11 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include <windows.h>
+#include "simulation.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "simulation.h"
+#include <windows.h>
 
 /* Power stack size for power distribution algorithm */
 #define PWRSTKSIZE 1000
@@ -31,64 +31,62 @@ static int MoveMapSim(short MDir);
 static int TestForCond(short TFDir);
 
 /* Move in a direction on the map during power scan */
-static int MoveMapSim(short MDir)
-{
+static int MoveMapSim(short MDir) {
     int xSave, ySave;
 
     xSave = SMapX;
     ySave = SMapY;
 
     switch (MDir) {
-        case 0: /* North */
-            if (SMapY > 0) {
-                SMapY--;
-                return 1;
-            }
-            if (SMapY < 0) {
-                SMapY = 0;
-            }
-            return 0;
-
-        case 1: /* East */
-            if (SMapX < (WORLD_X - 1)) {
-                SMapX++;
-                return 1;
-            }
-            if (SMapX > (WORLD_X - 1)) {
-                SMapX = WORLD_X - 1;
-            }
-            return 0;
-
-        case 2: /* South */
-            if (SMapY < (WORLD_Y - 1)) {
-                SMapY++;
-                return 1;
-            }
-            if (SMapY > (WORLD_Y - 1)) {
-                SMapY = WORLD_Y - 1;
-            }
-            return 0;
-
-        case 3: /* West */
-            if (SMapX > 0) {
-                SMapX--;
-                return 1;
-            }
-            if (SMapX < 0) {
-                SMapX = 0;
-            }
-            return 0;
-
-        case 4: /* No move - stay in place */
+    case 0: /* North */
+        if (SMapY > 0) {
+            SMapY--;
             return 1;
+        }
+        if (SMapY < 0) {
+            SMapY = 0;
+        }
+        return 0;
+
+    case 1: /* East */
+        if (SMapX < (WORLD_X - 1)) {
+            SMapX++;
+            return 1;
+        }
+        if (SMapX > (WORLD_X - 1)) {
+            SMapX = WORLD_X - 1;
+        }
+        return 0;
+
+    case 2: /* South */
+        if (SMapY < (WORLD_Y - 1)) {
+            SMapY++;
+            return 1;
+        }
+        if (SMapY > (WORLD_Y - 1)) {
+            SMapY = WORLD_Y - 1;
+        }
+        return 0;
+
+    case 3: /* West */
+        if (SMapX > 0) {
+            SMapX--;
+            return 1;
+        }
+        if (SMapX < 0) {
+            SMapX = 0;
+        }
+        return 0;
+
+    case 4: /* No move - stay in place */
+        return 1;
     }
 
     return 0;
 }
 
 /* Test if tile in a certain direction can be electrified */
-static int TestForCond(short TFDir)
-{
+static int TestForCond(short TFDir) {
     int xsave, ysave;
     short tile;
 
@@ -101,10 +99,8 @@ static int TestForCond(short TFDir)
         /* Check if tile can conduct power and is not already powered.
            NOTE: ZONEBIT-flagged tiles can also conduct power even if CONDBIT is not set.
            This is critical for residential zones to get power. */
-        if (((Map[SMapY][SMapX] & CONDBIT) || (Map[SMapY][SMapX] & ZONEBIT)) &&
-            (tile != NUCLEAR) &&
-            (tile != POWERPLANT) &&
-            !(Map[SMapY][SMapX] & POWERBIT)) {
+        if (((Map[SMapY][SMapX] & CONDBIT) || (Map[SMapY][SMapX] & ZONEBIT)) && (tile != NUCLEAR) &&
+            (tile != POWERPLANT) && !(Map[SMapY][SMapX] & POWERBIT)) {
             SMapX = xsave;
             SMapY = ysave;
             return 1;
@@ -117,8 +113,7 @@ static int TestForCond(short TFDir)
 }
 
 /* Add position to power stack */
-static void PushPowerStack(void)
-{
+static void PushPowerStack(void) {
     if (PowerStackNum < (PWRSTKSIZE - 2)) {
         PowerStackNum++;
         PowerStackX[PowerStackNum] = SMapX;
@@ -127,8 +122,7 @@ static void PushPowerStack(void)
 }
 
 /* Take position from power stack */
-static void PullPowerStack(void)
-{
+static void PullPowerStack(void) {
     if (PowerStackNum > 0) {
         SMapX = PowerStackX[PowerStackNum];
         SMapY = PowerStackY[PowerStackNum];
@@ -137,8 +131,7 @@ static void PullPowerStack(void)
 }
 
 /* Count power plants */
-void CountPowerPlants(void)
-{
+void CountPowerPlants(void) {
     int x, y;
     short tile;
 
@@ -161,8 +154,7 @@ void CountPowerPlants(void)
 }
 
 /* Add a power plant position to the distribution queue */
-void QueuePowerPlant(int x, int y)
-{
+void QueuePowerPlant(int x, int y) {
     if (PowerStackNum < (PWRSTKSIZE - 2)) {
         PowerStackNum++;
         PowerStackX[PowerStackNum] = x;
@@ -171,8 +163,7 @@ void QueuePowerPlant(int x, int y)
 }
 
 /* Find all power plants and add them to the queue */
-void FindPowerPlants(void)
-{
+void FindPowerPlants(void) {
     int x, y;
     short tile;
 
@@ -194,8 +185,7 @@ void FindPowerPlants(void)
 /* Do a full power distribution scan - ORIGINAL ALGORITHM
    This uses the original Micropolis power transmission method that traces along
    power lines and conductive terrain rather than using a simple radius */
-void DoPowerScan(void)
-{
+void DoPowerScan(void) {
     int x, y;
     short ADir, ConNum, Dir;
 
@@ -210,7 +200,7 @@ void DoPowerScan(void)
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
             Map[y][x] &= ~POWERBIT; /* Turn off the power bit */
-            PowerMap[y][x] = 0; /* Set PowerMap to unpowered */
+            PowerMap[y][x] = 0;     /* Set PowerMap to unpowered */
         }
     }
 
@@ -278,7 +268,7 @@ void DoPowerScan(void)
             while ((Dir < 4) && (ConNum < 2)) {
                 /* If there is a conductive tile in this direction */
                 if (TestForCond(Dir)) {
-                    ConNum++; /* Count it */
+                    ConNum++;   /* Count it */
                     ADir = Dir; /* Remember direction */
                 }
                 Dir++;

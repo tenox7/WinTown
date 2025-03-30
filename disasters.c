@@ -2,14 +2,14 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include <windows.h>
+#include "simulation.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "simulation.h"
+#include <windows.h>
 
 /* External log functions */
-extern void addGameLog(const char* format, ...);
-extern void addDebugLog(const char* format, ...);
+extern void addGameLog(const char *format, ...);
+extern void addDebugLog(const char *format, ...);
 
 /* External functions */
 extern int SimRandom(int range);
@@ -23,33 +23,32 @@ static const short xDelta[4] = {0, 1, 0, -1};
 static const short yDelta[4] = {-1, 0, 1, 0};
 
 /* These constants are from simulation.h, defining them here to avoid redeclaration issues */
-#define FIRE        56      /* Fire tile base - from simulation.h */
-#define ANIMBIT     0x0800  /* Animation bit - from simulation.h */
-#define RUBBLE      44      /* Rubble tile - from simulation.h */
-#define BULLBIT     0x1000  /* Bulldozable bit - from simulation.h */
-#define BURNBIT     0x2000  /* Burnable bit - from simulation.h */
-#define FLOOD       48      /* Flood tile - from simulation.h */
-#define RADTILE     52      /* Radiation tile - from simulation.h */
-#define DIRT        0       /* Dirt tile - from simulation.h */
-#define ZONEBIT     0x0400  /* Zone center bit - from simulation.h */
+#define FIRE 56        /* Fire tile base - from simulation.h */
+#define ANIMBIT 0x0800 /* Animation bit - from simulation.h */
+#define RUBBLE 44      /* Rubble tile - from simulation.h */
+#define BULLBIT 0x1000 /* Bulldozable bit - from simulation.h */
+#define BURNBIT 0x2000 /* Burnable bit - from simulation.h */
+#define FLOOD 48       /* Flood tile - from simulation.h */
+#define RADTILE 52     /* Radiation tile - from simulation.h */
+#define DIRT 0         /* Dirt tile - from simulation.h */
+#define ZONEBIT 0x0400 /* Zone center bit - from simulation.h */
 
 /* Zone ranges */
-#define RESBASE     240     /* Residential zone base */
-#define LASTRES     420     /* Last residential zone */
-#define COMBASE     423     /* Commercial zone base */
-#define LASTCOM     611     /* Last commercial zone */
-#define INDBASE     612     /* Industrial zone base */
-#define LASTIND     692     /* Last industrial zone */
-#define PORTBASE    693     /* Seaport base */
-#define LASTPORT    708     /* Last seaport */
-#define AIRPORTBASE 709     /* Airport base */
-#define LASTAIRPORT 744     /* Last airport */
-#define NUCLEAR     816     /* Nuclear power plant */
-#define LASTZONE    LASTAIRPORT /* Last zone tile for disaster purposes */
+#define RESBASE 240          /* Residential zone base */
+#define LASTRES 420          /* Last residential zone */
+#define COMBASE 423          /* Commercial zone base */
+#define LASTCOM 611          /* Last commercial zone */
+#define INDBASE 612          /* Industrial zone base */
+#define LASTIND 692          /* Last industrial zone */
+#define PORTBASE 693         /* Seaport base */
+#define LASTPORT 708         /* Last seaport */
+#define AIRPORTBASE 709      /* Airport base */
+#define LASTAIRPORT 744      /* Last airport */
+#define NUCLEAR 816          /* Nuclear power plant */
+#define LASTZONE LASTAIRPORT /* Last zone tile for disaster purposes */
 
 /* Trigger an earthquake disaster */
-void doEarthquake(void)
-{
+void doEarthquake(void) {
     int x, y, z;
     int time;
     short tile, tileValue;
@@ -104,8 +103,7 @@ void doEarthquake(void)
 }
 
 /* Create an explosion */
-void makeExplosion(int x, int y)
-{
+void makeExplosion(int x, int y) {
     int dir, tx, ty;
     char buf[256];
 
@@ -145,8 +143,7 @@ void makeExplosion(int x, int y)
 }
 
 /* Start a fire at the given location */
-void makeFire(int x, int y)
-{
+void makeFire(int x, int y) {
     char buf[256];
 
     /* Validate coordinates first */
@@ -171,8 +168,7 @@ void makeFire(int x, int y)
 }
 
 /* Check for and spread fires - called from simulation loop */
-void spreadFire(void)
-{
+void spreadFire(void) {
     int x, y, dir, tx, ty;
     int i;
     short tileValue;
@@ -223,8 +219,7 @@ void spreadFire(void)
 }
 
 /* Create a monster (Godzilla-like) disaster */
-void makeMonster(void)
-{
+void makeMonster(void) {
     int x, y;
     int found = 0;
     int attempts = 0;
@@ -258,26 +253,26 @@ void makeMonster(void)
 
                     /* Move in a random direction */
                     switch (dir) {
-                        case 0:
-                            tx = x;
-                            ty = y - 1;
-                            break; /* North */
-                        case 1:
-                            tx = x + 1;
-                            ty = y;
-                            break; /* East */
-                        case 2:
-                            tx = x;
-                            ty = y + 1;
-                            break; /* South */
-                        case 3:
-                            tx = x - 1;
-                            ty = y;
-                            break; /* West */
-                        default:
-                            tx = x;
-                            ty = y;
-                            break; /* Error case - stay put */
+                    case 0:
+                        tx = x;
+                        ty = y - 1;
+                        break; /* North */
+                    case 1:
+                        tx = x + 1;
+                        ty = y;
+                        break; /* East */
+                    case 2:
+                        tx = x;
+                        ty = y + 1;
+                        break; /* South */
+                    case 3:
+                        tx = x - 1;
+                        ty = y;
+                        break; /* West */
+                    default:
+                        tx = x;
+                        ty = y;
+                        break; /* Error case - stay put */
                     }
 
                     /* Check bounds before setting new position */
@@ -304,8 +299,7 @@ void makeMonster(void)
 }
 
 /* Create a flood disaster */
-void makeFlood(void)
-{
+void makeFlood(void) {
     int x, y, xx, yy, tx, ty;
     int waterFound = 0;
     int attempts = 0;
@@ -390,8 +384,7 @@ void makeFlood(void)
 }
 
 /* Create nuclear meltdown disaster */
-void makeMeltdown(void)
-{
+void makeMeltdown(void) {
     int x, y, tx, ty, i;
     int found = 0;
     char buf[256];
@@ -407,9 +400,12 @@ void makeMeltdown(void)
 
                 /* Log the meltdown */
                 addGameLog("DISASTER: NUCLEAR MELTDOWN!!!");
-                addGameLog("Nuclear power plant at %d,%d has experienced a critical failure!", x, y);
+                addGameLog("Nuclear power plant at %d,%d has experienced a critical failure!", x,
+                           y);
                 addGameLog("Area is heavily contaminated with radiation!");
-                addDebugLog("Nuclear meltdown at coordinates %d,%d, spreading radiation in 20x20 area", x, y);
+                addDebugLog(
+                    "Nuclear meltdown at coordinates %d,%d, spreading radiation in 20x20 area", x,
+                    y);
 
                 MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
 
