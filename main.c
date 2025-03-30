@@ -2197,23 +2197,8 @@ void drawCity(HDC hdc)
     cityYear = CityYear;
     fundValue = (int)TotalFunds;
 
-    /* CRITICAL FIX: Ensure population is never displayed as zero */
-    if (CityPop > 0) {
-        /* Use CityPop instead of TotalPop for accurate population display */
-        popValue = (int)CityPop;
-        /* Save last non-zero value for debug purposes */
-        PrevCityPop = (int)CityPop;
-    } else if (PrevCityPop > 0) {
-        /* If current population is zero but we had a previous value, use that */
-        popValue = PrevCityPop;
-        /* Force CityPop to match to preserve continuity */
-        CityPop = PrevCityPop;
-    } else {
-        /* Absolute fallback: minimum village population */
-        popValue = 100;
-        CityPop = 100;
-        PrevCityPop = 100;
-    }
+    /* Display the current population */
+    popValue = (int)CityPop;
 
     /* Calculate visible range */
     startX = xOffset / TILE_SIZE;
