@@ -49,18 +49,30 @@ static int GetFire(void);
 void EvalInit(void)
 {
     int x;
+    int preservePop;
+    int preserveClass;
+    
+    /* Save population values */
+    preservePop = CityPop;
+    preserveClass = CityClass;
     
     /* Clear variables */
     CityYes = 0;
     CityNo = 0;
-    CityPop = 0;
+    /* Don't clear CityPop here */
     deltaCityPop = 0;
     CityAssValue = 0;
-    CityClass = 0;
+    /* Don't clear CityClass here */
     CityScore = 500;
     deltaCityScore = 0;
     AverageCityScore = 500;
     EvalValid = 1;
+    
+    /* Restore population values if they were non-zero */
+    if (preservePop > 0) {
+        CityPop = preservePop;
+        CityClass = preserveClass;
+    }
     
     /* Clear problem arrays */
     for (x = 0; x < PROBNUM; x++) {
@@ -108,7 +120,8 @@ static void DoPopNum(void)
     /* Save old population */
     OldCityPop = CityPop;
     
-    /* Calculate city population */
+    /* CityPop is already calculated in TakeCensus since we need it 
+       updated more frequently, but calculate it here too for consistency */
     CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
     
     /* If first time, set old pop to current */
@@ -119,7 +132,8 @@ static void DoPopNum(void)
     /* Calculate population change */
     deltaCityPop = CityPop - OldCityPop;
     
-    /* Determine city class based on population */
+    /* Determine city class based on population - also done in TakeCensus 
+       but repeated here for consistency */
     CityClass = 0;                /* Village */
     if (CityPop > 2000)  CityClass++; /* Town */
     if (CityPop > 10000) CityClass++; /* City */

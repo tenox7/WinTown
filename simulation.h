@@ -156,6 +156,10 @@ extern int CityYear;     /* City year from 1900 onwards */
 extern int CityMonth;    /* City month from Jan to Dec */
 extern QUAD TotalFunds;  /* City operating funds */
 extern int TaxRate;      /* City tax rate 0-20 */
+extern int SkipCensusReset; /* Flag to skip census reset after loading a scenario */
+extern int DebugCensusReset; /* Debug counter for tracking census resets */
+extern int PrevResPop;      /* Debug tracker for last residential population value */
+extern int PrevCityPop;     /* Debug tracker for last city population value */
 
 /* Counters */
 extern int Scycle;       /* Simulation cycle counter (0-1023) */
@@ -248,6 +252,7 @@ void DoPowerScan(void);
 int MakeTraffic(int zoneType);
 void DecTrafficMap(void);
 void CalcTrafficAverage(void);
+void RandomlySeedRand(void); /* Initialize random number generator */
 int SimRandom(int range);  /* Random number function used by traffic system */
 
 /* Scanner-related functions - scanner.c */

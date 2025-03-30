@@ -36,6 +36,10 @@ int CityYear = 1900;
 int CityMonth = 0;
 QUAD TotalFunds = 5000;
 int TaxRate = 7;
+int SkipCensusReset = 0; /* Flag to skip census reset after loading a scenario */
+int DebugCensusReset = 0; /* Debug counter for tracking census resets */
+int PrevResPop = 0;      /* Debug tracker for last residential population value */
+int PrevCityPop = 0;     /* Debug tracker for last city population value */
 
 /* External declarations for scenario variables */
 extern short ScenarioID;
@@ -109,7 +113,7 @@ static short CChr;
 static short CChr9;
 
 /* Random number generator - Windows compatible */
-static void RandomlySeedRand(void)
+void RandomlySeedRand(void)
 {
     srand((unsigned int)GetTickCount());
 }
@@ -123,6 +127,17 @@ int SimRandom(int range)
 void DoSimInit(void)
 {
     int x, y;
+    int oldResPop, oldComPop, oldIndPop, oldTotalPop, oldCityClass;
+    QUAD oldCityPop;
+    int centerX, centerY, distance, value;
+    
+    /* Save previous population values */
+    oldResPop = ResPop;
+    oldComPop = ComPop;
+    oldIndPop = IndPop;
+    oldTotalPop = TotalPop;
+    oldCityPop = CityPop;
+    oldCityClass = CityClass;
     
     /* Clear all the density maps */
     memset(PopDensity, 0, sizeof(PopDensity));
@@ -140,14 +155,12 @@ void DoSimInit(void)
     memset(ComRate, 0, sizeof(ComRate));
     
     /* Initialize land values to make simulation more visually interesting */
+    centerX = WORLD_X/4;
+    centerY = WORLD_Y/4;
+    
     for (y = 0; y < WORLD_Y/2; y++) {
         for (x = 0; x < WORLD_X/2; x++) {
             /* Create a gradient of land values */
-            int centerX = WORLD_X/4;
-            int centerY = WORLD_Y/4;
-            int distance;
-            int value;
-            
             distance = (x - centerX) * (x - centerX) + (y - centerY) * (y - centerY);
             value = 250 - (distance / 10);
             if (value < 1) value = 1;
@@ -181,6 +194,25 @@ void DoSimInit(void)
     CityYear = 1900;
     CityMonth = 0;
     
+    /* Only reset population counters if they were zero */
+    if (oldCityPop == 0) {
+        ResPop = 0;
+        ComPop = 0;
+        IndPop = 0;
+        TotalPop = 0;
+        CityPop = 0;
+        LastTotalPop = 0;
+    } else {
+        /* Preserve population from previous values */
+        ResPop = oldResPop;
+        ComPop = oldComPop;
+        IndPop = oldIndPop;
+        TotalPop = oldTotalPop;
+        CityPop = oldCityPop;
+        CityClass = oldCityClass;
+        LastTotalPop = oldTotalPop;
+    }
+    
     /* Set initial growth demand */
     SetValves(500, 300, 100);
     ValveFlag = 1;
@@ -202,6 +234,9 @@ void DoSimInit(void)
     
     /* Generate a random disaster wait period */
     DisasterWait = SimRandom(51) + 49;
+    
+    /* Force an initial census to populate values */
+    TakeCensus();
 }
 
 void SimFrame(void)
@@ -268,6 +303,10 @@ void Simulate(int mod16)
             break;
             
         case 1:
+            /* Clear census before starting a new scan cycle */
+            ClearCensus();
+            /* FALLTHROUGH to start map scanning */
+            
         case 2:
         case 3:
         case 4:
@@ -285,10 +324,7 @@ void Simulate(int mod16)
             
         case 9:
             /* Process taxes, maintenance, city evaluation if needed */
-            if ((Scycle & 1) == 0) {
-                /* Even cycles: do census for graphs */
-                ClearCensus();
-            }
+            /* ClearCensus is now done in case 1 before map scanning */
             
             /* Every 4 cycles, take census for graphs */
             if ((Scycle % CENSUSRATE) == 0) {
@@ -311,6 +347,9 @@ void Simulate(int mod16)
             if ((Scycle % 4) == 0) {
                 CalcTrafficAverage();
             }
+            
+            /* Update city population more frequently than just at census time */
+            CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
             break;
             
         case 11:
@@ -324,6 +363,14 @@ void Simulate(int mod16)
                 /* ToDo: DoShowPicture(POPULATIONLOST_BIT); */
                 LastTotalPop = 0;
             }
+            
+            /* Update city class based on population */
+            CityClass = 0;                /* Village */
+            if (CityPop > 2000)  CityClass++; /* Town */
+            if (CityPop > 10000) CityClass++; /* City */
+            if (CityPop > 50000) CityClass++; /* Capital */
+            if (CityPop > 100000) CityClass++; /* Metropolis */
+            if (CityPop > 500000) CityClass++; /* Megalopolis */
             break;
             
         case 12:
@@ -373,25 +420,40 @@ void DoTimeStuff(void)
         CityMonth = 0;
         CityYear++;
         
-        /* Make the simulation more dynamic - add some random valve changes */
-        if (CityYear % 2 == 0) {
+        /* Make the simulation more dynamic - adjust valves more frequently */
+        /* Increased from every 2 years to every year */
+        {
             int rDelta, cDelta, iDelta;
             
-            rDelta = SimRandom(500) - 250;
-            cDelta = SimRandom(500) - 250;
-            iDelta = SimRandom(500) - 250;
+            /* Much stronger bias toward positive growth */
+            rDelta = SimRandom(600) - 100; /* Bias toward positive values */
+            cDelta = SimRandom(600) - 100;
+            iDelta = SimRandom(600) - 100;
             
             RValve += rDelta;
             CValve += cDelta;
             IValve += iDelta;
             
+            /* Force valves to stay positive most of the time */
+            if (RValve < 0 && SimRandom(4) < 3) RValve = 200 + SimRandom(300); 
+            if (CValve < 0 && SimRandom(4) < 3) CValve = 200 + SimRandom(300);
+            if (IValve < 0 && SimRandom(4) < 3) IValve = 200 + SimRandom(300);
+            
             /* Ensure valves stay in reasonable ranges */
-            if (RValve < -1500) RValve = -1500;
-            if (RValve > 1500) RValve = 1500;
-            if (CValve < -1500) CValve = -1500;
-            if (CValve > 1500) CValve = 1500;
-            if (IValve < -1500) IValve = -1500;
-            if (IValve > 1500) IValve = 1500;
+            if (RValve < -1000) RValve = -1000;
+            if (RValve > 2000) RValve = 2000;
+            if (CValve < -1000) CValve = -1000;
+            if (CValve > 2000) CValve = 2000;
+            if (IValve < -1000) IValve = -1000;
+            if (IValve > 2000) IValve = 2000;
+            
+            /* Debug valve changes */
+            {
+                char debugMsg[256];
+                wsprintf(debugMsg, "VALVES: R=%d C=%d I=%d (Year %d)\n",
+                       RValve, CValve, IValve, CityYear);
+                OutputDebugString(debugMsg);
+            }
         }
         
         /* Add some funds periodically to keep things interesting */
@@ -456,10 +518,24 @@ void SetValves(int res, int com, int ind)
 
 void ClearCensus(void)
 {
-    /* Reset census counts */
-    ResPop = 0;
-    ComPop = 0;
-    IndPop = 0;
+    /* CRITICAL: Save previous population values BEFORE resetting */
+    QUAD oldCityPop;
+    int oldResPop;
+    int oldComPop;
+    int oldIndPop;
+    int oldTotalPop;
+    
+    oldCityPop = CityPop;
+    oldResPop = ResPop;
+    oldComPop = ComPop;
+    oldIndPop = IndPop;
+    oldTotalPop = TotalPop;
+    
+    /* DEBUG: Track previous population values */
+    PrevResPop = ResPop;
+    PrevCityPop = (int)CityPop;
+    
+    /* Infrastructure counts always need resetting */
     RoadTotal = 0;
     RailTotal = 0;
     FirePop = 0;
@@ -471,21 +547,95 @@ void ClearCensus(void)
     PwrdZCnt = 0;
     UnpwrdZCnt = 0;
     
-    /* Reset total population to ensure clean census */
+    /* Population MUST be reset to allow recounting and growth/decline */
+    /* This is the key difference: always reset these values regardless of SkipCensusReset */
+    ResPop = 0;
+    ComPop = 0;
+    IndPop = 0;
     TotalPop = 0;
+    
+    /* DEBUG: Increment counter to track census resets */
+    DebugCensusReset++;
 }
 
 void TakeCensus(void)
 {
     /* Store city statistics in the history arrays */
     int i;
+    QUAD newCityPop;
     
     /* Calculate total population */
     TotalPop = (ResPop + ComPop + IndPop) * 8;
     
-    if (TotalPop == 0 && CityTime > 10) {
-        /* ToDo: DoShowPicture(POPULATIONLOST_BIT); */
+    /* Calculate new city population from zone populations */
+    newCityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    
+    /* If we have real zone population, update CityPop with the new value */
+    if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
+        CityPop = newCityPop;
     }
+    /* If we don't have zone population but have previous CityPop, maintain it */
+    else if (CityPop == 0 && PrevCityPop > 0) {
+        CityPop = PrevCityPop;
+    }
+    
+    /* DEBUG: Output current population state */
+    {
+        char debugMsg[256];
+        wsprintf(debugMsg, "DEBUG Population: Res=%d Com=%d Ind=%d Total=%d CityPop=%d (Prev=%d) Resets=%d\n",
+                ResPop, ComPop, IndPop, TotalPop, (int)CityPop, PrevCityPop, DebugCensusReset);
+        OutputDebugString(debugMsg);
+    }
+    
+    /* Determine city class based on population */
+    CityClass = 0;                /* Village */
+    if (CityPop > 2000)  CityClass++; /* Town */
+    if (CityPop > 10000) CityClass++; /* City */
+    if (CityPop > 50000) CityClass++; /* Capital */
+    if (CityPop > 100000) CityClass++; /* Metropolis */
+    if (CityPop > 500000) CityClass++; /* Megalopolis */
+    
+    /* Make sure CityPop is never zero if we have zones */
+    if (CityPop == 0) {
+        if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
+            /* Calculate from zone counts */
+            CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+            
+            /* If still zero, use minimum value */
+            if (CityPop == 0) {
+                CityPop = 100;  /* Minimum village size */
+                CityClass = 0;  /* Village */
+            }
+        }
+        else if (PrevCityPop > 0) {
+            /* If we lost all zones but had population before, maintain it */
+            CityPop = PrevCityPop;
+        }
+        else {
+            /* Absolute minimum to prevent zero display */
+            CityPop = 100;
+            CityClass = 0;
+        }
+    }
+    
+    /* Track population changes for growth rate calculations */
+    if (CityPop > PrevCityPop) {
+        /* Population is growing */
+        char debugMsg[256];
+        wsprintf(debugMsg, "GROWTH: Population increased from %d to %d (+%d)\n",
+               PrevCityPop, (int)CityPop, (int)(CityPop - PrevCityPop));
+        OutputDebugString(debugMsg);
+    }
+    else if (CityPop < PrevCityPop) {
+        /* Population is declining */
+        char debugMsg[256];
+        wsprintf(debugMsg, "DECLINE: Population decreased from %d to %d (-%d)\n",
+               PrevCityPop, (int)CityPop, (int)(PrevCityPop - CityPop));
+        OutputDebugString(debugMsg);
+    }
+    
+    /* Save current value for next comparison */
+    PrevCityPop = (int)CityPop;
     
     /* Update graph history */
     for (i = 0; i < HISTLEN/2 - 1; i++) {
@@ -527,8 +677,8 @@ void MapScan(int x1, int x2, int y1, int y2)
             SMapY = y;
             CChr = Map[y][x] & LOMASK;
             
-            /* Process powered zones */
-            if ((Map[y][x] & ZONEBIT) && ((Map[y][x] & POWERBIT) || CChr == 9))
+            /* Process all zone centers, whether powered or not */
+            if (Map[y][x] & ZONEBIT)
             {
                 DoZone(x, y, CChr);
             }

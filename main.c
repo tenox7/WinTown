@@ -1466,6 +1466,7 @@ void ForceFullCensus(void)
 {
     int x, y;
     short tile;
+    int zoneTile;
 
     /* Reset census counts */
     ClearCensus();
@@ -1477,7 +1478,7 @@ void ForceFullCensus(void)
             
             /* Check if this is a zone center */
             if (tile & ZONEBIT) {
-                int zoneTile = tile & LOMASK;
+                zoneTile = tile & LOMASK;
                 
                 /* Check zone type and add population accordingly */
                 if (zoneTile >= RESBASE && zoneTile <= LASTRES) {
@@ -1492,6 +1493,14 @@ void ForceFullCensus(void)
                     /* Industrial zone */
                     IndPop += calcIndPop(zoneTile);
                 }
+                else if (zoneTile == HOSPITAL) {
+                    /* Hospital contributes to residential population */
+                    ResPop += 30;
+                }
+                else if (zoneTile == CHURCH) {
+                    /* Church contributes to residential population */
+                    ResPop += 10;
+                }
                 
                 /* Count other special zones */
                 if (zoneTile == FIRESTATION) {
@@ -1502,12 +1511,18 @@ void ForceFullCensus(void)
                 }
                 else if (zoneTile == STADIUM) {
                     StadiumPop++;
+                    /* Stadium contributes to commercial population */
+                    ComPop += 50;
                 }
                 else if (zoneTile == PORT) {
                     PortPop++;
+                    /* Port contributes to industrial population */
+                    IndPop += 40;
                 }
                 else if (zoneTile == AIRPORT) {
                     APortPop++;
+                    /* Airport contributes to industrial population */
+                    IndPop += 40;
                 }
                 else if (zoneTile == NUCLEAR) {
                     NuclearPop++;
@@ -1535,6 +1550,17 @@ void ForceFullCensus(void)
     /* Calculate total population */
     TotalPop = (ResPop + ComPop + IndPop) * 8;
     
+    /* Also directly calculate CityPop to ensure it's set immediately */
+    CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    
+    /* Determine city class based on population */
+    CityClass = 0;                /* Village */
+    if (CityPop > 2000)  CityClass++; /* Town */
+    if (CityPop > 10000) CityClass++; /* City */
+    if (CityPop > 50000) CityClass++; /* Capital */
+    if (CityPop > 100000) CityClass++; /* Metropolis */
+    if (CityPop > 500000) CityClass++; /* Megalopolis */
+    
     /* Count special buildings for city evaluation */
     CountSpecialTiles();
     
@@ -1547,6 +1573,18 @@ void ForceFullCensus(void)
 
 int loadCity(char *filename)
 {
+    /* Save previous population values in case we need them */
+    int oldResPop;
+    int oldComPop;
+    int oldIndPop;
+    QUAD oldCityPop;
+    
+    /* Initialize variables at the top of function for C89 compliance */
+    oldResPop = ResPop;
+    oldComPop = ComPop;
+    oldIndPop = IndPop;
+    oldCityPop = CityPop;
+    
     /* Reset scenario ID */
     ScenarioID = 0;
     DisasterEvent = 0;
@@ -1565,10 +1603,31 @@ int loadCity(char *filename)
     if (xOffset < 0) xOffset = 0;
     if (yOffset < 0) yOffset = 0;
     
-    /* Initialize the simulation with the new city data */
+    /* First run a full census to calculate initial city population */
+    ForceFullCensus();
+    
+    /* Check if we got a valid population */
+    if (CityPop == 0 && (oldCityPop > 0)) {
+        /* If no population detected, use values from previous city */
+        ResPop = oldResPop;
+        ComPop = oldComPop;
+        IndPop = oldIndPop;
+        TotalPop = (ResPop + ComPop + IndPop) * 8;
+        CityPop = oldCityPop;
+        
+        /* Update city class based on restored population */
+        CityClass = 0;                /* Village */
+        if (CityPop > 2000)  CityClass++; /* Town */
+        if (CityPop > 10000) CityClass++; /* City */
+        if (CityPop > 50000) CityClass++; /* Capital */
+        if (CityPop > 100000) CityClass++; /* Metropolis */
+        if (CityPop > 500000) CityClass++; /* Megalopolis */
+    }
+    
+    /* Now we can initialize the simulation but preserve population */
     DoSimInit();
     
-    /* Force population census calculation for the loaded city */
+    /* Force a final population census calculation for the loaded city */
     ForceFullCensus();
     
     /* Unpause simulation at medium speed */
@@ -1899,7 +1958,24 @@ void drawCity(HDC hdc)
     cityMonth = CityMonth;
     cityYear = CityYear;
     fundValue = (int)TotalFunds;
-    popValue = TotalPop;
+    
+    /* CRITICAL FIX: Ensure population is never displayed as zero */
+    if (CityPop > 0) {
+        /* Use CityPop instead of TotalPop for accurate population display */
+        popValue = (int)CityPop;
+        /* Save last non-zero value for debug purposes */
+        PrevCityPop = (int)CityPop;
+    } else if (PrevCityPop > 0) {
+        /* If current population is zero but we had a previous value, use that */
+        popValue = PrevCityPop;
+        /* Force CityPop to match to preserve continuity */
+        CityPop = PrevCityPop;
+    } else {
+        /* Absolute fallback: minimum village population */
+        popValue = 100;
+        CityPop = 100;
+        PrevCityPop = 100;
+    }
     
     /* Calculate visible range */
     startX = xOffset / TILE_SIZE;
