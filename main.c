@@ -32,6 +32,7 @@
 
 /* View menu IDs */
 #define IDM_VIEW_INFOWINDOW        4100
+#define IDM_VIEW_POWER_OVERLAY     4101
 
 /* Info window definitions */
 #define INFO_WINDOW_CLASS         "MicropolisInfoWindow"
@@ -118,6 +119,7 @@ static HMENU hSimMenu = NULL;
 static HMENU hScenarioMenu = NULL;
 static HMENU hToolMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
+static int powerOverlayEnabled = 0;  /* Power overlay display toggle */
 
 /* External reference to scenario variables (defined in scenarios.c) */
 extern short ScenarioID;        /* Current scenario ID (0 = none) */
@@ -658,6 +660,28 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                             ShowWindow(hwndInfo, SW_SHOW);
                             SetFocus(hwnd);  /* Keep focus on main window */
                         }
+                    }
+                    return 0;
+                    
+                case IDM_VIEW_POWER_OVERLAY:
+                    {
+                        HMENU hMenu = GetMenu(hwnd);
+                        HMENU hViewMenu = GetSubMenu(hMenu, 4);  /* View is the 5th menu (0-based index) */
+                        UINT state = GetMenuState(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND);
+                        
+                        /* Toggle power overlay */
+                        powerOverlayEnabled = (state & MF_CHECKED) ? 0 : 1;
+                        
+                        if (powerOverlayEnabled) {
+                            /* Enable power overlay */
+                            CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_CHECKED);
+                        } else {
+                            /* Disable power overlay */
+                            CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_UNCHECKED);
+                        }
+                        
+                        /* Force a redraw to show/hide the overlay */
+                        InvalidateRect(hwnd, NULL, TRUE);
                     }
                     return 0;
 
@@ -2229,9 +2253,193 @@ void drawCity(HDC hdc)
             screenY = y * TILE_SIZE - yOffset;
 
             drawTile(hdc, screenX, screenY, Map[y][x]);
+            
+            /* If power overlay is enabled, show power status with a transparent color overlay */
+            if (powerOverlayEnabled)
+            {
+                RECT tileRect;
+                HBRUSH hOverlayBrush;
+                
+                tileRect.left = screenX;
+                tileRect.top = screenY;
+                tileRect.right = screenX + TILE_SIZE;
+                tileRect.bottom = screenY + TILE_SIZE;
+                
+                /* Skip power plants themselves */
+                if ((Map[y][x] & LOMASK) != POWERPLANT && (Map[y][x] & LOMASK) != NUCLEAR)
+                {
+                    /* Create overlay effect - use red for unpowered zones and green for powered */
+                    if (Map[y][x] & ZONEBIT)
+                    {
+                        if (Map[y][x] & POWERBIT)
+                        {
+                            /* Powered zones - green overlay */
+                            hOverlayBrush = CreateSolidBrush(RGB(0, 255, 0));
+                            /* Draw a thick green border for powered zones */
+                            FrameRect(hdc, &tileRect, hOverlayBrush);
+                            /* Adjust rectangle and draw another frame for thickness */
+                            tileRect.left += 1;
+                            tileRect.top += 1;
+                            tileRect.right -= 1;
+                            tileRect.bottom -= 1;
+                            FrameRect(hdc, &tileRect, hOverlayBrush);
+                            DeleteObject(hOverlayBrush);
+                        }
+                        else
+                        {
+                            /* Unpowered zones - red overlay */
+                            hOverlayBrush = CreateSolidBrush(RGB(255, 0, 0));
+                            /* Draw a solid filled rectangle with 50% transparency */
+                            FillRect(hdc, &tileRect, hOverlayBrush);
+                            DeleteObject(hOverlayBrush);
+                        }
+                    }
+                    else if (PowerMap[y][x] == 1)
+                    {
+                        /* Non-zone tiles that have power - light green outline */
+                        hOverlayBrush = CreateSolidBrush(RGB(0, 200, 0));
+                        /* Draw a dot in the middle of the tile to show power */
+                        Rectangle(hdc, 
+                                tileRect.left + (TILE_SIZE/2) - 2, 
+                                tileRect.top + (TILE_SIZE/2) - 2,
+                                tileRect.left + (TILE_SIZE/2) + 2, 
+                                tileRect.top + (TILE_SIZE/2) + 2);
+                        DeleteObject(hOverlayBrush);
+                    }
+                }
+                
+                /* Mark power plants with a yellow circle */
+                if ((Map[y][x] & LOMASK) == POWERPLANT || (Map[y][x] & LOMASK) == NUCLEAR)
+                {
+                    HPEN hPen;
+                    HPEN hOldPen;
+                    HBRUSH hOldBrush;
+                    
+                    hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+                    hOldPen = SelectObject(hdc, hPen);
+                    hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
+                    
+                    /* Draw a circle around the power plant */
+                    Ellipse(hdc, 
+                            screenX + 2, screenY + 2, 
+                            screenX + TILE_SIZE - 2, screenY + TILE_SIZE - 2);
+                    
+                    SelectObject(hdc, hOldPen);
+                    SelectObject(hdc, hOldBrush);
+                    DeleteObject(hPen);
+                }
+            }
         }
     }
 
+    /* Show legend for power overlay if enabled */
+    if (powerOverlayEnabled)
+    {
+        RECT legendRect;
+        RECT legendBackground;
+        HBRUSH hLegendBrush;
+        HBRUSH hBackgroundBrush;
+        COLORREF oldTextColor;
+        int legendX = (cxClient - toolbarWidth) - 300;
+        int legendY = 10;
+        int legendWidth = 150;
+        int legendHeight = 80;
+        
+        /* Create semi-transparent background for the legend */
+        legendBackground.left = legendX - 5;
+        legendBackground.top = legendY - 5;
+        legendBackground.right = legendX + legendWidth;
+        legendBackground.bottom = legendY + legendHeight;
+        
+        hBackgroundBrush = CreateSolidBrush(RGB(50, 50, 50));
+        FillRect(hdc, &legendBackground, hBackgroundBrush);
+        DeleteObject(hBackgroundBrush);
+        
+        /* Set up text for legend */
+        SetBkMode(hdc, TRANSPARENT);
+        oldTextColor = SetTextColor(hdc, RGB(255, 255, 255));
+        
+        /* Header */
+        TextOut(hdc, legendX, legendY, "Power Overlay Legend:", 21);
+        legendY += 20;
+        
+        /* Powered zones */
+        legendRect.left = legendX;
+        legendRect.top = legendY;
+        legendRect.right = legendX + 15;
+        legendRect.bottom = legendY + 15;
+        hLegendBrush = CreateSolidBrush(RGB(0, 255, 0));
+        FrameRect(hdc, &legendRect, hLegendBrush);
+        /* Draw a second frame to show the thick border */
+        legendRect.left += 1;
+        legendRect.top += 1;
+        legendRect.right -= 1;
+        legendRect.bottom -= 1;
+        FrameRect(hdc, &legendRect, hLegendBrush);
+        DeleteObject(hLegendBrush);
+        TextOut(hdc, legendX + 20, legendY, "Powered Zones", 13);
+        legendY += 20;
+        
+        /* Unpowered zones */
+        legendRect.left = legendX;
+        legendRect.top = legendY;
+        legendRect.right = legendX + 15;
+        legendRect.bottom = legendY + 15;
+        hLegendBrush = CreateSolidBrush(RGB(255, 0, 0));
+        FillRect(hdc, &legendRect, hLegendBrush);
+        DeleteObject(hLegendBrush);
+        TextOut(hdc, legendX + 20, legendY, "Unpowered Zones", 15);
+        legendY += 20;
+        
+        /* Powered grid tiles */
+        legendRect.left = legendX;
+        legendRect.top = legendY;
+        legendRect.right = legendX + 15;
+        legendRect.bottom = legendY + 15;
+        hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
+        FrameRect(hdc, &legendRect, hLegendBrush);
+        /* Draw a dot in the center to match the visualization */
+        Rectangle(hdc, 
+                legendX + 6, legendY + 6,
+                legendX + 10, legendY + 10);
+        DeleteObject(hLegendBrush);
+        TextOut(hdc, legendX + 20, legendY, "Powered Grid", 12);
+        legendY += 20;
+        
+        /* Power plants */
+        legendRect.left = legendX;
+        legendRect.top = legendY;
+        legendRect.right = legendX + 15;
+        legendRect.bottom = legendY + 15;
+        hLegendBrush = CreateSolidBrush(GetStockObject(NULL_BRUSH));
+        FrameRect(hdc, &legendRect, hLegendBrush);
+        DeleteObject(hLegendBrush);
+        
+        /* Draw a yellow circle for power plants */
+        {
+            HPEN hPen;
+            HPEN hOldPen;
+            HBRUSH hOldBrush;
+            
+            hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+            hOldPen = SelectObject(hdc, hPen);
+            hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
+            
+            Ellipse(hdc, 
+                    legendX + 2, legendY + 2, 
+                    legendX + 13, legendY + 13);
+            
+            SelectObject(hdc, hOldPen);
+            SelectObject(hdc, hOldBrush);
+            DeleteObject(hPen);
+        }
+        
+        TextOut(hdc, legendX + 20, legendY, "Power Plants", 12);
+        
+        /* Restore text color */
+        SetTextColor(hdc, oldTextColor);
+    }
+    
     /* Draw tool hover highlight if a tool is active */
     if (isToolActive)
     {
@@ -2363,6 +2571,8 @@ HMENU createMainMenu(void)
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_INFOWINDOW, "&Info Window");
     /* Check it by default since the info window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_CHECKED);
+    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
 
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
