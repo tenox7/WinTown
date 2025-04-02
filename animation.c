@@ -41,7 +41,7 @@ void AnimateTiles(void) {
                 /* Debug animation (once every 100 frames) */
                 if (debugCount == 0) {
                     /* Check for known animation types to debug them */
-                    if (tilevalue >= INDSMOKE1 && tilevalue <= INDSMOKE8) {
+                    if (tilevalue >= TELEBASE && tilevalue <= TELELAST) {
                         char debugMsg[256];
                         wsprintf(debugMsg, "ANIMATION: Industrial smoke at (%d,%d) frame %d\n", 
                                  x, y, tilevalue);
@@ -180,9 +180,9 @@ static void DoIndustrialSmoke(int x, int y) {
                 default: smokeTile = INDSMOKE1; break;
                 }
 
-                /* Skip if already animated with the right tile */
-                if ((Map[yy][xx] & ANIMBIT) && (Map[yy][xx] & LOMASK) >= INDSMOKE1 &&
-                    (Map[yy][xx] & LOMASK) <= INDSMOKE8) {
+                /* Skip if already animated with the right tile - use TELEBASE range */
+                if ((Map[yy][xx] & ANIMBIT) && (Map[yy][xx] & LOMASK) >= TELEBASE &&
+                    (Map[yy][xx] & LOMASK) <= TELELAST) {
                     continue;
                 }
 

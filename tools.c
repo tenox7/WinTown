@@ -87,27 +87,27 @@ static short WireTable[16] = {POWERBASE,     POWERBASE + 1, POWERBASE + 2,  POWE
 
 /* Building and zone constants with TILE_ prefix for consistent naming */
 #define TILE_WOODS WOODS
-#define TILE_FIRESTBASE 761      /* Fire station base */
+#define TILE_FIRESTBASE FIRESTBASE
 #define TILE_FIRESTATION FIRESTATION
-#define TILE_POLICESTBASE 770    /* Police station base */
+#define TILE_POLICESTBASE POLICESTBASE
 #define TILE_POLICESTATION POLICESTATION
-#define TILE_COALBASE 745        /* Coal power plant base */
+#define TILE_COALBASE COALBASE
 #define TILE_POWERPLANT POWERPLANT
-#define TILE_NUCLEARBASE 811     /* Nuclear power plant base */
+#define TILE_NUCLEARBASE NUCLEARBASE
 #define TILE_NUCLEAR NUCLEAR
-#define TILE_STADIUMBASE 779     /* Stadium base */
+#define TILE_STADIUMBASE STADIUMBASE
 #define TILE_STADIUM STADIUM
-#define TILE_PORTBASE 693        /* Port base */
+#define TILE_PORTBASE PORTBASE
 #define TILE_PORT PORT
-#define TILE_AIRPORTBASE 709     /* Airport base */
+#define TILE_AIRPORTBASE AIRPORTBASE
 #define TILE_AIRPORT AIRPORT
 
-/* Additional constants for zone ranges needed by tools.c */
-#define LASTAIRPORT 744          /* Last airport tile */
-#define LASTFIRESTATION 769      /* Last fire station tile */
-#define LASTPOLICESTATION 778    /* Last police station tile */
-#define LASTNUCLEAR 826          /* Last nuclear plant tile */
-#define LASTSTADIUM 799          /* Last stadium tile */
+/* Using constants from simulation.h for zone ranges */
+#define LASTAIRPORT LASTPORT     /* Last airport tile */
+#define LASTFIRESTATION POLICESTBASE - 1 /* Last fire station tile */
+#define LASTPOLICESTATION STADIUMBASE - 1 /* Last police station tile */
+#define LASTNUCLEAR LASTZONE     /* Last nuclear plant tile */
+#define LASTSTADIUM FULLSTADIUM  /* Last stadium tile */
 
 /* Forward declarations for tile connection functions */
 int ConnectTile(int x, int y, short *tilePtr, int command);
@@ -840,7 +840,11 @@ int LayRail(int x, int y, short *tilePtr) {
 /* Lay power lines */
 int LayWire(int x, int y, short *tilePtr) {
     short cost;
-    short tile = *tilePtr & LOMASK;
+    short tile;
+    short connectMask;
+    
+    tile = *tilePtr & LOMASK;
+    connectMask = 0;
 
     if (tile == RIVER || tile == REDGE || tile == CHANNEL) {
         /* Build underwater power lines */
@@ -851,7 +855,43 @@ int LayWire(int x, int y, short *tilePtr) {
         }
 
         Spend(cost);
-        *tilePtr = HPOWER | CONDBIT | BULLBIT;
+        
+        /* Build the connection mask manually for underwater power lines */
+        /* Check North */
+        if (y > 0 && ((Map[y-1][x] & CONDBIT) || 
+            ((Map[y-1][x] & LOMASK) >= POWERBASE && (Map[y-1][x] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 1;
+        }
+        
+        /* Check East */
+        if (x < WORLD_X - 1 && ((Map[y][x+1] & CONDBIT) || 
+            ((Map[y][x+1] & LOMASK) >= POWERBASE && (Map[y][x+1] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 2;
+        }
+        
+        /* Check South */
+        if (y < WORLD_Y - 1 && ((Map[y+1][x] & CONDBIT) || 
+            ((Map[y+1][x] & LOMASK) >= POWERBASE && (Map[y+1][x] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 4;
+        }
+        
+        /* Check West */
+        if (x > 0 && ((Map[y][x-1] & CONDBIT) || 
+            ((Map[y][x-1] & LOMASK) >= POWERBASE && (Map[y][x-1] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 8;
+        }
+
+        if (connectMask != 0) {
+            /* Use the proper tile from the wire table */
+            *tilePtr = WireTable[connectMask & 15] | CONDBIT | BULLBIT;
+        } else if ((x > 0 && x < WORLD_X - 1) && 
+                  (Map[y][x-1] & CONDBIT) && (Map[y][x+1] & CONDBIT)) {
+            /* Horizontal connection needed */
+            *tilePtr = HPOWER | CONDBIT | BULLBIT;
+        } else {
+            /* Default to vertical power line for underwater */
+            *tilePtr = VPOWER | CONDBIT | BULLBIT; 
+        }
         return 1;
     }
 
@@ -897,6 +937,8 @@ int LayWire(int x, int y, short *tilePtr) {
 
     if (tile == DIRT || (tile >= TINYEXP && tile <= LASTTINYEXP)) {
         /* Lay wire on dirt */
+        short connectMask;
+        
         cost = WIRE_COST;
 
         if (TotalFunds < cost) {
@@ -904,7 +946,50 @@ int LayWire(int x, int y, short *tilePtr) {
         }
 
         Spend(cost);
-        *tilePtr = HPOWER | CONDBIT | BULLBIT | BURNBIT;
+        
+        /* Build a connection mask to determine the proper wire tile */
+        connectMask = 0;
+        
+        /* Check North */
+        if (y > 0 && ((Map[y-1][x] & CONDBIT) || 
+            ((Map[y-1][x] & LOMASK) >= POWERBASE && (Map[y-1][x] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 1;
+        }
+        
+        /* Check East */
+        if (x < WORLD_X - 1 && ((Map[y][x+1] & CONDBIT) || 
+            ((Map[y][x+1] & LOMASK) >= POWERBASE && (Map[y][x+1] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 2;
+        }
+        
+        /* Check South */
+        if (y < WORLD_Y - 1 && ((Map[y+1][x] & CONDBIT) || 
+            ((Map[y+1][x] & LOMASK) >= POWERBASE && (Map[y+1][x] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 4;
+        }
+        
+        /* Check West */
+        if (x > 0 && ((Map[y][x-1] & CONDBIT) || 
+            ((Map[y][x-1] & LOMASK) >= POWERBASE && (Map[y][x-1] & LOMASK) <= LASTPOWER))) {
+            connectMask |= 8;
+        }
+        
+        /* If we have connections, choose the appropriate power line tile */
+        if (connectMask != 0) {
+            /* Use the proper tile from the wire table */
+            *tilePtr = WireTable[connectMask & 15] | CONDBIT | BULLBIT | BURNBIT;
+        } else {
+            /* Special case for vertical alignment - if this is a second vertical tile, 
+               use VPOWER instead of LHPOWER to avoid the upside-down L issue */
+            if (y > 0 && (Map[y-1][x] & LOMASK) == VPOWER) {
+                *tilePtr = VPOWER | CONDBIT | BULLBIT | BURNBIT;
+            } else if (y < WORLD_Y - 1 && (Map[y+1][x] & LOMASK) == VPOWER) {
+                *tilePtr = VPOWER | CONDBIT | BULLBIT | BURNBIT;
+            } else {
+                /* Default to LHPOWER (horizontal power line) */
+                *tilePtr = LHPOWER | CONDBIT | BULLBIT | BURNBIT;
+            }
+        }
         return 1;
     }
 
@@ -1069,7 +1154,11 @@ void FixSingle(int x, int y) {
         /* Check the north side */
         if (y > 0) {
             mapValue = Map[y - 1][x] & LOMASK;
-            if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
+            /* Handle special case for vertical power lines */
+            if (tile == VPOWER && mapValue == VPOWER) {
+                /* Force connection for vertical power lines */
+                connectMask |= 1;
+            } else if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
                 ((Map[y - 1][x] & CONDBIT) != 0) ||
                 mapValue == HROADPOWER || mapValue == VROADPOWER ||
                 mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
@@ -1091,7 +1180,11 @@ void FixSingle(int x, int y) {
         /* Check the south side */
         if (y < WORLD_Y - 1) {
             mapValue = Map[y + 1][x] & LOMASK;
-            if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
+            /* Handle special case for vertical power lines */
+            if (tile == VPOWER && mapValue == VPOWER) {
+                /* Force connection for vertical power lines */
+                connectMask |= 4;
+            } else if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
                 ((Map[y + 1][x] & CONDBIT) != 0) ||
                 mapValue == HROADPOWER || mapValue == VROADPOWER ||
                 mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {

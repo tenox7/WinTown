@@ -111,26 +111,20 @@ static short aniTile[1024] = {
                                     953, 954, 955, 952,
 };
 
-/* Constants for smoke animations */
-#define COALSMOKE1   916
-#define COALSMOKE2   920
-#define COALSMOKE3   924
-#define COALSMOKE4   928
+/* Using sim.h definitions directly - don't redefine */
 
-/* Industrial smoke animations */
-#define INDSMOKE1    884
-#define INDSMOKE2    888
-#define INDSMOKE3    892
-#define INDSMOKE4    896
-#define INDSMOKE5    900
-#define INDSMOKE6    904
-#define INDSMOKE7    908
-#define INDSMOKE8    912
+/* Industrial smoke animations - calculated from industrial base values */
+#define INDSMOKE1    TELEBASE
+#define INDSMOKE2    (TELEBASE + 4)
+#define INDSMOKE3    (TELEBASE + 8)
+#define INDSMOKE4    (TELEBASE + 12)
+#define INDSMOKE5    (TELEBASE + 16)
+#define INDSMOKE6    (TELEBASE + 20)
+#define INDSMOKE7    (TELEBASE + 24)
+#define INDSMOKE8    (TELEBASE + 28)
 
-/* Special animations */
-#define FOOTBALLGAME1 932
-#define FOOTBALLGAME2 940
-#define NUCLEAR_SWIRL 952  /* Nuclear power plant swirl animation */
+/* Special animations - using sim.h values directly */
+#define NUCLEAR_SWIRL 952  /* Nuclear power plant swirl animation - no sim.h equivalent */
 
 /* Smoke stack position offsets */
 static short smokeOffsetX[4] = {  1,  2,  1,  2 };

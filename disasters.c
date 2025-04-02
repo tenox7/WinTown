@@ -23,8 +23,8 @@ static const short xDelta[4] = {0, 1, 0, -1};
 static const short yDelta[4] = {-1, 0, 1, 0};
 
 /* Local definitions for disaster purposes */
-#define LASTAIRPORT 744        /* Last airport tile */
-#define LOCAL_LASTZONE LASTAIRPORT /* Last zone tile for disaster purposes */
+/* Use the constant from simulation.h */
+#define LOCAL_LASTZONE LASTZONE /* Last zone tile for disaster purposes */
 
 /* Trigger an earthquake disaster */
 void doEarthquake(void) {

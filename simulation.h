@@ -81,154 +81,150 @@ typedef long QUAD;
  * - HROADPOWER (77): Horizontal road with vertical power line (╥)
  * - VROADPOWER (78): Vertical road with horizontal power line (╞)
  * - RAILHPOWERV (221): Horizontal rail with vertical power line
- * - RAILVPOWERH (222): Vertical rail with horizontal power line 
+ * - RAILVPOWERH (222): Vertical rail with horizontal power line
  * - HRAILROAD (237): Horizontal rail with vertical road
  * - VRAILROAD (238): Vertical rail with horizontal road
  */
 
-/* Complete Tile Definitions from Original Micropolis */
-#define DIRT            0       /* Dirt */
-#define RIVER           2       /* River */
-#define REDGE           3       /* River edge */
-#define CHANNEL         4       /* Channel */
-#define FIRSTRIVEDGE    5       /* First river edge */
-#define LASTRIVEDGE     20      /* Last river edge */
-#define TREEBASE        21      /* First tree */
-#define LASTTREE        36      /* Last tree */
-#define WOODS           37      /* Regular forest */
-#define UNUSED_TRASH1   38      /* Unused trash */
-#define UNUSED_TRASH2   39      /* Unused trash */
-#define WOODS2          40      /* Forest type 2 */
-#define WOODS3          41      /* Forest type 3 */
-#define WOODS4          42      /* Forest type 4 */
-#define WOODS5          43      /* Forest type 5 */
-#define RUBBLE          44      /* Rubble (destroyed buildings) */
-#define LASTRUBBLE      47      /* Last rubble tile */
-#define FLOOD           48      /* Flood plain */
-#define LASTFLOOD       51      /* Last flood plain */
-#define RADTILE         52      /* Radiation */
-#define UNUSED_TRASH3   53      /* Unused trash */
-#define UNUSED_TRASH4   54      /* Unused trash */
-#define UNUSED_TRASH5   55      /* Unused trash */
-#define FIRE            56      /* Fire */
-#define FIREBASE        56      /* First fire tile */
-#define LASTFIRE        63      /* Last fire tile */
-#define ROADBASE        64      /* First road tile */
-#define HBRIDGE         64      /* Horizontal bridge */
-#define VBRIDGE         65      /* Vertical bridge */
-#define ROADS           66      /* Normal road */
-#define INTERSECTION    76      /* Road intersection */
-#define HROADPOWER      77      /* Horizontal road with power */
-#define VROADPOWER      78      /* Vertical road with power */
-#define BRWH            79      /* Bridge west to horizontal (empty) */
-#define LTRFBASE        80      /* Light traffic base (roadbase + 16) */
-#define BRWV            95      /* Bridge west to vertical (empty) */
-#define BRWXXX1         111     /* Extra bridge piece */
-#define BRWXXX2         127     /* Extra bridge piece */
-#define BRWXXX3         143     /* Extra bridge piece */
-#define HTRFBASE        144     /* Heavy traffic base */
-#define BRWXXX4         159     /* Extra bridge piece */
-#define BRWXXX5         175     /* Extra bridge piece */
-#define BRWXXX6         191     /* Extra bridge piece */
-#define LASTROAD        206     /* Last road tile */
-#define BRWXXX7         207     /* Extra bridge piece */
-#define POWERBASE       208     /* First power line */
-#define HPOWER          208     /* Horizontal power */
-#define VPOWER          209     /* Vertical power */
-#define LHPOWER         210     /* Power line corner left-horizontal */
-#define LVPOWER         211     /* Power line corner left-vertical */
-#define LPOWER          211     /* L-shaped power (same as LVPOWER) */
-#define RAILHPOWERV     221     /* Rail with power */
-#define RAILVPOWERH     222     /* Rail with power */
-#define LASTPOWER       222     /* Last power line */
-#define UNUSED_TRASH6   223     /* Unused trash */
-#define RAILBASE        224     /* First rail */
-#define HRAIL           224     /* Horizontal rail */
-#define VRAIL           225     /* Vertical rail */
-#define LHRAIL          226     /* Rail corner left-horizontal */
-#define LVRAIL          227     /* Rail corner left-vertical */
-#define HRAILROAD       237     /* Horizontal rail with road */
-#define VRAILROAD       238     /* Vertical rail with road */
-#define LASTRAIL        238     /* Last rail */
-#define ROAD_POWER_CROSS 239    /* Road and power line crossing */
-#define RAIL_POWER_CROSS 240    /* Rail and power line crossing */
-#define RESBASE         240     /* First residential zone */
-#define FREEZ           244     /* Free fire zone */
-#define HOUSE           249     /* First house */
-#define LHTHR           249     /* Low-value housing threshold */
-#define HHTHR           260     /* High-value housing threshold */
-#define RZB             265     /* Residential base tile */
-#define HOSPITAL        409     /* Hospital */
-#define CHURCH          418     /* Church */
-#define COMBASE         423     /* First commercial tile */
-#define COMCLR          427     /* Commercial clear tile */
-#define CZB             436     /* Commercial base tile */
-#define INDBASE         612     /* First industrial tile */
-#define INDCLR          616     /* Industrial clear tile */
-#define LASTIND         620     /* Last original industrial tile */
-#define IND1            621     /* Industrial type 1 */
-#define IZB             625     /* Industrial base tile */
-#define IND2            641     /* Industrial type 2 */
-#define IND3            644     /* Industrial type 3 */
-#define IND4            649     /* Industrial type 4 */
-#define IND5            650     /* Industrial type 5 */
-#define IND6            676     /* Industrial type 6 */
-#define IND7            677     /* Industrial type 7 */
-#define IND8            686     /* Industrial type 8 */
-#define IND9            689     /* Industrial type 9 */
-#define PORTBASE        693     /* First seaport */
-#define PORT            698     /* Seaport */
-#define LASTPORT        708     /* Last seaport */
-#define AIRPORTBASE     709     /* First airport */
-#define RADAR           711     /* Airport radar */
-#define AIRPORT         716     /* Airport */
-#define COALBASE        745     /* First coal power plant */
-#define POWERPLANT      750     /* Coal power plant */
-#define LASTPOWERPLANT  760     /* Last coal power plant */
-#define FIRESTBASE      761     /* First fire station */
-#define FIRESTATION     765     /* Fire station */
-#define POLICESTBASE    770     /* First police station */
-#define POLICESTATION   774     /* Police station */
-#define STADIUMBASE     779     /* First stadium */
-#define STADIUM         784     /* Stadium */
-#define FULLSTADIUM     800     /* Stadium with people */
-#define NUCLEARBASE     811     /* First nuclear plant */
-#define NUCLEAR         816     /* Nuclear power plant */
-#define LASTZONE        826     /* Last zone */
-#define LIGHTNINGBOLT   827     /* No-power indicator */
-#define HBRDG0          828     /* Horizontal bridge support */
-#define HBRDG1          829     /* Horizontal bridge support */
-#define HBRDG2          830     /* Horizontal bridge support */
-#define HBRDG3          831     /* Horizontal bridge support */
-#define RADAR0          832     /* Radar animation frame 0 */
-#define RADAR1          833     /* Radar animation frame 1 */
-#define RADAR2          834     /* Radar animation frame 2 */
-#define RADAR3          835     /* Radar animation frame 3 */
-#define RADAR4          836     /* Radar animation frame 4 */
-#define RADAR5          837     /* Radar animation frame 5 */
-#define RADAR6          838     /* Radar animation frame 6 */
-#define RADAR7          839     /* Radar animation frame 7 */
-#define FOUNTAIN        840     /* Fountain animation */
-#define INDBASE2        844     /* More industrial buildings */
-#define TELEBASE        844     /* Telecom buildings */
-#define TELELAST        851     /* Last telecom building */
-#define SMOKEBASE       852     /* First smoke animation frame */
-#define TINYEXP         860     /* Small explosion */
-#define SOMETINYEXP     864     /* Medium explosion */
-#define LASTTINYEXP     867     /* Last explosion */
-#define COALSMOKE1      916     /* Coal power plant smoke */
-#define COALSMOKE2      920     /* Coal power plant smoke */
-#define COALSMOKE3      924     /* Coal power plant smoke */
-#define COALSMOKE4      928     /* Coal power plant smoke */
-#define FOOTBALLGAME1   932     /* Football game */
-#define FOOTBALLGAME2   940     /* Football game */
-#define VBRDG0          948     /* Vertical bridge support */
-#define VBRDG1          949     /* Vertical bridge support */
-#define VBRDG2          950     /* Vertical bridge support */
-#define VBRDG3          951     /* Vertical bridge support */
-#define FOOTBALLBASE    950     /* Football stadium base - same value as VBRDG2 */
+ #define DIRT		0
+ #define RIVER		2
+ #define REDGE		3
+ #define CHANNEL		4
+ #define FIRSTRIVEDGE	5
+ #define LASTRIVEDGE	20
+ #define TREEBASE	21
+ #define LASTTREE	36
+ #define WOODS		37
+ #define UNUSED_TRASH1	38
+ #define UNUSED_TRASH2	39
+ #define WOODS2		40
+ #define WOODS3		41
+ #define WOODS4		42
+ #define WOODS5		43
+ #define RUBBLE		44
+ #define LASTRUBBLE	47
+ #define FLOOD		48
+ #define LASTFLOOD	51
+ #define RADTILE		52
+ #define UNUSED_TRASH3	53
+ #define UNUSED_TRASH4	54
+ #define UNUSED_TRASH5	55
+ #define FIRE		56
+ #define FIREBASE	56
+ #define LASTFIRE	63
+ #define ROADBASE	64
+ #define HBRIDGE		64
+ #define VBRIDGE		65
+ #define ROADS		66
+ #define INTERSECTION	76
+ #define HROADPOWER	77
+ #define VROADPOWER	78
+ #define BRWH		79
+ #define LTRFBASE	80
+ #define BRWV		95
+ #define BRWXXX1		111
+ #define BRWXXX2		127
+ #define BRWXXX3		143
+ #define HTRFBASE	144
+ #define BRWXXX4		159
+ #define BRWXXX5		175
+ #define BRWXXX6		191
+ #define LASTROAD	206
+ #define BRWXXX7		207
+ #define POWERBASE	208
+ #define HPOWER		208
+ #define VPOWER		209
+ #define LHPOWER		210
+ #define LVPOWER		211
+ #define RAILHPOWERV	221
+ #define RAILVPOWERH	222
+ #define LASTPOWER	222
+ #define UNUSED_TRASH6	223
+ #define RAILBASE	224
+ #define HRAIL		224
+ #define VRAIL		225
+ #define LHRAIL		226
+ #define LVRAIL		227
+ #define HRAILROAD	237
+ #define VRAILROAD	238
+ #define LASTRAIL	238
+ #define ROADVPOWERH	239 /* bogus? */
+ #define RESBASE		240
+ #define FREEZ		244
+ #define HOUSE		249
+ #define LHTHR		249
+ #define HHTHR		260
+ #define RZB		265
+ #define HOSPITAL	409
+ #define CHURCH		418
+ #define COMBASE		423
+ #define COMCLR		427
+ #define CZB		436
+ #define INDBASE		612
+ #define INDCLR		616
+ #define LASTIND		620
+ #define IND1		621
+ #define IZB		625
+ #define IND2		641
+ #define IND3		644
+ #define IND4		649
+ #define IND5		650
+ #define IND6		676
+ #define IND7		677
+ #define IND8		686
+ #define IND9		689
+ #define PORTBASE	693
+ #define PORT		698
+ #define LASTPORT	708
+ #define AIRPORTBASE	709
+ #define RADAR		711
+ #define AIRPORT		716
+ #define COALBASE	745
+ #define POWERPLANT	750
+ #define LASTPOWERPLANT	760
+ #define FIRESTBASE	761
+ #define FIRESTATION	765
+ #define POLICESTBASE	770
+ #define POLICESTATION	774
+ #define STADIUMBASE	779
+ #define STADIUM		784
+ #define FULLSTADIUM	800
+ #define NUCLEARBASE	811
+ #define NUCLEAR		816
+ #define LASTZONE	826
+ #define LIGHTNINGBOLT	827
+ #define HBRDG0		828
+ #define HBRDG1		829
+ #define HBRDG2		830
+ #define HBRDG3		831
+ #define RADAR0		832
+ #define RADAR1		833
+ #define RADAR2		834
+ #define RADAR3		835
+ #define RADAR4		836
+ #define RADAR5		837
+ #define RADAR6		838
+ #define RADAR7		839
+ #define FOUNTAIN	840
+ #define INDBASE2	844
+ #define TELEBASE	844
+ #define TELELAST	851
+ #define SMOKEBASE	852
+ #define TINYEXP		860
+ #define SOMETINYEXP	864
+ #define LASTTINYEXP	867
+ #define COALSMOKE1	916
+ #define COALSMOKE2	920
+ #define COALSMOKE3	924
+ #define COALSMOKE4	928
+ #define FOOTBALLGAME1	932
+ #define FOOTBALLGAME2	940
+ #define VBRDG0		948
+ #define VBRDG1		949
+ #define VBRDG2		950
+ #define VBRDG3		951
 
-#define TILE_COUNT      960     /* Total number of tiles */
+ #define TILE_COUNT	960
 
 /* Other constants */
 #define BSIZE           8       /* Building size? */
