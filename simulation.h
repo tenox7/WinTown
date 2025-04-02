@@ -60,6 +60,8 @@ typedef long QUAD;
 #define POWERBASE       208     /* First power line tile */
 #define RAILBASE        224     /* First rail tile */
 #define LASTRAIL        238     /* Last rail tile */
+#define ROAD_POWER_CROSS 239     /* Road and power line crossing */
+#define RAIL_POWER_CROSS 240     /* Rail and power line crossing */
 #define BSIZE           8       /* Building size? */
 #define LHTHR           249     /* Light house threshold? */
 #define HHTHR           260     /* Heavy house threshold? */
