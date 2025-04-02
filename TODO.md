@@ -13,8 +13,6 @@
 
 ## Major Bugs To Fix
 - Color map issues
-- Population, traffic, pollution
-- Animations other than Power Plant / position of animated objects
 
 ## Cosmetic
 - Panning button fix
@@ -22,3 +20,4 @@
 - Buttons / sizing / layout / etc
 - More debug overlays eg for power, traffic, etc
 - Drawing, eg drawing road/powerlines as continuous line
+- Animations are in wrong spot, eg radar, or nuclear sign

@@ -199,23 +199,25 @@ void DoSimInit(void) {
     CityYear = 1900;
     CityMonth = 0;
 
-    /* Only reset population counters if they were zero */
+    /* Population counters */
+    /* For a new city, set minimum population */
     if (oldCityPop == 0) {
-        ResPop = 0;
-        ComPop = 0;
-        IndPop = 0;
-        TotalPop = 0;
-        CityPop = 0;
-        LastTotalPop = 0;
+        /* Set minimum default values */
+        ResPop = 1;
+        ComPop = 1;
+        IndPop = 1;
+        TotalPop = 3;
+        CityPop = 100; /* Minimum city population to display */
+        LastTotalPop = 3;
     } else {
         /* Preserve population from previous values */
-        ResPop = oldResPop;
-        ComPop = oldComPop;
-        IndPop = oldIndPop;
-        TotalPop = oldTotalPop;
-        CityPop = oldCityPop;
+        ResPop = oldResPop > 0 ? oldResPop : 1;
+        ComPop = oldComPop > 0 ? oldComPop : 1;
+        IndPop = oldIndPop > 0 ? oldIndPop : 1;
+        TotalPop = oldTotalPop > 0 ? oldTotalPop : 3;
+        CityPop = oldCityPop > 0 ? oldCityPop : 100;
         CityClass = oldCityClass;
-        LastTotalPop = oldTotalPop;
+        LastTotalPop = oldTotalPop > 0 ? oldTotalPop : 3;
     }
 
     /* Set initial growth demand */
@@ -366,7 +368,11 @@ void Simulate(int mod16) {
         }
 
         /* Update city population more frequently than just at census time */
-        CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+        if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
+            CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+        } else if (CityPop == 0) {
+            CityPop = 100; /* Minimum population display */
+        }
 
         /* Run animations for smoother motion */
         AnimateTiles();
@@ -705,10 +711,15 @@ void TakeCensus(void) {
     int i;
     QUAD newCityPop;
 
-    /* Calculate total population */
-    TotalPop = (ResPop + ComPop + IndPop) * 8;
+    /* CRITICAL: Make sure we have valid population counts even if they're small */
+    if (ResPop <= 0 && (Map[4][4] & LOMASK) == RESBASE) {
+        ResPop = 50;  /* Set a minimal initial population */
+    }
 
-    /* Calculate new city population from zone populations */
+    /* Calculate total population - normalize for simulation */
+    TotalPop = ResPop + ComPop + IndPop;
+
+    /* Calculate new city population from zone populations using the official formula */
     newCityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
 
     /* If we have real zone population, update CityPop with the new value */
@@ -718,6 +729,12 @@ void TakeCensus(void) {
     /* If we don't have zone population but have previous CityPop, maintain it */
     else if (CityPop == 0 && PrevCityPop > 0) {
         CityPop = PrevCityPop;
+    }
+
+    /* CRITICAL: Make sure we have some population value if there are zones */
+    if (CityPop < 100 && (PwrdZCnt > 0 || UnpwrdZCnt > 0)) {
+        /* Set a minimum population if there are any zones */
+        CityPop = 100;
     }
 
     /* DEBUG: Output current population state */

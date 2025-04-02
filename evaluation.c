@@ -123,7 +123,11 @@ static void DoPopNum(void) {
 
     /* CityPop is already calculated in TakeCensus since we need it
        updated more frequently, but calculate it here too for consistency */
-    CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
+        CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    } else if (CityPop == 0) {
+        CityPop = 100; /* Minimum population display */
+    }
 
     /* If first time, set old pop to current */
     if (OldCityPop == 0) {

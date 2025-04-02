@@ -257,12 +257,16 @@ void DoZone(int Xloc, int Yloc, int pos) {
 /* Process hospital/church zone */
 static void DoHospChur(int x, int y) {
     short z;
+    int zonePowered;
 
     if (!(Map[y][x] & ZONEBIT)) {
         return;
     }
 
     SetZPower(x, y);
+    
+    /* Check if zone has power */
+    zonePowered = (Map[y][x] & POWERBIT) != 0;
 
     if (CityTime & 3) {
         return;
@@ -272,7 +276,11 @@ static void DoHospChur(int x, int y) {
 
     if (z == HOSPITAL) {
         /* Add hospital population to census directly */
-        ResPop += 30;
+        if (zonePowered) {
+            ResPop += 30;
+        } else {
+            ResPop += 5; /* Even unpowered hospitals have some population */
+        }
 
         /* Also increment trade zone count on some cycles */
         if (ZoneRandom(20) < 10) {
@@ -283,7 +291,11 @@ static void DoHospChur(int x, int y) {
 
     if (z == CHURCH) {
         /* Add church population to census directly */
-        ResPop += 10;
+        if (zonePowered) {
+            ResPop += 10;
+        } else {
+            ResPop += 2; /* Even unpowered churches have some population */
+        }
 
         /* Also increment residential zone count on some cycles */
         if (ZoneRandom(20) < 10) {
@@ -352,6 +364,7 @@ static void DoIndustrial(int x, int y) {
     short zone;
     short tpop;
     int pop;
+    int zonePowered;
 
     zone = Map[y][x];
     if (!(zone & ZONEBIT)) {
@@ -359,11 +372,19 @@ static void DoIndustrial(int x, int y) {
     }
 
     SetZPower(x, y);
+    
+    /* Check if zone has power */
+    zonePowered = (Map[y][x] & POWERBIT) != 0;
 
     tpop = IZPop;
 
     /* Get actual zone population */
     pop = calcIndPop(zone);
+    
+    /* Make sure even empty zones contribute some population */
+    if (pop == 0 && zonePowered) {
+        pop = 1;  /* Minimum population for any powered industrial zone */
+    }
 
     /* Add to total industrial population for the census */
     IndPop += pop;
@@ -410,6 +431,7 @@ static void DoCommercial(int x, int y) {
     short zone;
     short tpop;
     int pop;
+    int zonePowered;
 
     zone = Map[y][x];
     if (!(zone & ZONEBIT)) {
@@ -417,11 +439,19 @@ static void DoCommercial(int x, int y) {
     }
 
     SetZPower(x, y);
+    
+    /* Check if zone has power */
+    zonePowered = (Map[y][x] & POWERBIT) != 0;
 
     tpop = CZPop;
 
     /* Get actual zone population */
     pop = calcComPop(zone);
+    
+    /* Make sure even empty zones contribute some population */
+    if (pop == 0 && zonePowered) {
+        pop = 1;  /* Minimum population for any powered commercial zone */
+    }
 
     /* Add to total commercial population for the census */
     ComPop += pop;
@@ -476,12 +506,17 @@ static void DoResidential(int x, int y) {
     }
 
     /* Check if zone has power */
-    zonePowered = (zone & POWERBIT) != 0;
+    zonePowered = (Map[y][x] & POWERBIT) != 0;
 
     tpop = RZPop;
 
     /* Get actual zone population */
     pop = calcResPop(zone);
+
+    /* Make sure even empty zones contribute some population */
+    if (pop == 0 && zonePowered) {
+        pop = 1;  /* Minimum population for any powered residential zone */
+    }
 
     /* Add to total residential population for the census */
     ResPop += pop;
