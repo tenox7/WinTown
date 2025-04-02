@@ -44,6 +44,48 @@ typedef long QUAD;
 #define BNCNBIT         0x0400  /* Center bit */
 #define ALLBITS         0xFFFF  /* All bits */
 
+/*
+ * MICROPOLIS TILESET LAYOUT - 16×16 PIXEL TILES IN A GRID
+ * -------------------------------------------------------
+ * Tile numbers are arranged in a 16×60 grid (16 columns, 60 rows)
+ *
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |  Row 0: Dirt, River
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 |  Row 1: River edges, Trees
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 |  Row 2: Trees, Woods, Rubble
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * | 48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 |  Row 3: Flood, Radiation, Fire
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * | 64 | 65 | 66 | 67 | 68 | 69 | 70 | 71 | 72 | 73 | 74 | 75 | 76 | 77 | 78 | 79 |  Row 4: Roads, Bridges, Crossings
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * | 80 | 81 | 82 | 83 | 84 | 85 | 86 | 87 | 88 | 89 | 90 | 91 | 92 | 93 | 94 | 95 |  Row 5: Light Traffic
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * | 96 | .. | .. | .. |... |... |... |... |... |... |... |... |... |... |... |111 |  Row 6-13: Traffic, Bridges
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |208 |209 |210 |211 |212 |213 |214 |215 |216 |217 |218 |219 |220 |221 |222 |223 |  Row 13: Power Lines
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |224 |225 |226 |227 |228 |229 |230 |231 |232 |233 |234 |235 |236 |237 |238 |239 |  Row 14: Rail, Rail crossings
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |240 |241 |242 |243 |244 |245 |246 |247 |248 |249 |250 |251 |252 |253 |254 |255 |  Row 15: Residential zones
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |... |... |... |... |... |... |... |... |... |... |... |... |... |... |... |... |  Rows 16-58: Various zones
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |928 |929 |930 |931 |932 |933 |934 |935 |936 |937 |938 |939 |940 |941 |942 |943 |  Row 58: Stadium games
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |944 |945 |946 |947 |948 |949 |950 |951 |952 |953 |954 |955 |956 |957 |958 |959 |  Row 59: Bridge parts, Nuclear
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ *
+ * Special crossing tiles:
+ * - HROADPOWER (77): Horizontal road with vertical power line (╥)
+ * - VROADPOWER (78): Vertical road with horizontal power line (╞)
+ * - RAILHPOWERV (221): Horizontal rail with vertical power line
+ * - RAILVPOWERH (222): Vertical rail with horizontal power line 
+ * - HRAILROAD (237): Horizontal rail with vertical road
+ * - VRAILROAD (238): Vertical rail with horizontal road
+ */
+
 /* Complete Tile Definitions from Original Micropolis */
 #define DIRT            0       /* Dirt */
 #define RIVER           2       /* River */
@@ -187,32 +229,6 @@ typedef long QUAD;
 #define FOOTBALLBASE    950     /* Football stadium base - same value as VBRDG2 */
 
 #define TILE_COUNT      960     /* Total number of tiles */
-
-/* 
- * HOW TO READ TILES FROM TILESET FILES (*.bmp)
- * --------------------------------------------
- * Tiles are stored in the tileset files (like classic.bmp, x11.bmp) as a grid of 16x16 pixel tiles.
- * To find a specific tile (e.g., #123) in the tileset:
- * 
- * 1. The tileset is arranged as a grid with 16 tiles per row
- * 2. Divide the tile number by 16 to get the row (integer division)
- * 3. Take the remainder of the tile number divided by 16 to get the column
- * 
- * Example for tile #123:
- * - Row = 123 ÷ 16 = 7 (rows are 0-indexed, so this is the 8th row)
- * - Column = 123 % 16 = 11 (columns are 0-indexed, so this is the 12th column)
- * - So tile #123 is located at position (row 7, column 11) in the tileset
- * 
- * In pixel coordinates:
- * - x = column × 16 = 11 × 16 = 176 pixels from the left edge
- * - y = row × 16 = 7 × 16 = 112 pixels from the top edge
- * 
- * Important note about crossing tiles:
- * - HROADPOWER (77): Horizontal road with power line (looks like ╥)
- * - VROADPOWER (78): Vertical road with power line (looks like ╞)
- * - RAILHPOWERV (221): Horizontal rail with vertical power line
- * - RAILVPOWERH (222): Vertical rail with horizontal power line
- */
 
 /* Other constants */
 #define BSIZE           8       /* Building size? */

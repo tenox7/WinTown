@@ -130,8 +130,7 @@ static short aniTile[1024] = {
 /* Special animations */
 #define FOOTBALLGAME1 932
 #define FOOTBALLGAME2 940
-#define RADAR_ANIM    832  /* Radar animation frame, different from simulation.h RADAR */
-#define NUCLEAR_SWIRL 952
+#define NUCLEAR_SWIRL 952  /* Nuclear power plant swirl animation */
 
 /* Smoke stack position offsets */
 static short smokeOffsetX[4] = {  1,  2,  1,  2 };
