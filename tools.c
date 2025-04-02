@@ -775,7 +775,7 @@ int LayRoad(int x, int y, short *tilePtr) {
     }
     
     /* Handle crossing a power line */
-    if (tile >= POWERBASE && (tile <= POWERBASE + 11)) {
+    if (tile >= POWERBASE && (tile <= LASTPOWER)) {
         cost = ROAD_COST;
         if (TotalFunds < cost) {
             return 0;
@@ -821,7 +821,7 @@ int LayRail(int x, int y, short *tilePtr) {
     }
     
     /* Handle crossing a power line */
-    if (tile >= POWERBASE && (tile <= POWERBASE + 11)) {
+    if (tile >= POWERBASE && (tile <= LASTPOWER)) {
         cost = RAIL_COST;
         if (TotalFunds < cost) {
             return 0;
@@ -2085,9 +2085,12 @@ int DoRoad(int mapX, int mapY) {
 
     baseTile = Map[mapY][mapX] & LOMASK;
 
-    /* Check if we need to bulldoze first */
+    /* Check if we need to bulldoze first - now allows roads over power lines */
     if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE && baseTile != CHANNEL &&
-        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
+        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP) &&
+        !(baseTile >= ROADBASE && baseTile <= LASTROAD) &&
+        !(baseTile >= RAILBASE && baseTile <= LASTRAIL) &&
+        !(baseTile >= POWERBASE && baseTile <= LASTPOWER)) {
         return TOOLRESULT_NEED_BULLDOZE;
     }
 
@@ -2121,9 +2124,12 @@ int DoRail(int mapX, int mapY) {
 
     baseTile = Map[mapY][mapX] & LOMASK;
 
-    /* Check if we need to bulldoze first */
+    /* Check if we need to bulldoze first - now allows rails over power lines */
     if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE && baseTile != CHANNEL &&
-        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
+        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP) &&
+        !(baseTile >= ROADBASE && baseTile <= LASTROAD) &&
+        !(baseTile >= RAILBASE && baseTile <= LASTRAIL) &&
+        !(baseTile >= POWERBASE && baseTile <= LASTPOWER)) {
         return TOOLRESULT_NEED_BULLDOZE;
     }
 
@@ -2157,9 +2163,11 @@ int DoWire(int mapX, int mapY) {
 
     baseTile = Map[mapY][mapX] & LOMASK;
 
-    /* Check if we need to bulldoze first */
+    /* Check if we need to bulldoze first - now allows power over roads and rails */
     if (baseTile != DIRT && baseTile != RIVER && baseTile != REDGE && baseTile != CHANNEL &&
-        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP)) {
+        !(baseTile >= TINYEXP && baseTile <= LASTTINYEXP) &&
+        !(baseTile >= ROADBASE && baseTile <= LASTROAD) &&
+        !(baseTile >= RAILBASE && baseTile <= LASTRAIL)) {
         return TOOLRESULT_NEED_BULLDOZE;
     }
 

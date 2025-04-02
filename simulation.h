@@ -58,6 +58,7 @@ typedef long QUAD;
 #define ROADBASE        64      /* First road tile */
 #define LASTROAD        206     /* Last road tile */
 #define POWERBASE       208     /* First power line tile */
+#define LASTPOWER       222     /* Last power line tile */
 #define RAILBASE        224     /* First rail tile */
 #define LASTRAIL        238     /* Last rail tile */
 #define ROAD_POWER_CROSS 239     /* Road and power line crossing */
