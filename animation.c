@@ -50,9 +50,9 @@ void AnimateTiles(void) {
                         char debugMsg[256];
                         wsprintf(debugMsg, "ANIMATION: Nuclear reactor at (%d,%d)\n", x, y);
                         OutputDebugString(debugMsg);
-                    } else if (tilevalue == RADAR) {
+                    } else if (tilevalue == RADAR_ANIM) {
                         char debugMsg[256];
-                        wsprintf(debugMsg, "ANIMATION: Airport radar at (%d,%d)\n", x, y);
+                        wsprintf(debugMsg, "ANIMATION: Airport radar animation at (%d,%d)\n", x, y);
                         OutputDebugString(debugMsg);
                     } else if (tilevalue == FOOTBALLGAME1 || tilevalue == FOOTBALLGAME2) {
                         char debugMsg[256];
@@ -302,7 +302,7 @@ void UpdateAirportRadar(int x, int y) {
 
         if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
             /* Set the radar animation bit with appropriate flags */
-            Map[yy][xx] = RADAR | ANIMBIT | CONDBIT | BURNBIT;
+            Map[yy][xx] = RADAR_ANIM | ANIMBIT | CONDBIT | BURNBIT;
         }
     }
 }

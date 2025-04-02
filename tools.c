@@ -77,66 +77,37 @@ static short WireTable[16] = {POWERBASE,     POWERBASE + 1, POWERBASE + 2,  POWE
 #define TOOLRESULT_NO_MONEY 2
 #define TOOLRESULT_NEED_BULLDOZE 3
 
-/* Missing tile definitions */
-#define TINYEXP 624
-#define LASTTINYEXP 627
-#define SOMETINYEXP 625 /* A specific tiny explosion tile */
-#define LASTTILE 960    /* Last possible tile value */
-#define DIRT 0          /* Clear tile */
-#define RIVER 2         /* River tiles */
-#define REDGE 3         /* River edge */
-#define CHANNEL 4       /* Channel tile */
-#define HANDBALL 5      /* No idea what these bridge helper tiles are */
-#define LHBALL 6
-#define BRWH 7
-#define BRWV 8
-#define HBRIDGE 64    /* Horizontal bridge */
-#define VBRIDGE 65    /* Vertical bridge */
-#define VRAILROAD 75  /* Vertical rail/road crossing */
-#define LHPOWER 210   /* L-shaped power (horizontal) */
-#define LVPOWER 211   /* L-shaped power (vertical) */
-#define HRAIL 224     /* Horizontal rail */
-#define VRAIL 225     /* Vertical rail */
-#define RUBBLE 44     /* Rubble base */
-#define LASTRUBBLE 47 /* Last rubble tile */
-#define TREEBASE 21   /* Base for trees */
-#define LASTTREE 36   /* Last tree tile */
-#define LASTPOWER 222 /* Last power line tile */
-#define LASTFIRE 63   /* Last fire tile */
-#define FLOOD 48      /* Flood base */
-#define LASTFLOOD 51  /* Last flood tile */
+/* Constants needed for tools.c */
 #define TILE_SIZE 16  /* Size of each tile in pixels */
+#define LASTTILE 960  /* Last possible tile value */
 
-/* Define constants for buildings not in simulation.h */
-#define TILE_WOODS 37
-#define TILE_FIRESTBASE 761
-#define TILE_FIRESTATION 765
-#define TILE_POLICESTBASE 770
-#define TILE_POLICESTATION 774
-#define TILE_COALBASE 745
-#define TILE_POWERPLANT 750
-#define TILE_NUCLEARBASE 811
-#define TILE_NUCLEAR 816
-#define TILE_STADIUMBASE 779
-#define TILE_STADIUM 784
-#define TILE_PORTBASE 693
-#define TILE_PORT 698
-#define TILE_AIRPORTBASE 709
-#define TILE_AIRPORT 716
+/* Special tiles not in simulation.h */
+#define HANDBALL 5    /* Bridge helper tile */
+#define LHBALL 6      /* Bridge helper tile */
 
-/* Additional constants for zone ranges */
-#define AIRPORTBASE TILE_AIRPORTBASE
-#define LASTAIRPORT 744
-#define COALBASE TILE_COALBASE
-#define LASTPOWERPLANT 760
-#define NUCLEARBASE TILE_NUCLEARBASE
-#define LASTNUCLEAR 826
-#define FIRESTBASE TILE_FIRESTBASE
-#define LASTFIRESTATION 769
-#define POLICESTBASE TILE_POLICESTBASE
-#define LASTPOLICESTATION 778
-#define STADIUMBASE TILE_STADIUMBASE
-#define LASTSTADIUM 799
+/* Building and zone constants with TILE_ prefix for consistent naming */
+#define TILE_WOODS WOODS
+#define TILE_FIRESTBASE 761      /* Fire station base */
+#define TILE_FIRESTATION FIRESTATION
+#define TILE_POLICESTBASE 770    /* Police station base */
+#define TILE_POLICESTATION POLICESTATION
+#define TILE_COALBASE 745        /* Coal power plant base */
+#define TILE_POWERPLANT POWERPLANT
+#define TILE_NUCLEARBASE 811     /* Nuclear power plant base */
+#define TILE_NUCLEAR NUCLEAR
+#define TILE_STADIUMBASE 779     /* Stadium base */
+#define TILE_STADIUM STADIUM
+#define TILE_PORTBASE 693        /* Port base */
+#define TILE_PORT PORT
+#define TILE_AIRPORTBASE 709     /* Airport base */
+#define TILE_AIRPORT AIRPORT
+
+/* Additional constants for zone ranges needed by tools.c */
+#define LASTAIRPORT 744          /* Last airport tile */
+#define LASTFIRESTATION 769      /* Last fire station tile */
+#define LASTPOLICESTATION 778    /* Last police station tile */
+#define LASTNUCLEAR 826          /* Last nuclear plant tile */
+#define LASTSTADIUM 799          /* Last stadium tile */
 
 /* Forward declarations for tile connection functions */
 int ConnectTile(int x, int y, short *tilePtr, int command);
@@ -781,7 +752,16 @@ int LayRoad(int x, int y, short *tilePtr) {
             return 0;
         }
         Spend(cost);
-        *tilePtr = ROAD_POWER_CROSS | CONDBIT | BULLBIT | BURNBIT;
+        /* Use the built-in road/power crossing tiles */
+        if (y > 0 && y < WORLD_Y - 1 && 
+            (Map[y-1][x] & LOMASK) >= POWERBASE && (Map[y-1][x] & LOMASK) <= LASTPOWER &&
+            (Map[y+1][x] & LOMASK) >= POWERBASE && (Map[y+1][x] & LOMASK) <= LASTPOWER) {
+            /* Vertical power line needs horizontal road crossing */
+            *tilePtr = HROADPOWER | CONDBIT | BULLBIT | BURNBIT;
+        } else {
+            /* Horizontal power line needs vertical road crossing */
+            *tilePtr = VROADPOWER | CONDBIT | BULLBIT | BURNBIT;
+        }
         return 1;
     }
 
@@ -827,7 +807,16 @@ int LayRail(int x, int y, short *tilePtr) {
             return 0;
         }
         Spend(cost);
-        *tilePtr = RAIL_POWER_CROSS | CONDBIT | BULLBIT | BURNBIT;
+        /* Use the built-in rail/power crossing tiles */
+        if (y > 0 && y < WORLD_Y - 1 && 
+            (Map[y-1][x] & LOMASK) >= POWERBASE && (Map[y-1][x] & LOMASK) <= LASTPOWER &&
+            (Map[y+1][x] & LOMASK) >= POWERBASE && (Map[y+1][x] & LOMASK) <= LASTPOWER) {
+            /* Vertical power line needs horizontal rail crossing */
+            *tilePtr = RAILHPOWERV | CONDBIT | BULLBIT | BURNBIT;
+        } else {
+            /* Horizontal power line needs vertical rail crossing */
+            *tilePtr = RAILVPOWERH | CONDBIT | BULLBIT | BURNBIT;
+        }
         return 1;
     }
 
@@ -873,7 +862,16 @@ int LayWire(int x, int y, short *tilePtr) {
             return 0;
         }
         Spend(cost);
-        *tilePtr = ROAD_POWER_CROSS | CONDBIT | BULLBIT | BURNBIT;
+        /* Use the built-in road/power crossing tiles */
+        if (x > 0 && x < WORLD_X - 1 && 
+            (Map[y][x-1] & LOMASK) >= ROADBASE && (Map[y][x-1] & LOMASK) <= LASTROAD &&
+            (Map[y][x+1] & LOMASK) >= ROADBASE && (Map[y][x+1] & LOMASK) <= LASTROAD) {
+            /* Horizontal road needs vertical power line crossing */
+            *tilePtr = VROADPOWER | CONDBIT | BULLBIT | BURNBIT;
+        } else {
+            /* Vertical road needs horizontal power line crossing */
+            *tilePtr = HROADPOWER | CONDBIT | BULLBIT | BURNBIT;
+        }
         return 1;
     }
     
@@ -884,7 +882,16 @@ int LayWire(int x, int y, short *tilePtr) {
             return 0;
         }
         Spend(cost);
-        *tilePtr = RAIL_POWER_CROSS | CONDBIT | BULLBIT | BURNBIT;
+        /* Use the built-in rail/power crossing tiles */
+        if (x > 0 && x < WORLD_X - 1 && 
+            (Map[y][x-1] & LOMASK) >= RAILBASE && (Map[y][x-1] & LOMASK) <= LASTRAIL &&
+            (Map[y][x+1] & LOMASK) >= RAILBASE && (Map[y][x+1] & LOMASK) <= LASTRAIL) {
+            /* Horizontal rail needs vertical power line crossing */
+            *tilePtr = RAILVPOWERH | CONDBIT | BULLBIT | BURNBIT;
+        } else {
+            /* Vertical rail needs horizontal power line crossing */
+            *tilePtr = RAILHPOWERV | CONDBIT | BULLBIT | BURNBIT;
+        }
         return 1;
     }
 
@@ -960,7 +967,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y - 1][x] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == ROAD_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER) {
                 connectMask |= 1;
             }
         }
@@ -970,7 +977,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y][x + 1] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == ROAD_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER) {
                 connectMask |= 2;
             }
         }
@@ -980,7 +987,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y + 1][x] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == ROAD_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER) {
                 connectMask |= 4;
             }
         }
@@ -990,7 +997,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y][x - 1] & LOMASK;
             if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
                 (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == ROAD_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER) {
                 connectMask |= 8;
             }
         }
@@ -1012,7 +1019,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y - 1][x] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAIL_POWER_CROSS) {
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 1;
             }
         }
@@ -1022,7 +1029,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y][x + 1] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAIL_POWER_CROSS) {
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 2;
             }
         }
@@ -1032,7 +1039,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y + 1][x] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAIL_POWER_CROSS) {
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 4;
             }
         }
@@ -1042,7 +1049,7 @@ void FixSingle(int x, int y) {
             mapValue = Map[y][x - 1] & LOMASK;
             if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
                 (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAIL_POWER_CROSS) {
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 8;
             }
         }
@@ -1064,7 +1071,8 @@ void FixSingle(int x, int y) {
             mapValue = Map[y - 1][x] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
                 ((Map[y - 1][x] & CONDBIT) != 0) ||
-                mapValue == ROAD_POWER_CROSS || mapValue == RAIL_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER ||
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 1;
             }
         }
@@ -1074,7 +1082,8 @@ void FixSingle(int x, int y) {
             mapValue = Map[y][x + 1] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
                 ((Map[y][x + 1] & CONDBIT) != 0) ||
-                mapValue == ROAD_POWER_CROSS || mapValue == RAIL_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER ||
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 2;
             }
         }
@@ -1084,7 +1093,8 @@ void FixSingle(int x, int y) {
             mapValue = Map[y + 1][x] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
                 ((Map[y + 1][x] & CONDBIT) != 0) ||
-                mapValue == ROAD_POWER_CROSS || mapValue == RAIL_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER ||
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 4;
             }
         }
@@ -1094,7 +1104,8 @@ void FixSingle(int x, int y) {
             mapValue = Map[y][x - 1] & LOMASK;
             if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
                 ((Map[y][x - 1] & CONDBIT) != 0) ||
-                mapValue == ROAD_POWER_CROSS || mapValue == RAIL_POWER_CROSS) {
+                mapValue == HROADPOWER || mapValue == VROADPOWER ||
+                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
                 connectMask |= 8;
             }
         }
@@ -1110,7 +1121,8 @@ void FixSingle(int x, int y) {
     }
     
     /* Handle the special crossing tiles */
-    if (tile == ROAD_POWER_CROSS || tile == RAIL_POWER_CROSS) {
+    if (tile == HROADPOWER || tile == VROADPOWER || 
+        tile == RAILHPOWERV || tile == RAILVPOWERH) {
         /* These tiles already have the CONDBIT set to allow power flow
            We'll trigger updates for the surrounding tiles */
         if (y > 0) {

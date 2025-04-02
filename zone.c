@@ -8,25 +8,16 @@
 #include <windows.h>
 
 /* Population table values for different zone types */
-#define RZB 0 /* Residential base level */
-/* Use values from simulation.h instead of 0 */
-#define HOSPITALBASE 400 /* Hospital */
-#define HOSPITAL 401     /* Hospital tile */
-#define CHURCH 402       /* Church tile */
-#define CZB 0            /* Commercial base level */
-#define IZB 0            /* Industrial base level */
+/* These are local overrides for specific use in this file */
+#define LOCAL_RZB 0    /* Residential base level (different from simulation.h) */
+#define LOCAL_CZB 0    /* Commercial base level (different from simulation.h) */
+#define LOCAL_IZB 0    /* Industrial base level (different from simulation.h) */
 
-/* Zone base values */
-#define RESBASE 240
-#define COMBASE 423
-#define INDBASE 612
-#define PORTBASE 693
-#define AIRPORTBASE 709
-#define COALBASE 745
-#define FIRESTBASE 761
-#define POLICESTBASE 770
-#define STADIUMBASE 779
-#define NUCLEARBASE 811
+/* Some definitions needed by zone.c - matches simulation.h values */
+#define HOSPITALBASE 400  /* Hospital base */
+#define FOOTBALLBASE 950  /* Football stadium */
+
+/* Note: Other zone base values all come from simulation.h */
 
 /* Zone bit flags */
 #define ALLBITS 0xFFFF

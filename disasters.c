@@ -22,30 +22,9 @@ extern short Map[WORLD_Y][WORLD_X];
 static const short xDelta[4] = {0, 1, 0, -1};
 static const short yDelta[4] = {-1, 0, 1, 0};
 
-/* These constants are from simulation.h, defining them here to avoid redeclaration issues */
-#define FIRE 56        /* Fire tile base - from simulation.h */
-#define ANIMBIT 0x0800 /* Animation bit - from simulation.h */
-#define RUBBLE 44      /* Rubble tile - from simulation.h */
-#define BULLBIT 0x1000 /* Bulldozable bit - from simulation.h */
-#define BURNBIT 0x2000 /* Burnable bit - from simulation.h */
-#define FLOOD 48       /* Flood tile - from simulation.h */
-#define RADTILE 52     /* Radiation tile - from simulation.h */
-#define DIRT 0         /* Dirt tile - from simulation.h */
-#define ZONEBIT 0x0400 /* Zone center bit - from simulation.h */
-
-/* Zone ranges */
-#define RESBASE 240          /* Residential zone base */
-#define LASTRES 420          /* Last residential zone */
-#define COMBASE 423          /* Commercial zone base */
-#define LASTCOM 611          /* Last commercial zone */
-#define INDBASE 612          /* Industrial zone base */
-#define LASTIND 692          /* Last industrial zone */
-#define PORTBASE 693         /* Seaport base */
-#define LASTPORT 708         /* Last seaport */
-#define AIRPORTBASE 709      /* Airport base */
-#define LASTAIRPORT 744      /* Last airport */
-#define NUCLEAR 816          /* Nuclear power plant */
-#define LASTZONE LASTAIRPORT /* Last zone tile for disaster purposes */
+/* Local definitions for disaster purposes */
+#define LASTAIRPORT 744        /* Last airport tile */
+#define LOCAL_LASTZONE LASTAIRPORT /* Last zone tile for disaster purposes */
 
 /* Trigger an earthquake disaster */
 void doEarthquake(void) {
@@ -59,6 +38,12 @@ void doEarthquake(void) {
     epicenterX = WORLD_X / 2;
     epicenterY = WORLD_Y / 2;
 
+    /* Random earthquake damage - with reasonable limits */
+    time = SimRandom(700) + 300;
+    if (time > 1000) {
+        time = 1000; /* Cap to prevent excessive processing */
+    }
+
     /* Notify user */
     wsprintf(buf, "Earthquake reported at %d,%d!", epicenterX, epicenterY);
 
@@ -67,12 +52,6 @@ void doEarthquake(void) {
     addGameLog("Epicenter at coordinates %d,%d", epicenterX, epicenterY);
     addDebugLog("Earthquake: Magnitude %d, Duration %d", (time / 100), time);
     MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
-
-    /* Random earthquake damage - with reasonable limits */
-    time = SimRandom(700) + 300;
-    if (time > 1000) {
-        time = 1000; /* Cap to prevent excessive processing */
-    }
 
     for (z = 0; z < time; z++) {
         /* Get random coordinates but ensure they are within bounds */
@@ -87,7 +66,7 @@ void doEarthquake(void) {
         tile = Map[y][x];
         tileValue = tile & LOMASK;
 
-        if ((tileValue >= RESBASE) && (tileValue <= LASTZONE) && !(tile & ZONEBIT)) {
+        if ((tileValue >= RESBASE) && (tileValue <= LOCAL_LASTZONE) && !(tile & ZONEBIT)) {
             if (z & 0x3) {
                 /* Create rubble (every 4th iteration) */
                 Map[y][x] = (RUBBLE + BULLBIT) + (SimRandom(4));

@@ -130,7 +130,7 @@ static short aniTile[1024] = {
 /* Special animations */
 #define FOOTBALLGAME1 932
 #define FOOTBALLGAME2 940
-#define RADAR         832
+#define RADAR_ANIM    832  /* Radar animation frame, different from simulation.h RADAR */
 #define NUCLEAR_SWIRL 952
 
 /* Smoke stack position offsets */
