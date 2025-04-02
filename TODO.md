@@ -14,7 +14,7 @@
 ## Major Bugs To Fix
 - Color map issues
 - Population, traffic, pollution
-- Animations other than Power Plant
+- Animations other than Power Plant / position of animated objects
 
 ## Cosmetic
 - Panning button fix

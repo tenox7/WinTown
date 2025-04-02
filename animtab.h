@@ -117,8 +117,31 @@ static short aniTile[1024] = {
 #define COALSMOKE3   924
 #define COALSMOKE4   928
 
+/* Industrial smoke animations */
+#define INDSMOKE1    884
+#define INDSMOKE2    888
+#define INDSMOKE3    892
+#define INDSMOKE4    896
+#define INDSMOKE5    900
+#define INDSMOKE6    904
+#define INDSMOKE7    908
+#define INDSMOKE8    912
+
+/* Special animations */
+#define FOOTBALLGAME1 932
+#define FOOTBALLGAME2 940
+#define RADAR         832
+#define NUCLEAR_SWIRL 952
+
 /* Smoke stack position offsets */
 static short smokeOffsetX[4] = {  1,  2,  1,  2 };
 static short smokeOffsetY[4] = { -1, -1,  0,  0 };
+
+/* Industrial smoke position data */
+static short indOffsetX[8] = { -1,  0,  1,  0,  0,  0,  0,  1 };
+static short indOffsetY[8] = { -1,  0, -1, -1,  0,  0, -1, -1 };
+
+/* Industrial building types that can have smoke */
+static short indSmokeTable[8] = { 621, 0, 641, 649, 0, 0, 676, 686 };
 
 #endif /* _ANIMTAB_H */
