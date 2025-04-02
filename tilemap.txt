@@ -1,0 +1,142 @@
+# MICROPOLIS TILE MAP
+
+```
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+| DIRT  |[UNUSED]| RIVER | REDGE |CHANNEL|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|RIVEDGE|TREEBSE| TREE  | TREE  | TREE  | TREE  | TREE  | TREE  | TREE  | TREE  | TREE  | TREE  |
+| (0)   | (1)   | (2)   | (3)   | (4)   | (5)   | (6)   | (7)   | (8)   | (9)   | (10)  | (11)  | (12)  | (13)  | (14)  | (15)  | (16)  | (17)  | (18)  | (19)  | (20)  | (21)  | (22)  | (23)  | (24)  | (25)  | (26)  | (27)  | (28)  | (29)  | (30)  | (31)  |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+| TREE  | TREE  | TREE  | TREE  |LASTTREE| WOODS |TRASH1 |TRASH2 | WOODS2| WOODS3| WOODS4| WOODS5| RUBBLE| RUBBLE| RUBBLE|LASTRBBL| FLOOD | FLOOD | FLOOD |LASTFLD |RADTILE|TRASH3 |TRASH4 |TRASH5 | FIRE  | FIRE  | FIRE  | FIRE  | FIRE  | FIRE  | FIRE  |LASTFIRE|
+| (32)  | (33)  | (34)  | (35)  | (36)  | (37)  | (38)  | (39)  | (40)  | (41)  | (42)  | (43)  | (44)  | (45)  | (46)  | (47)  | (48)  | (49)  | (50)  | (51)  | (52)  | (53)  | (54)  | (55)  | (56)  | (57)  | (58)  | (59)  | (60)  | (61)  | (62)  | (63)  |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|HBRIDGE|VBRIDGE| ROADS | ROADS | ROADS | ROADS | ROADS | ROADS | ROADS | ROADS | ROADS |INTRSCT|HRDPOWR|VRDPOWR| BRWH  |LTRFBSE|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC| BRWV  |
+| (64)  | (65)  | (66)  | (67)  | (68)  | (69)  | (70)  | (71)  | (72)  | (73)  | (74)  | (76)  | (77)  | (78)  | (79)  | (80)  | (81)  | (82)  | (83)  | (84)  | (85)  | (86)  | (87)  | (88)  | (89)  | (90)  | (91)  | (92)  | (93)  | (94)  | (95)  | (96)  |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|BRWXXX1|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|BRWXXX2|
+| (96)  | (97)  | (98)  | (99)  | (100) | (101) | (102) | (103) | (104) | (105) | (106) | (107) | (108) | (109) | (110) | (111) | (112) | (113) | (114) | (115) | (116) | (117) | (118) | (119) | (120) | (121) | (122) | (123) | (124) | (125) | (126) | (127) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|BRWXXX3|HTRFBSE|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|BRWXXX4|
+| (128) | (129) | (130) | (131) | (132) | (133) | (134) | (135) | (136) | (137) | (138) | (139) | (140) | (141) | (142) | (143) | (144) | (145) | (146) | (147) | (148) | (149) | (150) | (151) | (152) | (153) | (154) | (155) | (156) | (157) | (158) | (159) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|BRWXXX5|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|BRWXXX6|
+| (160) | (161) | (162) | (163) | (164) | (165) | (166) | (167) | (168) | (169) | (170) | (171) | (172) | (173) | (174) | (175) | (176) | (177) | (178) | (179) | (180) | (181) | (182) | (183) | (184) | (185) | (186) | (187) | (188) | (189) | (190) | (191) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|TRAFFIC|LASTROD|BRWXXX7| HPOWER| VPOWER| LHPOWER| LVPOWER|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|POWERLN|
+| (192) | (193) | (194) | (195) | (196) | (197) | (198) | (199) | (200) | (201) | (202) | (203) | (204) | (205) | (206) | (207) | (208) | (209) | (210) | (211) | (212) | (213) | (214) | (215) | (216) | (217) | (218) | (219) | (220) | (221) | (222) | (223) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|RAILHPV|RAILVPH|LASTPWR|TRASH6 | HRAIL | VRAIL | LHRAIL| LVRAIL| RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  | RAIL  |HRAILRD|VRAILRD|LASTRAIL|RDVPWRH|RESBASE|RESZONE|RESZONE|RESZONE| FREEZ |RESZONE|RESZONE|RESZONE|
+| (221) | (222) | (222) | (223) | (224) | (225) | (226) | (227) | (228) | (229) | (230) | (231) | (232) | (233) | (234) | (235) | (236) | (237) | (238) | (239) | (237) | (238) | (238) | (239) | (240) | (241) | (242) | (243) | (244) | (245) | (246) | (247) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|RESZONE| HOUSE | LHTHR |RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE| HHTHR |RESZONE| RZB  |RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|RESZONE|
+| (248) | (249) | (249) | (250) | (251) | (252) | (253) | (254) | (255) | (256) | (257) | (258) | (259) | (260) | (261) | (265) | (265) | (266) | (267) | (268) | (269) | (270) | (271) | (272) | (273) | (274) | (275) | (276) | (277) | (278) | (279) | (280) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|                                     [...More Residential Zone tiles from 280-408...]                                                                                                                                                               |HOSPITAL|
+|                                                                                                                                                                                                                                                   | (409) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+| [...Church, Commercial Zone tiles...]                                                                                                                                                                                                                      |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|COMBASE|COMZONE| COMCLR|COMZONE|COMZONE|COMZONE|COMZONE|COMZONE|COMZONE|COMZONE| CZB  |                                                                                                                                                                    |
+| (423) | (424) | (427) | (428) | (429) | (430) | (431) | (432) | (433) | (435) | (436) |                                                                                                                                                                    |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|                                              [...More Commercial and Industrial Zone tiles...]                                                                                                                                                             |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|INDBASE| INDCLR|INDZONE|INDZONE|INDZONE|INDZONE|INDZONE|INDZONE|LASTIND| IND1  |INDZONE| IZB  |                                                                                                                                                            |
+| (612) | (616) | (617) | (618) | (619) | (620) | (620) | (620) | (620) | (621) | (622) | (625) |                                                                                                                                                            |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|                                            [...More Industrial tiles and Special Buildings...]                                                                                                                                                             |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|PORTBSE| PORT  |PORTTLE|PORTTLE|PORTTLE|PORTTLE|PORTTLE|PORTTLE|PORTTLE|PORTTLE|LASTPRT|AIRPBSE|AIRPORT| RADAR |AIRPORT|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|
+| (693) | (698) | (699) | (700) | (701) | (702) | (703) | (704) | (705) | (706) | (708) | (709) | (716) | (711) | (716) | (717) | (718) | (719) | (720) | (721) | (722) | (723) | (724) | (725) | (726) | (727) | (728) | (729) | (730) | (731) | (732) | (733) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|AIRPTLE|COALBSE|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|PWRPLNT|LASTPWR|FIREBSE|FIRESTN|FIRESTN|FIRESTN|FIRESTN|POLBSE |POLICST|POLICST|POLICST|
+| (734) | (735) | (736) | (737) | (738) | (739) | (740) | (741) | (742) | (743) | (744) | (745) | (750) | (751) | (752) | (753) | (754) | (755) | (756) | (757) | (758) | (759) | (760) | (761) | (765) | (766) | (767) | (768) | (770) | (774) | (775) | (776) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|POLICST|POLICST|POLICST|POLICST|POLICST|STADBSE|STADIUM|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|FULLSTD|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|STADTLE|NUCBSE|
+| (777) | (778) | (779) | (780) | (781) | (779) | (784) | (785) | (786) | (787) | (788) | (789) | (790) | (791) | (792) | (793) | (794) | (795) | (796) | (797) | (798) | (799) | (800) | (801) | (802) | (803) | (804) | (805) | (806) | (807) | (808) | (811) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|NUCLEAR|NUCPWRP|NUCPWRP|NUCPWRP|NUCPWRP|NUCPWRP|NUCPWRP|NUCPWRP|NUCPWRP|NUCPWRP|LASTZNE|LTGBOLT| HBRDG0| HBRDG1| HBRDG2| HBRDG3| RADAR0| RADAR1| RADAR2| RADAR3| RADAR4| RADAR5| RADAR6| RADAR7|FOUNTAN|INDBSE2|TELECOM|TELECOM|TELECOM|TELECOM|TELECOM|TELECOM|
+| (816) | (817) | (818) | (819) | (820) | (821) | (822) | (823) | (824) | (825) | (826) | (827) | (828) | (829) | (830) | (831) | (832) | (833) | (834) | (835) | (836) | (837) | (838) | (839) | (840) | (844) | (844) | (845) | (846) | (847) | (848) | (849) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|TELECOM|TELLTWR|SMOKBSE|SMOKE  |SMOKE  |SMOKE  |SMOKE  |SMOKE  |SMOKE  |SMOKE  | TINYXP|EXPLSN |EXPLSN |EXPLSN |LSTTNYXP|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+| (850) | (851) | (852) | (853) | (854) | (855) | (856) | (857) | (858) | (859) | (860) | (861) | (862) | (863) | (867) | (868) | (869) | (870) | (871) | (872) | (873) | (874) | (875) | (876) | (877) | (878) | (879) | (880) | (881) | (882) | (883) | (884) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|                                                        [...More Special Effects and Animation tiles...]                                                                                                                                                    |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+|COALSMK1|COALSMK2|COALSMK3|COALSMK4|FTBLGM1 |FTBLGM1 |FTBLGM1 |FTBLGM1 |FTBLGM1 |FTBLGM1 |FTBLGM1 |FTBLGM1 |FTBLGM2 |FTBLGM2 |FTBLGM2 |FTBLGM2 |FTBLGM2 |FTBLGM2 |FTBLGM2 |FTBLGM2 | VBRDG0| VBRDG1| VBRDG2| VBRDG3|       |       |       |       |       |       |       |       |
+| (916) | (920) | (924) | (928) | (932) | (933) | (934) | (935) | (936) | (937) | (938) | (939) | (940) | (941) | (942) | (943) | (944) | (945) | (946) | (947) | (948) | (949) | (950) | (951) | (952) | (953) | (954) | (955) | (956) | (957) | (958) | (959) |
++-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+```
+
+## KEY SPECIAL TILES
+
+```
++------------+---------------------------------------------+
+| TILE       | Description                                 |
++------------+---------------------------------------------+
+| DIRT (0)   | Empty dirt tile                             |
+| RIVER (2)  | River/water tile                            |
+| WOODS (37) | Forest tile                                 |
+| RUBBLE (44)| Demolished building rubble                  |
+| RADTILE (52)| Radiation from nuclear meltdown            |
+| FIRE (56)  | Fire animation tiles                        |
+| ROAD (66+) | Road tiles in various configurations        |
+| HROADPOWER (77)| Horizontal road with vertical powerline |
+| VROADPOWER (78)| Vertical road with horizontal powerline |
+| POWER (208+)| Power line tiles                           |
+| RAIL (224+)| Rail tiles in various configurations        |
+| HRAILROAD (237)| Horizontal rail with vertical road      |
+| VRAILROAD (238)| Vertical rail with horizontal road      |
+| RESBASE (240)| Start of residential zone tiles           |
+| COMBASE (423)| Start of commercial zone tiles            |
+| INDBASE (612)| Start of industrial zone tiles            |
+| PORT (698) | Seaport                                     |
+| AIRPORT (716)| Airport                                   |
+| POWERPLANT (750)| Coal power plant                       |
+| FIRESTATION (765)| Fire station                          |
+| POLICESTATION (774)| Police station                      |
+| STADIUM (784)| Stadium                                   |
+| NUCLEAR (816)| Nuclear power plant                       |
++------------+---------------------------------------------+
+```
+
+## TILE FLAGS
+
+```
++------------+-------+-------------------------------------------+
+| Flag       | Value | Description                               |
++------------+-------+-------------------------------------------+
+| LOMASK     | 0x03ff| Mask for the low 10 bits (tile ID 0-1023) |
+| ANIMBIT    | 0x0800| Bit 11, tile is animated                  |
+| BURNBIT    | 0x2000| Bit 13, tile can be lit (catch fire)      |
+| BULLBIT    | 0x1000| Bit 12, tile is bulldozable               |
+| CONDBIT    | 0x4000| Bit 14, tile can conduct electricity      |
+| ZONEBIT    | 0x0400| Bit 10, tile is the center of a zone      |
+| POWERBIT   | 0x8000| Bit 15, tile has power                    |
++------------+-------+-------------------------------------------+
+```
+
+## TILE RANGES
+
+```
++----------------+-------+-------+-----------------------------------+
+| Type           | Start | End   | Description                       |
++----------------+-------+-------+-----------------------------------+
+| River Edges    | 5     | 20    | River edge tiles                  |
+| Trees          | 21    | 36    | Tree tiles                        |
+| Rubble         | 44    | 47    | Demolished building rubble        |
+| Flood          | 48    | 51    | Flood tiles                       |
+| Fire           | 56    | 63    | Fire animation tiles              |
+| Roads          | 64    | 206   | All road and traffic tiles        |
+| Power Lines    | 208   | 222   | Power line tiles                  |
+| Rails          | 224   | 238   | Rail tiles                        |
+| Residential    | 240   | 420   | Residential zone tiles            |
+| Commercial     | 423   | 611   | Commercial zone tiles             |
+| Industrial     | 612   | 620   | Industrial zone tiles             |
+| Port           | 693   | 708   | Seaport tiles                     |
+| Airport        | 709   | 744   | Airport tiles                     |
+| Power Plant    | 745   | 760   | Coal power plant tiles            |
+| Fire Station   | 761   | 769   | Fire station tiles                |
+| Police Station | 770   | 778   | Police station tiles              |
+| Stadium        | 779   | 810   | Stadium tiles                     |
+| Nuclear Plant  | 811   | 826   | Nuclear power plant tiles         |
++----------------+-------+-------+-----------------------------------+
+```
