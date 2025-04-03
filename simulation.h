@@ -110,10 +110,26 @@ typedef long QUAD;
  #define ROADBASE	64
  #define HBRIDGE		64
  #define VBRIDGE		65
- #define ROADS		66
- #define INTERSECTION	76
- #define HROADPOWER	77
- #define VROADPOWER	78
+ /* Road tiles - positioned according to RoadTable[16] index 0-15 */
+ #define ROADS		66  /* East-West road (no connections) - RoadTable[0] */
+ #define ROADS2		67  /* North-South road (no connections) - RoadTable[1] */
+ #define ROADS3		68  /* East-West road with West connection - RoadTable[2] */
+ #define ROADS4		69  /* North-South road with South connection - RoadTable[3] */
+ #define ROADS5		70  /* East-West road with East connection - RoadTable[4] */
+ #define ROADS6		71  /* North-West corner - RoadTable[5] */
+ #define ROADS7		72  /* North-East corner - RoadTable[6] */
+ #define ROADS8		73  /* South-East corner - RoadTable[7] */
+ #define ROADS9		74  /* South-West corner - RoadTable[8] */
+ #define ROADS10		75  /* T-junction East-South-West - RoadTable[9] */
+ #define ROADS11		76  /* T-junction North-South-West - RoadTable[10] */
+ #define ROADS12		77  /* T-junction North-East-South - RoadTable[11] */
+ #define ROADS13		78  /* T-junction North-East-West - RoadTable[12] */
+ #define ROADS14		79  /* North-South road with North connection - RoadTable[13] */
+ #define ROADS15		80  /* East-West road with East and West connections - RoadTable[14] */
+ #define ROADS16		81  /* North-South road with North and South connections - RoadTable[15] */
+ #define INTERSECTION	82  /* All connections (North, East, South, West) */
+ #define HROADPOWER	83  /* Horizontal road with vertical power line */
+ #define VROADPOWER	84  /* Vertical road with horizontal power line */
  #define BRWH		79
  #define LTRFBASE	80
  #define BRWV		95
@@ -129,19 +145,39 @@ typedef long QUAD;
  #define POWERBASE	208
  #define HPOWER		208
  #define VPOWER		209
- #define LHPOWER		210
- #define LVPOWER		211
- #define RAILHPOWERV	221
- #define RAILVPOWERH	222
+ /* Power line tiles - positioned according to WireTable[16] index 0-15 */
+ #define LHPOWER		210  /* Horizontal power line (no connections) - WireTable[0] */
+ #define LVPOWER		211  /* Vertical power line (no connections) - WireTable[1] */
+ #define LVPOWER2	212  /* Horizontal power line with West connection - WireTable[2] */
+ #define LVPOWER3	213  /* Vertical power line with South connection - WireTable[3] */
+ #define LVPOWER4	214  /* Horizontal power line with East connection - WireTable[4] */
+ #define LVPOWER5	215  /* North-West corner power line - WireTable[5] */
+ #define LVPOWER6	216  /* North-East corner power line - WireTable[6] */
+ #define LVPOWER7	217  /* South-East corner power line - WireTable[7] */
+ #define LVPOWER8	218  /* South-West corner power line - WireTable[8] */
+ #define LVPOWER9	219  /* T-junction E-S-W power line - WireTable[9] */
+ #define LVPOWER10	220  /* T-junction N-S-W power line - WireTable[10] */
+ #define RAILHPOWERV	221  /* Horizontal rail with vertical power line */
+ #define RAILVPOWERH	222  /* Vertical rail with horizontal power line */
  #define LASTPOWER	222
  #define UNUSED_TRASH6	223
  #define RAILBASE	224
- #define HRAIL		224
- #define VRAIL		225
- #define LHRAIL		226
- #define LVRAIL		227
- #define HRAILROAD	237
- #define VRAILROAD	238
+ #define HRAIL		224  /* Horizontal rail (no connections) - RailTable[0] */
+ #define VRAIL		225  /* Vertical rail (no connections) - RailTable[1] */
+ /* Rail tiles - positioned according to RailTable[16] index 0-15 */
+ #define LHRAIL		226  /* Horizontal rail (no connections) - RailTable[0] */
+ #define LVRAIL		227  /* Vertical rail (no connections) - RailTable[1] */
+ #define LVRAIL2		228  /* Horizontal rail with West connection - RailTable[2] */
+ #define LVRAIL3		229  /* Vertical rail with South connection - RailTable[3] */
+ #define LVRAIL4		230  /* Horizontal rail with East connection - RailTable[4] */
+ #define LVRAIL5		231  /* North-West corner rail - RailTable[5] */
+ #define LVRAIL6		232  /* North-East corner rail - RailTable[6] */
+ #define LVRAIL7		233  /* South-East corner rail - RailTable[7] */
+ #define LVRAIL8		234  /* South-West corner rail - RailTable[8] */
+ #define LVRAIL9		235  /* T-junction E-S-W rail - RailTable[9] */
+ #define LVRAIL10	236  /* T-junction N-S-W rail - RailTable[10] */
+ #define HRAILROAD	237  /* Horizontal rail with vertical road */
+ #define VRAILROAD	238  /* Vertical rail with horizontal road */
  #define LASTRAIL	238
  #define ROADVPOWERH	239 /* bogus? */
  #define RESBASE		240

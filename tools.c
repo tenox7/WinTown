@@ -29,21 +29,73 @@ extern HWND hwndMain;
 /* External reference to Map array */
 extern short Map[WORLD_Y][WORLD_X];
 
-/* Tile connection tables for road, rail, and wire */
-static short RoadTable[16] = {ROADS,      ROADS + 1,  ROADS + 2,  ROADS + 3, ROADS + 4,  ROADS + 5,
-                              ROADS + 6,  ROADS + 7,  ROADS + 8,  ROADS + 9, ROADS + 10, ROADS + 11,
-                              ROADS + 12, ROADS + 13, ROADS + 14, ROADS + 15};
+/* 
+ * Tile connection tables for road, rail, and wire
+ * Index is a 4-bit mask representing connections:
+ * Bit 0 (value 1): North connection
+ * Bit 1 (value 2): East connection
+ * Bit 2 (value 4): South connection
+ * Bit 3 (value 8): West connection
+ */
+/* MicropolisJS RoadTable exact mapping */
+static short RoadTable[16] = {
+    ROADS,         /* 0000 - No connections */
+    ROADS2,        /* 0001 - North only */
+    ROADS,         /* 0010 - East only */
+    ROADS3,        /* 0011 - North, East */
+    ROADS2,        /* 0100 - South only */
+    ROADS2,        /* 0101 - North, South */
+    ROADS4,        /* 0110 - East, South */
+    ROADS8,        /* 0111 - North, East, South */
+    ROADS,         /* 1000 - West only */
+    ROADS6,        /* 1001 - North, West */
+    ROADS,         /* 1010 - East, West */
+    ROADS7,        /* 1011 - North, East, West */
+    ROADS5,        /* 1100 - South, West */
+    ROADS10,       /* 1101 - North, South, West */
+    ROADS9,        /* 1110 - East, South, West */
+    INTERSECTION   /* 1111 - All connections */
+};
 
-static short RailTable[16] = {RAILBASE,      RAILBASE + 1,  RAILBASE + 2,  RAILBASE + 3,
-                              RAILBASE + 4,  RAILBASE + 5,  RAILBASE + 6,  RAILBASE + 7,
-                              RAILBASE + 8,  RAILBASE + 9,  RAILBASE + 10, RAILBASE + 11,
-                              RAILBASE + 12, RAILBASE + 13, RAILBASE + 14, RAILBASE + 15};
+/* MicropolisJS RailTable exact mapping */
+static short RailTable[16] = {
+    LHRAIL,       /* 0000 - No connections */
+    LVRAIL,       /* 0001 - North only */
+    LHRAIL,       /* 0010 - East only */
+    LVRAIL2,      /* 0011 - North, East */
+    LVRAIL,       /* 0100 - South only */
+    LVRAIL,       /* 0101 - North, South */
+    LVRAIL3,      /* 0110 - East, South */
+    LVRAIL7,      /* 0111 - North, East, South */
+    LHRAIL,       /* 1000 - West only */
+    LVRAIL5,      /* 1001 - North, West */
+    LHRAIL,       /* 1010 - East, West */
+    LVRAIL6,      /* 1011 - North, East, West */
+    LVRAIL4,      /* 1100 - South, West */
+    LVRAIL9,      /* 1101 - North, South, West */
+    LVRAIL8,      /* 1110 - East, South, West */
+    LVRAIL10      /* 1111 - All connections */
+};
 
-/* Cannot use LHPOWER and LVPOWER in initializer for C89, define numeric values */
-static short WireTable[16] = {POWERBASE,     POWERBASE + 1, POWERBASE + 2,  POWERBASE + 3,
-                              POWERBASE + 4, POWERBASE + 5, POWERBASE + 6,  POWERBASE + 7,
-                              POWERBASE + 8, POWERBASE + 9, POWERBASE + 10, POWERBASE + 11,
-                              210,           211,           POWERBASE + 14, POWERBASE + 15};
+/* MicropolisJS WireTable exact mapping */
+static short WireTable[16] = {
+    LHPOWER,      /* 0000 - No connections */
+    LVPOWER,      /* 0001 - North only */
+    LHPOWER,      /* 0010 - East only */
+    LVPOWER2,     /* 0011 - North, East */
+    LVPOWER,      /* 0100 - South only */
+    LVPOWER,      /* 0101 - North, South */
+    LVPOWER3,     /* 0110 - East, South */
+    LVPOWER7,     /* 0111 - North, East, South */
+    LHPOWER,      /* 1000 - West only */
+    LVPOWER5,     /* 1001 - North, West */
+    LHPOWER,      /* 1010 - East, West */
+    LVPOWER6,     /* 1011 - North, East, West */
+    LVPOWER4,     /* 1100 - South, West */
+    LVPOWER9,     /* 1101 - North, South, West */
+    LVPOWER8,     /* 1110 - East, South, West */
+    LVPOWER10     /* 1111 - All connections */
+};
 
 /* Tool cost constants */
 #define TOOL_BULLDOZER_COST 1
@@ -117,6 +169,7 @@ int LayRail(int x, int y, short *tilePtr);
 int LayWire(int x, int y, short *tilePtr);
 void FixZone(int x, int y, short *tilePtr);
 void FixSingle(int x, int y);
+short NormalizeRoad(short tile);
 
 /* Zone deletion functions */
 int checkSize(short tileValue);
@@ -1023,11 +1076,23 @@ void FixZone(int x, int y, short *tilePtr) {
     }
 }
 
-/* Fix a single tile - update its connections */
+/* NormalizeRoad function - standardizes road tile values for comparison 
+ * This is equivalent to MicropolisJS's normalizeRoad function
+ */
+short NormalizeRoad(short tile) {
+    /* For roads, convert them to a standard set of tiles */
+    if (tile >= ROADBASE && tile <= LASTROAD) {
+        return (tile & 15) + ROADS;
+    }
+    return tile;
+}
+
+/* Fix a single tile - update its connections 
+ * Closely follows MicropolisJS's fixSingle implementation
+ */
 void FixSingle(int x, int y) {
     short tile;
-    int bitIndex;
-    short connectMask;
+    short adjTile = 0; /* Adjacency bitmask */
     short mapValue;
 
     /* Verify the coordinates */
@@ -1042,182 +1107,174 @@ void FixSingle(int x, int y) {
         return;
     }
 
-    /* Initialize connection mask */
-    connectMask = 0;
+    /* Normalize the current tile for comparison */
+    tile = NormalizeRoad(tile);
 
     /* Check for road connections */
-    if (tile >= ROADBASE && tile <= LASTROAD) {
+    if (tile >= ROADS && tile <= INTERSECTION) {
         /* Check the north side */
         if (y > 0) {
             mapValue = Map[y - 1][x] & LOMASK;
-            if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER) {
-                connectMask |= 1;
+            mapValue = NormalizeRoad(mapValue);
+
+            if ((mapValue == HRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
+                mapValue != HROADPOWER && mapValue != VRAILROAD &&
+                mapValue != ROADBASE) {
+                adjTile |= 1;  /* North connection */
             }
         }
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
             mapValue = Map[y][x + 1] & LOMASK;
-            if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER) {
-                connectMask |= 2;
+            mapValue = NormalizeRoad(mapValue);
+
+            if ((mapValue == VRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
+                mapValue != VROADPOWER && mapValue != HRAILROAD &&
+                mapValue != VBRIDGE) {
+                adjTile |= 2;  /* East connection */
             }
         }
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
             mapValue = Map[y + 1][x] & LOMASK;
-            if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER) {
-                connectMask |= 4;
+            mapValue = NormalizeRoad(mapValue);
+
+            if ((mapValue == HRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
+                mapValue != HROADPOWER && mapValue != VRAILROAD &&
+                mapValue != ROADBASE) {
+                adjTile |= 4;  /* South connection */
             }
         }
 
         /* Check the west side */
         if (x > 0) {
             mapValue = Map[y][x - 1] & LOMASK;
-            if ((mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                (mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER) {
-                connectMask |= 8;
+            mapValue = NormalizeRoad(mapValue);
+
+            if ((mapValue == VRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
+                mapValue != VROADPOWER && mapValue != HRAILROAD &&
+                mapValue != VBRIDGE) {
+                adjTile |= 8;  /* West connection */
             }
         }
 
-        /* Fix the road tile based on the connection pattern */
-        tile = (Map[y][x] & LOMASK);
-        bitIndex = connectMask;
-
         /* Update the road tile with proper connections */
-        tile = RoadTable[bitIndex & 15];
-        Map[y][x] = (Map[y][x] & ALLBITS) | tile | BULLBIT | BURNBIT;
+        tile = RoadTable[adjTile];
+        Map[y][x] = (Map[y][x] & MASKBITS) | tile | BULLBIT | BURNBIT;
         return;
     }
 
     /* Check for rail connections */
-    if (tile >= RAILBASE && tile <= LASTRAIL) {
+    if (tile >= LHRAIL && tile <= LVRAIL10) {
         /* Check the north side */
         if (y > 0) {
             mapValue = Map[y - 1][x] & LOMASK;
-            if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 1;
+            mapValue = NormalizeRoad(mapValue);
+            if (mapValue >= RAILHPOWERV && mapValue <= VRAILROAD &&
+                mapValue != RAILHPOWERV && mapValue != HRAILROAD &&
+                mapValue != HRAIL) {
+                adjTile |= 1;  /* North connection */
             }
         }
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
             mapValue = Map[y][x + 1] & LOMASK;
-            if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 2;
+            mapValue = NormalizeRoad(mapValue);
+            if (mapValue >= RAILHPOWERV && mapValue <= VRAILROAD &&
+                mapValue != RAILVPOWERH && mapValue != VRAILROAD &&
+                mapValue != VRAIL) {
+                adjTile |= 2;  /* East connection */
             }
         }
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
             mapValue = Map[y + 1][x] & LOMASK;
-            if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 4;
+            mapValue = NormalizeRoad(mapValue);
+            if (mapValue >= RAILHPOWERV && mapValue <= VRAILROAD &&
+                mapValue != RAILHPOWERV && mapValue != HRAILROAD &&
+                mapValue != HRAIL) {
+                adjTile |= 4;  /* South connection */
             }
         }
 
         /* Check the west side */
         if (x > 0) {
             mapValue = Map[y][x - 1] & LOMASK;
-            if ((mapValue >= RAILBASE && mapValue <= LASTRAIL) ||
-                (mapValue >= ROADBASE && mapValue <= LASTROAD) ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 8;
+            mapValue = NormalizeRoad(mapValue);
+            if (mapValue >= RAILHPOWERV && mapValue <= VRAILROAD &&
+                mapValue != RAILVPOWERH && mapValue != VRAILROAD &&
+                mapValue != VRAIL) {
+                adjTile |= 8;  /* West connection */
             }
         }
 
-        /* Fix the rail tile based on the connection pattern */
-        tile = (Map[y][x] & LOMASK);
-        bitIndex = connectMask;
-
         /* Update the rail tile with proper connections */
-        tile = RailTable[bitIndex & 15];
-        Map[y][x] = (Map[y][x] & ALLBITS) | tile | BULLBIT | BURNBIT;
+        tile = RailTable[adjTile];
+        Map[y][x] = (Map[y][x] & MASKBITS) | tile | BULLBIT | BURNBIT;
         return;
     }
 
     /* Check for wire connections */
-    if (tile >= POWERBASE && tile <= LASTPOWER) {
+    if (tile >= LHPOWER && tile <= LVPOWER10) {
         /* Check the north side */
         if (y > 0) {
-            mapValue = Map[y - 1][x] & LOMASK;
-            /* Handle special case for vertical power lines */
-            if (tile == VPOWER && mapValue == VPOWER) {
-                /* Force connection for vertical power lines */
-                connectMask |= 1;
-            } else if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y - 1][x] & CONDBIT) != 0) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 1;
+            if ((Map[y - 1][x] & CONDBIT) != 0) {
+                mapValue = Map[y - 1][x] & LOMASK;
+                mapValue = NormalizeRoad(mapValue);
+                if (mapValue != VPOWER && mapValue != VROADPOWER && mapValue != RAILVPOWERH) {
+                    adjTile |= 1;  /* North connection */
+                }
             }
         }
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
-            mapValue = Map[y][x + 1] & LOMASK;
-            if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y][x + 1] & CONDBIT) != 0) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 2;
+            if ((Map[y][x + 1] & CONDBIT) != 0) {
+                mapValue = Map[y][x + 1] & LOMASK;
+                mapValue = NormalizeRoad(mapValue);
+                if (mapValue != HPOWER && mapValue != HROADPOWER && mapValue != RAILHPOWERV) {
+                    adjTile |= 2;  /* East connection */
+                }
             }
         }
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
-            mapValue = Map[y + 1][x] & LOMASK;
-            /* Handle special case for vertical power lines */
-            if (tile == VPOWER && mapValue == VPOWER) {
-                /* Force connection for vertical power lines */
-                connectMask |= 4;
-            } else if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y + 1][x] & CONDBIT) != 0) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 4;
+            if ((Map[y + 1][x] & CONDBIT) != 0) {
+                mapValue = Map[y + 1][x] & LOMASK;
+                mapValue = NormalizeRoad(mapValue);
+                if (mapValue != VPOWER && mapValue != VROADPOWER && mapValue != RAILVPOWERH) {
+                    adjTile |= 4;  /* South connection */
+                }
             }
         }
 
         /* Check the west side */
         if (x > 0) {
-            mapValue = Map[y][x - 1] & LOMASK;
-            if ((mapValue >= POWERBASE && mapValue <= LASTPOWER) ||
-                ((Map[y][x - 1] & CONDBIT) != 0) ||
-                mapValue == HROADPOWER || mapValue == VROADPOWER ||
-                mapValue == RAILHPOWERV || mapValue == RAILVPOWERH) {
-                connectMask |= 8;
+            if ((Map[y][x - 1] & CONDBIT) != 0) {
+                mapValue = Map[y][x - 1] & LOMASK;
+                mapValue = NormalizeRoad(mapValue);
+                if (mapValue != HPOWER && mapValue != HROADPOWER && mapValue != RAILHPOWERV) {
+                    adjTile |= 8;  /* West connection */
+                }
             }
         }
 
-        /* Fix the wire tile based on the connection pattern */
-        tile = (Map[y][x] & LOMASK);
-        bitIndex = connectMask;
-
         /* Update the wire tile with proper connections */
-        tile = WireTable[bitIndex & 15];
-        Map[y][x] = (Map[y][x] & ALLBITS) | tile | BULLBIT | BURNBIT | CONDBIT;
+        tile = WireTable[adjTile];
+        Map[y][x] = (Map[y][x] & MASKBITS) | tile | BULLBIT | BURNBIT | CONDBIT;
         return;
     }
     
     /* Handle the special crossing tiles */
     if (tile == HROADPOWER || tile == VROADPOWER || 
-        tile == RAILHPOWERV || tile == RAILVPOWERH) {
-        /* These tiles already have the CONDBIT set to allow power flow
-           We'll trigger updates for the surrounding tiles */
+        tile == RAILHPOWERV || tile == RAILVPOWERH ||
+        tile == HRAILROAD || tile == VRAILROAD) {
+        /* These special tiles should trigger updates for surrounding tiles */
         if (y > 0) {
             FixSingle(x, y - 1);
         }
