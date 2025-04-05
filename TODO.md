@@ -19,7 +19,7 @@
 
 ## Cosmetic
 - Panning button fix
-- RCI letter on map tiles (middle tile)
+- Middle tile fix, RCI / Powered (unpowered ok)
 - Buttons / sizing / layout / etc
 - More debug overlays eg for power, traffic, etc
 - Power overlay over tiles, roads and train tracks
