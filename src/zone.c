@@ -1108,7 +1108,7 @@ static void SetZPower(int x, int y) {
         }
     }
 
-    /* Update power count */
+    /* Update power count - use the external variables from sim.h */
     if (powered) {
         PwrdZCnt++;
     } else {
