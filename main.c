@@ -296,6 +296,7 @@ void createNewMap(HWND hwnd);
 extern int SimRandom(int range);
 extern void SetValves(int r, int c, int i);
 extern const char *GetCityClassName(void);
+extern void RandomlySeedRand(void);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASSEX wc, wcInfo;
     MSG msg;
@@ -398,9 +399,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         /* Continue anyway, just without the log window */
     }
 
+    /* Initialize graphics first */
     initializeGraphics(hwndMain);
     
-    /* Initialize with empty map */
+    /* Then create new map (this will set the tileset to classic) */
     createNewMap(hwndMain);
 
     ShowWindow(hwndMain, nCmdShow);
@@ -1598,7 +1600,9 @@ int loadTileset(const char *filename) {
         hbmTiles = NULL;
     }
 
-    hbmTiles = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    /* Load the bitmap with explicit color control */
+    hbmTiles = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
+                        LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
 
     if (hbmTiles == NULL) {
         /* Output debug message */
@@ -1625,7 +1629,7 @@ int loadTileset(const char *filename) {
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
 
-    /* Apply our palette to the tileset */
+    /* Apply our palette to the tileset - be more forceful about it */
     if (hPalette) {
         SelectPalette(hdcTiles, hPalette, FALSE);
         RealizePalette(hdcTiles);
@@ -1633,6 +1637,9 @@ int loadTileset(const char *filename) {
 
     SelectObject(hdcTiles, hbmTiles);
 
+    /* Force a background color update to use our palette */
+    SetBkMode(hdcTiles, TRANSPARENT);
+    
     ReleaseDC(hwndMain, hdc);
     return 1;
 }
@@ -1659,7 +1666,8 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     }
 
     hbmTiles =
-        LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+        LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, 
+                 LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
 
     if (hbmTiles == NULL) {
         /* Output debug message */
@@ -1680,13 +1688,16 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     hdc = GetDC(hwndMain);
     hdcTiles = CreateCompatibleDC(hdc);
 
-    /* Apply our palette to the tileset */
+    /* Apply our palette to the tileset - be more forceful about it */
     if (hPalette) {
         SelectPalette(hdcTiles, hPalette, FALSE);
         RealizePalette(hdcTiles);
     }
 
     SelectObject(hdcTiles, hbmTiles);
+    
+    /* Force a background color update to use our palette */
+    SetBkMode(hdcTiles, TRANSPARENT);
 
     strcpy(currentTileset, tilesetName);
 
@@ -2925,7 +2936,10 @@ void createNewMap(HWND hwnd) {
     /* Clear city filename since this is a new map */
     cityFileName[0] = '\0';
     
-    /* Update window title */
+    /* Set classic tileset for new maps */
+    changeTileset(hwnd, "classic");
+    
+    /* Update window title (override the tileset title) */
     SetWindowText(hwnd, "MicropolisNT - New City");
     
     /* Fill map with dirt */
@@ -2939,6 +2953,9 @@ void createNewMap(HWND hwnd) {
     ScenarioID = 0;
     DisasterEvent = 0;
     DisasterWait = 0;
+    
+    /* Use fixed seed for consistent appearance */
+    RandomlySeedRand();
     
     /* Reset simulation */
     DoSimInit();
