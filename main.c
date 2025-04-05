@@ -294,6 +294,7 @@ void createNewMap(HWND hwnd);
 
 /* External functions - defined in simulation.c */
 extern int SimRandom(int range);
+extern void SetValves(int r, int c, int i);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASSEX wc, wcInfo;
     MSG msg;
@@ -397,27 +398,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     initializeGraphics(hwndMain);
-    cityFileName[0] = '\0';
-
-    {
-        int x, y;
-        for (y = 0; y < WORLD_Y; y++) {
-            for (x = 0; x < WORLD_X; x++) {
-                Map[y][x] = TILE_DIRT;
-            }
-        }
-    }
-
-    /* Initialize simulation */
-    DoSimInit();
-
-    /* Start simulation at medium speed */
-    SetSimulationSpeed(hwndMain, SPEED_MEDIUM);
-
-    /* Set some initial demand values so we can see activity */
-    RValve = 500;
-    CValve = 300;
-    IValve = 100;
+    
+    /* Initialize with empty map */
+    createNewMap(hwndMain);
 
     ShowWindow(hwndMain, nCmdShow);
     UpdateWindow(hwndMain);
@@ -2932,4 +2915,47 @@ void populateTilesetMenu(HMENU hSubMenu) {
     } else {
         AppendMenu(hSubMenu, MF_GRAYED, 0, "No tilesets found");
     }
+}
+
+/**
+ * Creates a new empty map
+ */
+void createNewMap(HWND hwnd) {
+    int x, y;
+    
+    /* Clear city filename since this is a new map */
+    cityFileName[0] = '\0';
+    
+    /* Update window title */
+    SetWindowText(hwnd, "MicropolisNT - New City");
+    
+    /* Fill map with dirt */
+    for (y = 0; y < WORLD_Y; y++) {
+        for (x = 0; x < WORLD_X; x++) {
+            Map[y][x] = TILE_DIRT;
+        }
+    }
+    
+    /* Reset scenario values */
+    ScenarioID = 0;
+    DisasterEvent = 0;
+    DisasterWait = 0;
+    
+    /* Reset simulation */
+    DoSimInit();
+    
+    /* Reset funds to starting amount */
+    TotalFunds = 50000;
+    
+    /* Start with medium speed */
+    SetSimulationSpeed(hwnd, SPEED_MEDIUM);
+    
+    /* Set demand valves to initial values */
+    SetValves(500, 300, 100);
+    
+    /* Add logging */
+    addGameLog("Created new empty city");
+    
+    /* Force display update */
+    InvalidateRect(hwnd, NULL, TRUE);
 }
