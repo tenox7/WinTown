@@ -1533,16 +1533,18 @@ void initializeGraphics(HWND hwnd) {
 #else
 	/* Setup 8-bit DIB section for our drawing buffer */
     ZeroMemory(&binfo, sizeof(BITMAPINFO));
-	binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    binfo.bmiHeader.biWidth = width;
-    binfo.bmiHeader.biHeight = -height; /* Negative for top-down DIB */
-    binfo.bmiHeader.biPlanes = 1;
-    binfo.bmiHeader.biBitCount = 8; /* 8 bits = 256 colors */
-    binfo.bmiHeader.biCompression = BI_RGB;
+    ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = width;
+    bi.biHeight = -height; /* Negative for top-down DIB */
+    bi.biPlanes = 1;
+    bi.biBitCount = 8; /* 8 bits = 256 colors */
+    bi.biCompression = BI_RGB;
+
 	hbmBuffer = CreateDIBitmap(hdc, 
-		&binfo.bmiHeader,	// Pointer to BITMAPINFOHEADER
+		&bi,				// Pointer to BITMAPINFOHEADER
 		CBM_INIT,			// Initialize bitmap bits
-		&bits,				// Pointer to actual bitmap bits (if any)
+		bits,				// Pointer to actual bitmap bits (if any)
 		&binfo,				// Pointer to BITMAPINFO
 		DIB_RGB_COLORS);	// Color usage
 #endif
@@ -1825,15 +1827,16 @@ void resizeBuffer(int cx, int cy) {
     hbmNew = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
 #else
     ZeroMemory(&binfo, sizeof(BITMAPINFO));
-	binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    binfo.bmiHeader.biWidth = cx;
-    binfo.bmiHeader.biHeight = -cy; /* Negative for top-down DIB */
-    binfo.bmiHeader.biPlanes = 1;
-    binfo.bmiHeader.biBitCount = 8; /* 8 bits = 256 colors */
-    binfo.bmiHeader.biCompression = BI_RGB;
+    ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = cx;
+    bi.biHeight = -cy; /* Negative for top-down DIB */
+    bi.biPlanes = 1;
+    bi.biBitCount = 8; /* 8 bits = 256 colors */
+    bi.biCompression = BI_RGB;
 
 	hbmNew = CreateDIBitmap(hdc, 
-		&binfo.bmiHeader,	// Pointer to BITMAPINFOHEADER
+		&bi,				// Pointer to BITMAPINFOHEADER
 		CBM_INIT,			// Initialize bitmap bits
 		&bits,				// Pointer to actual bitmap bits (if any)
 		&binfo,				// Pointer to BITMAPINFO
