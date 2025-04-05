@@ -11,8 +11,9 @@
 #include <string.h>
 #include <windows.h>
 
-#define IDM_FILE_OPEN 1001
-#define IDM_FILE_EXIT 1002
+#define IDM_FILE_NEW 1001
+#define IDM_FILE_OPEN 1002
+#define IDM_FILE_EXIT 1003
 #define IDM_TILESET_BASE 2000
 #define IDM_TILESET_MAX 2100
 #define IDM_SIM_PAUSE 3001
@@ -289,6 +290,7 @@ HMENU createMainMenu(void);
 void populateTilesetMenu(HMENU hSubMenu);
 int changeTileset(HWND hwnd, const char *tilesetName);
 void ForceFullCensus(void);
+void createNewMap(HWND hwnd);
 
 /* External functions - defined in simulation.c */
 extern int SimRandom(int range);
@@ -774,6 +776,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
+        case IDM_FILE_NEW:
+            createNewMap(hwnd);
+            return 0;
+            
         case IDM_FILE_OPEN:
             openCityDialog(hwnd);
             return 0;
@@ -2794,6 +2800,7 @@ HMENU createMainMenu(void) {
     hMainMenu = CreateMenu();
 
     hFileMenu = CreatePopupMenu();
+    AppendMenu(hFileMenu, MF_STRING, IDM_FILE_NEW, "&New...");
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_OPEN, "&Open City...");
     AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_EXIT, "E&xit");
