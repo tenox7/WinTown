@@ -1486,6 +1486,7 @@ void initializeGraphics(HWND hwnd) {
     int width;
     int height;
     BITMAPINFOHEADER bi;
+	BITMAPINFO binfo;
     LPVOID bits;
     HBITMAP hbmOld;
     char errorMsg[256];
@@ -1519,7 +1520,8 @@ void initializeGraphics(HWND hwnd) {
     width = cxClient;
     height = cyClient;
 
-    /* Setup 8-bit DIB section for our drawing buffer */
+#if NEW32
+	/* Setup 8-bit DIB section for our drawing buffer */
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = width;
@@ -1527,15 +1529,21 @@ void initializeGraphics(HWND hwnd) {
     bi.biPlanes = 1;
     bi.biBitCount = 8; /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
-
-#if NEW32
     hbmBuffer = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
 #else
+	/* Setup 8-bit DIB section for our drawing buffer */
+    ZeroMemory(&binfo, sizeof(BITMAPINFO));
+	binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    binfo.bmiHeader.biWidth = width;
+    binfo.bmiHeader.biHeight = -height; /* Negative for top-down DIB */
+    binfo.bmiHeader.biPlanes = 1;
+    binfo.bmiHeader.biBitCount = 8; /* 8 bits = 256 colors */
+    binfo.bmiHeader.biCompression = BI_RGB;
 	hbmBuffer = CreateDIBitmap(hdc, 
-		&bi,				// Pointer to BITMAPINFOHEADER
+		&binfo.bmiHeader,	// Pointer to BITMAPINFOHEADER
 		CBM_INIT,			// Initialize bitmap bits
 		&bits,				// Pointer to actual bitmap bits (if any)
-		(BITMAPINFO *)&bi,	// Pointer to BITMAPINFO
+		&binfo,				// Pointer to BITMAPINFO
 		DIB_RGB_COLORS);	// Color usage
 #endif
 
@@ -1580,11 +1588,11 @@ HBITMAP loadBitmapFile(const char *filename) {
     /* LR_CREATEDIBSECTION creates a DIB section bitmap that can be
        selected into a memory DC. Using this flag makes the bitmap
        compatible with our 8-bit/256 color rendering. */
-	#if(WINVER >= 0x0400)
-    hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-#else
-	hBitmap = LoadImage(filename);
-#endif
+//#if(WINVER >= 0x0400)
+//    hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | //LR_CREATEDIBSECTION);
+//#else
+	hBitmap = LoadBitmapFromFile(filename);
+//#endif
 
     if (hBitmap == NULL) {
         /* Debug output to help diagnose bitmap loading errors */
@@ -1787,6 +1795,7 @@ void resizeBuffer(int cx, int cy) {
     HBITMAP hbmNew;
     RECT rcBuffer;
     BITMAPINFOHEADER bi;
+	BITMAPINFO binfo;
     LPVOID bits;
     char errorMsg[256];
     DWORD error;
@@ -1803,6 +1812,8 @@ void resizeBuffer(int cx, int cy) {
         RealizePalette(hdc);
     }
 
+#if NEW32
+    /* Create DIB section with our palette */
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = cx;
@@ -1811,15 +1822,21 @@ void resizeBuffer(int cx, int cy) {
     bi.biBitCount = 8; /* 8 bits = 256 colors */
     bi.biCompression = BI_RGB;
 
-    /* Create DIB section with our palette */
-#if NEW32
     hbmNew = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
 #else
+    ZeroMemory(&binfo, sizeof(BITMAPINFO));
+	binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    binfo.bmiHeader.biWidth = cx;
+    binfo.bmiHeader.biHeight = -cy; /* Negative for top-down DIB */
+    binfo.bmiHeader.biPlanes = 1;
+    binfo.bmiHeader.biBitCount = 8; /* 8 bits = 256 colors */
+    binfo.bmiHeader.biCompression = BI_RGB;
+
 	hbmNew = CreateDIBitmap(hdc, 
-		&bi,				// Pointer to BITMAPINFOHEADER
+		&binfo.bmiHeader,	// Pointer to BITMAPINFOHEADER
 		CBM_INIT,			// Initialize bitmap bits
 		&bits,				// Pointer to actual bitmap bits (if any)
-		(BITMAPINFO *)&bi,	// Pointer to BITMAPINFO
+		&binfo,				// Pointer to BITMAPINFO
 		DIB_RGB_COLORS);	// Color usage
 #endif
 

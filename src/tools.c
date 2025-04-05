@@ -2942,22 +2942,60 @@ int HandleToolMouse(int mouseX, int mouseY, int xOffset, int yOffset) {
 void CheckMenuRadioItem(){}
 
 // Function to load a bitmap from a file and handle different palette sizes
-HBITMAP LoadImage(LPCSTR filePath) {
+
+HBITMAP LoadBitmapFromFilexxxx(const char* filename) {
+    DWORD fileSize;
+    BYTE* fileBuffer;
+    DWORD bytesRead;
+    HANDLE hFile;
+    BITMAPINFO* bmpInfo;
+    BYTE* bmpData;
+    HBITMAP hBitmap;
+    HDC hdc;
+
+    hdc = GetDC(NULL);
+
+    hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        printf("Failed to open file: %s\n", filename);
+        return NULL;
+    }
+
+
+    fileSize = GetFileSize(hFile, NULL);
+    fileBuffer = malloc(fileSize+10);
+    ReadFile(hFile, fileBuffer, fileSize, &bytesRead, NULL);
+    CloseHandle(hFile);
+
+    bmpInfo = (BITMAPINFO*)fileBuffer;
+    bmpData = fileBuffer + bmpInfo->bmiHeader.biSize + bmpInfo->bmiHeader.biClrUsed * sizeof(RGBQUAD);
+
+    hBitmap = CreateDIBitmap(hdc, &bmpInfo->bmiHeader, CBM_INIT, bmpData, bmpInfo, DIB_RGB_COLORS);
+
+    free(fileBuffer);
+    return hBitmap;
+}
+
+#endif
+
+HBITMAP LoadBitmapFromFile(const char* filename) {
     BITMAPFILEHEADER bmfHeader;
     BITMAPINFOHEADER bmiHeader;
     HBITMAP hBitmap = NULL;
     RGBQUAD *colorTable = NULL;
     BYTE *bitmapBits = NULL;
     FILE *file;
-	HDC hdc;
+	BITMAPINFO *bmi;
+	size_t bmiSize;
+    HDC hdc;
 
-	hdc = GetDC(hwndMain); // Get a handle to the screen DC
+    hdc = GetDC(NULL);
 
     // Open the file in binary mode
-    file = fopen(filePath, "rb");
+    file = fopen(filename, "rb");
     if (file == NULL) {
-        MessageBox(NULL, "Failed to open the file!", "Error", MB_OK | MB_ICONERROR);
-	addDebugLog("LoadBitmapFromFile failed to load %s\n",filePath);
+//        MessageBox(NULL, "Failed to open the file!", "Error", MB_OK | MB_ICONERROR);
+//	addDebugLog("LoadBitmapFromFile failed to load %s\n",filename);
         return NULL;
     }
 
@@ -2973,6 +3011,20 @@ HBITMAP LoadImage(LPCSTR filePath) {
     fread(&bmiHeader, sizeof(BITMAPINFOHEADER), 1, file);
 
     // Handle indexed color bitmaps (palettes)
+	bmiSize = sizeof(BITMAPINFOHEADER) + (bmiHeader.biBitCount <= 8 ? (1 << bmiHeader.biBitCount) * sizeof(RGBQUAD) : 0);
+	bmi = (BITMAPINFO *)malloc(bmiSize);
+	if (bmi == NULL) {
+		MessageBox(NULL, "Failed to allocate memory for BITMAPINFO!", "Error", MB_OK | MB_ICONERROR);
+		free(colorTable);
+		free(bitmapBits);
+		fclose(file);
+		return NULL;
+	}
+
+	// Copy BITMAPINFOHEADER
+	memcpy(&bmi->bmiHeader, &bmiHeader, sizeof(BITMAPINFOHEADER));
+
+	// Copy color table if present
     if (bmiHeader.biBitCount <= 8) {
         // Calculate the size of the palette
         size_t colorTableSize = (1 << bmiHeader.biBitCount) * sizeof(RGBQUAD);
@@ -2984,7 +3036,6 @@ HBITMAP LoadImage(LPCSTR filePath) {
         }
         fread(colorTable, colorTableSize, 1, file);
     }
-addDebugLog("bmiHeader.biBitCount is %d\n",bmiHeader.biBitCount);
 
     // Allocate memory for the bitmap bits
     bitmapBits = (BYTE *)malloc(bmiHeader.biSizeImage);
@@ -2998,21 +3049,28 @@ addDebugLog("bmiHeader.biBitCount is %d\n",bmiHeader.biBitCount);
     // Move file pointer to the start of bitmap data and read it
     fseek(file, bmfHeader.bfOffBits, SEEK_SET);
     fread(bitmapBits, 1, bmiHeader.biSizeImage, file);
-    fclose(file);
+addDebugLog("LoadBitmapFromFile %s bytes in image %d bmiHeader.biBitCount %d\n",
+				filename,bmiHeader.biSizeImage,bmiHeader.biBitCount);
+
+	// Copy color table if present
+	if (bmiHeader.biBitCount <= 8) {
+		memcpy(bmi->bmiColors, colorTable, (1 << bmiHeader.biBitCount) * sizeof(RGBQUAD));
+	}
 
     // Create the HBITMAP
     hBitmap = CreateDIBitmap(hdc, &bmiHeader, CBM_INIT, bitmapBits, 
-                             (BITMAPINFO *)&bmiHeader, DIB_RGB_COLORS);
+                             bmi, DIB_RGB_COLORS);
 
     // Clean up allocated memory
     free(colorTable);
     free(bitmapBits);
 
+    fclose(file);
     if (hBitmap == NULL) {
         MessageBox(NULL, "Failed to create HBITMAP!", "Error", MB_OK | MB_ICONERROR);
     }
-addDebugLog("LoadBitmapFromFile loaded %s\n",filePath);
+addDebugLog("LoadBitmapFromFile loaded %s\n",filename);
     return hBitmap;
 }
 
-#endif
+
