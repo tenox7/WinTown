@@ -2,6 +2,7 @@
 
 ## Major Features Missing
 - Save game
+- New game / map generator
 - Difficulty level
 - Trains, ships, ferries, planes, helicpters
 - Budgets, reporting, money system
@@ -9,7 +10,7 @@
 - Alerts (crime, pollution, traffic)
 - Disasters
 - Impeachment
-- Scenarios as real scenarios
+- Scenarios as real scenarios, not just map load
 - Bridges
 
 
