@@ -295,6 +295,7 @@ void createNewMap(HWND hwnd);
 /* External functions - defined in simulation.c */
 extern int SimRandom(int range);
 extern void SetValves(int r, int c, int i);
+extern const char *GetCityClassName(void);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASSEX wc, wcInfo;
     MSG msg;
@@ -623,7 +624,11 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(255, 255, 255));
 
-        /* Get city name from file path */
+        /* Draw title */
+        TextOut(hdc, 10, y, "CITY INFO", 9);
+        y += 25;
+
+        /* Draw city name */
         if (cityFileName[0] != '\0') {
             /* Make a copy of the path to work with */
             char tempPath[MAX_PATH];
@@ -646,69 +651,63 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (dot) {
                 *dot = '\0';
             }
-
-            /* Draw title */
-            TextOut(hdc, 10, y, "CITY INFO", 9);
-            y += 25;
-
-            /* Draw city name */
             wsprintf(buffer, "City Name: %s", nameBuffer);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            /* Draw date and funds */
-            wsprintf(buffer, "Year: %d  Month: %d", CityYear, CityMonth + 1);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            wsprintf(buffer, "Funds: $%d", (int)TotalFunds);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            /* Draw population */
-            wsprintf(buffer, "Population: %d", (int)CityPop);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            /* Draw detailed population breakdown */
-            wsprintf(buffer, "Residential: %d", ResPop);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            wsprintf(buffer, "Commercial: %d", ComPop);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            wsprintf(buffer, "Industrial: %d", IndPop);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            /* Draw demand values */
-            wsprintf(buffer, "Demand - R:%d C:%d I:%d", RValve, CValve, IValve);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            /* Draw city assessment */
-            wsprintf(buffer, "Score: %d  Assessment: %s", CityScore, GetCityClassName());
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            wsprintf(buffer, "Approval Rating: %d%%",
-                     (CityYes > 0) ? (CityYes * 100 / (CityYes + CityNo)) : 0);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            /* Draw other stats */
-            wsprintf(buffer, "Traffic: %d  Pollution: %d", TrafficAverage, PollutionAverage);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
-            y += 20;
-
-            wsprintf(buffer, "Crime: %d  Land Value: %d", CrimeAverage, LVAverage);
-            TextOut(hdc, 10, y, buffer, lstrlen(buffer));
         } else {
-            /* No city loaded */
-            TextOut(hdc, 10, clientRect.bottom / 2 - 10, "No city loaded", 14);
+            /* New city */
+            wsprintf(buffer, "City Name: New City");
         }
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw date and funds */
+        wsprintf(buffer, "Year: %d  Month: %d", CityYear, CityMonth + 1);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        wsprintf(buffer, "Funds: $%d", (int)TotalFunds);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw population */
+        wsprintf(buffer, "Population: %d", (int)CityPop);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw detailed population breakdown */
+        wsprintf(buffer, "Residential: %d", ResPop);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        wsprintf(buffer, "Commercial: %d", ComPop);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        wsprintf(buffer, "Industrial: %d", IndPop);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw demand values */
+        wsprintf(buffer, "Demand - R:%d C:%d I:%d", RValve, CValve, IValve);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw city assessment */
+        wsprintf(buffer, "Score: %d  Assessment: %s", CityScore, GetCityClassName());
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        wsprintf(buffer, "Approval Rating: %d%%",
+                 (CityYes > 0) ? (CityYes * 100 / (CityYes + CityNo)) : 0);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw other stats */
+        wsprintf(buffer, "Traffic: %d  Pollution: %d", TrafficAverage, PollutionAverage);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        wsprintf(buffer, "Crime: %d  Land Value: %d", CrimeAverage, LVAverage);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
 
         EndPaint(hwnd, &ps);
         return 0;
@@ -2958,4 +2957,9 @@ void createNewMap(HWND hwnd) {
     
     /* Force display update */
     InvalidateRect(hwnd, NULL, TRUE);
+    
+    /* Update info window */
+    if (hwndInfo) {
+        InvalidateRect(hwndInfo, NULL, TRUE);
+    }
 }
