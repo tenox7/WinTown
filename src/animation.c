@@ -3,7 +3,7 @@
  */
 
 #include "animtab.h"
-#include "simulation.h"
+#include "sim.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

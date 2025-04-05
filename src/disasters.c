@@ -2,7 +2,7 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include "simulation.h"
+#include "sim.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>

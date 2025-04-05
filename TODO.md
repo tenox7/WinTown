@@ -19,7 +19,7 @@
 
 ## Cosmetic
 - Panning button fix
-- Middle tile fix, RCI / Powered (unpowered ok)
+- Middle tile (RCI/Power) gets destroyed on zone upgrade
 - Buttons / sizing / layout / etc
 - More debug overlays eg for power, traffic, etc
 - Power overlay over tiles, roads and train tracks

@@ -2,7 +2,7 @@
  * Based on original Micropolis code from MicropolisLegacy project
  */
 
-#include "simulation.h"
+#include "sim.h"
 #include "tools.h"
 #include <commdlg.h>
 #include <stdarg.h>
