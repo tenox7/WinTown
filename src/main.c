@@ -1550,13 +1550,20 @@ void initializeGraphics(HWND hwnd) {
     /* Fill with black background */
     FillRect(hdcBuffer, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
-    /* Always load the classic tileset by default */
-    strcpy(currentTileset, "classic");
+    /* Use default.bmp tileset by default */
+    strcpy(currentTileset, "default");
     wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
 
     /* Load the tileset with our 8-bit palette */
     if (!loadTileset(tilePath)) {
-        OutputDebugString("Failed to load default tileset!");
+        OutputDebugString("Failed to load default tileset! Trying classic as fallback...");
+        /* Fallback to classic if default is not available */
+        strcpy(currentTileset, "classic");
+        wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
+        
+        if (!loadTileset(tilePath)) {
+            OutputDebugString("Failed to load classic tileset too!");
+        }
     }
 
     ReleaseDC(hwnd, hdc);
@@ -1675,7 +1682,30 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
 
         wsprintf(errorMsg, "Failed to change tileset: %s, Error: %d", tilesetPath, error);
         OutputDebugString(errorMsg);
-        return 0;
+        
+        /* Try fallback to default if requested tileset isn't 'default' */
+        if (strcmp(tilesetName, "default") != 0) {
+            wsprintf(errorMsg, "Trying to fallback to default tileset");
+            OutputDebugString(errorMsg);
+            
+            wsprintf(tilesetPath, "tilesets\\default.bmp");
+            hbmTiles = LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, 
+                              LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+                              
+            if (hbmTiles == NULL) {
+                /* If default also fails, give up */
+                error = GetLastError();
+                wsprintf(errorMsg, "Failed to load default fallback: Error: %d", error);
+                OutputDebugString(errorMsg);
+                return 0;
+            }
+            
+            /* Success with default tileset - update in the strcpy below */
+            /* We can't modify tilesetName directly as it's a const parameter */
+        } else {
+            /* If we're already trying to load default and it failed, give up */
+            return 0;
+        }
     }
 
     /* Verify that the bitmap was loaded properly */
@@ -1699,9 +1729,14 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     /* Force a background color update to use our palette */
     SetBkMode(hdcTiles, TRANSPARENT);
 
-    strcpy(currentTileset, tilesetName);
+    /* If we used the fallback to default.bmp, use "default" as the tileset name */
+    if (strcmp(tilesetPath, "tilesets\\default.bmp") == 0 && strcmp(tilesetName, "default") != 0) {
+        strcpy(currentTileset, "default");
+    } else {
+        strcpy(currentTileset, tilesetName);
+    }
 
-    wsprintf(windowTitle, "MicropolisNT - Tileset: %s", tilesetName);
+    wsprintf(windowTitle, "MicropolisNT - Tileset: %s", currentTileset);
     SetWindowText(hwnd, windowTitle);
 
     /* Force a full redraw */
@@ -2936,8 +2971,8 @@ void createNewMap(HWND hwnd) {
     /* Clear city filename since this is a new map */
     cityFileName[0] = '\0';
     
-    /* Set classic tileset for new maps */
-    changeTileset(hwnd, "classic");
+    /* Set default tileset for new maps */
+    changeTileset(hwnd, "default");
     
     /* Update window title (override the tileset title) */
     SetWindowText(hwnd, "MicropolisNT - New City");
