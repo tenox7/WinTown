@@ -20,6 +20,7 @@ MicropolisNT is based on the following prior art and open-source projects:
 
 - **SimCity** - Created by Will Wright and published by Maxis in 1989. Later ported to Unix platforms by [DUX Software](https://web.archive.org/web/19970714233606/http://www.dux.com/simctyux.html), and finally released as open source by Electronic Arts for the [One Laptop Per Child program](https://wiki.laptop.org/go/Micropolis).
 - **Micropolis** - The original open-source release of Micropolis by Don Hopkins and Electronic Arts, https://github.com/SimHacker/micropolis | https://www.donhopkins.com/home/micropolis/
+- **MicropolisCore** - Micropolis C++ Core | https://github.com/SimHacker/MicropolisCore
 - **MicropolisJS** - A JavaScript port of Micropolis, https://github.com/graememcc/micropolisJS
 - **Micropolis Unity** - A Unity port of Micropolis, https://github.com/bsimser/Micropolis
 - **Micropolis for Windows** - A Windows 10 port of Micropolis, https://github.com/andreasbalzer/MicropolisForWindows
