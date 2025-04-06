@@ -6,11 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-
-#ifndef MB_ICONWARNING
-#define MB_ICONWARNING	MB_ICONASTERISK
-#define MB_ICONERROR	MB_ICONSTOP
-#endif
+#include "gdifix.h"
 
 /* External log functions */
 extern void addGameLog(const char *format, ...);
