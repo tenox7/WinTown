@@ -28,8 +28,8 @@ HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
     RGBQUAD *colorTable = NULL;
     BYTE *bitmapBits = NULL;
     FILE *file;
-        BITMAPINFO *bmi;
-        size_t bmiSize;
+    BITMAPINFO *bmi;
+    size_t bmiSize, fsize;
     HDC hdc;
 
     hdc = GetDC(NULL);
@@ -78,6 +78,15 @@ HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
             return NULL;
         }
         fread(colorTable, colorTableSize, 1, file);
+    }
+
+    // Handle uncompressed bitmaps
+    // credit to roytam1
+    // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
+    if(!bmiHeader.biSizeImage) {
+	    fseek(file, 0, SEEK_END);
+	    fsize = ftell(file);
+	    bmiHeader.biSizeImage = fsize - bmfHeader.bfOffBits;
     }
 
     // Allocate memory for the bitmap bits
