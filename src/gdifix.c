@@ -11,8 +11,7 @@
 #include "gdifix.h"
 
 
-//#if(_MSC_VER > 900)
-#if 0
+#if(_MSC_VER > 900)
 
 HANDLE LoadImageFromFile (LPCSTR filename, UINT fuLoad)	{
 	return ( LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, fuLoad) );

@@ -2,6 +2,10 @@
 #ifndef _GDI_FIX
 #define _GDI_FIX
 
+/* I'm not sure where Visual C++ 2 (MSC9) falls onto this.
+	I'm not sure it even matters, if you have VC 2
+	You'll have access to VC 4	*/
+
 #if(_MSC_VER < 1000)
 #define WS_EX_CLIENTEDGE 	0
 #define MB_ICONWARNING  	MB_ICONASTERISK
@@ -25,11 +29,11 @@ HANDLE LoadImageFromFile (LPCSTR filename, UINT fuLoad);
 
 #else
 
-	//#if _MSC_VER > 1000
     // Use CheckMenuRadioItem if it's supported
     #define CHECK_MENU_RADIO_ITEM(hmenu, first, last, check, flags) \
         CheckMenuRadioItem((hmenu), (first), (last), (check), (flags))
 
+// use original Ex calls/structures where availble
 #define NEW32 1
 
 #endif
