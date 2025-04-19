@@ -131,6 +131,7 @@ static BOOL isMouseDown = FALSE; /* Used for map dragging */
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
+char progPathName[MAX_PATH];
 char cityFileName[MAX_PATH]; /* Current city filename - used by other modules */
 static HMENU hMenu = NULL;
 static HMENU hFileMenu = NULL;
@@ -297,11 +298,48 @@ extern int SimRandom(int range);
 extern void SetValves(int r, int c, int i);
 extern const char *GetCityClassName(void);
 extern void RandomlySeedRand(void);
+
+
+BOOL WINAPI MyPathRemoveFileSpecA(char* path)
+{
+	char* filespec = path;
+	BOOL modified = FALSE;
+
+	if (!path || !*path) { return FALSE; }
+	if (*path == '\\') { filespec = ++path; }
+	if (*path == '\\') { filespec = ++path; }
+
+	while (*path)
+	{
+		if (*path == '\\')
+		{
+			filespec = path;
+		}
+		else if (*path == ':')
+		{
+			filespec = ++path;
+			if (*path == '\\') { filespec++; }
+		}
+		path = CharNextA(path);
+	}
+
+	if (*filespec)
+	{
+		*filespec = '\0';
+		modified = TRUE;
+	}
+
+	return modified;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASS wc, wcInfo;
     MSG msg;
     RECT rect;
     int mainWindowX, mainWindowY;
+
+	GetModuleFileName(NULL, progPathName, MAX_PATH);
+	MyPathRemoveFileSpecA(progPathName);
 
     /* Register main window class */
     //wc.cbSize = sizeof(WNDCLASS);
@@ -1572,7 +1610,7 @@ void initializeGraphics(HWND hwnd) {
 
     /* Use default.bmp tileset by default */
     strcpy(currentTileset, "default");
-    wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
+    wsprintf(tilePath, "%s\\tilesets\\%s.bmp", progPathName, currentTileset);
 wsprintf(errorMsg,"PLEASE LOAD TILESET %s\n",tilePath);
 OutputDebugString(errorMsg);
     /* Load the tileset with our 8-bit palette */
@@ -1580,7 +1618,7 @@ OutputDebugString(errorMsg);
         OutputDebugString("Failed to load default tileset! Trying classic as fallback...");
         /* Fallback to classic if default is not available */
         strcpy(currentTileset, "classic");
-        wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
+        wsprintf(tilePath, "%s\\tilesets\\%s.bmp", progPathName, currentTileset);
         
         if (!loadTileset(tilePath)) {
             OutputDebugString("Failed to load classic tileset too!");
@@ -1663,7 +1701,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     BITMAP bm;
     char debugMsg[256];
 
-    wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
+    wsprintf(tilesetPath, "%s\\tilesets\\%s.bmp", progPathName, tilesetName);
 
     if (hdcTiles) {
         DeleteDC(hdcTiles);
@@ -1690,7 +1728,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
             wsprintf(errorMsg, "Trying to fallback to default tileset");
             OutputDebugString(errorMsg);
             
-            wsprintf(tilesetPath, "tilesets\\default.bmp");
+            wsprintf(tilesetPath, "%s\\tilesets\\default.bmp", progPathName);
             hbmTiles = LoadImageFromFile(tilesetPath, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
                               
             if (hbmTiles == NULL) {
@@ -1731,7 +1769,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     SetBkMode(hdcTiles, TRANSPARENT);
 
     /* If we used the fallback to default.bmp, use "default" as the tileset name */
-    if (strcmp(tilesetPath, "tilesets\\default.bmp") == 0 && strcmp(tilesetName, "default") != 0) {
+    if (strstr(tilesetPath, "tilesets\\default.bmp") != NULL && strcmp(tilesetName, "default") != 0) {
         strcpy(currentTileset, "default");
     } else {
         strcpy(currentTileset, tilesetName);
@@ -2951,7 +2989,8 @@ void populateTilesetMenu(HMENU hSubMenu) {
     int menuId = IDM_TILESET_BASE;
     UINT menuFlags;
 
-    strcpy(searchPath, "tilesets\\*.bmp");
+    strcpy(searchPath, progPathName);
+    strcat(searchPath, "\\tilesets\\*.bmp");
 
     hFind = FindFirstFile(searchPath, &findData);
 
