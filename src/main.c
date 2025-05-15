@@ -369,11 +369,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     mainWindowY = rect.top;
 
     /* Create info window */
-    hwndInfo =
-        CreateWindowEx(WS_EX_CLIENTEDGE, INFO_WINDOW_CLASS, "Micropolis Info",
-                       WS_OVERLAPPEDWINDOW | WS_VISIBLE, mainWindowX + rect.right - rect.left + 10,
-                       mainWindowY, /* Position to right of main window */
-                       INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+    hwndInfo = CreateWindowEx(WS_EX_TOOLWINDOW, INFO_WINDOW_CLASS, "Micropolis Info",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE,
+        mainWindowX + rect.right - rect.left + 10, mainWindowY, /* Position to right of main window */
+        INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
     if (hwndInfo == NULL) {
         MessageBox(NULL, "Info Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -388,10 +387,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     logBuffer[0] = '\0';
 
     /* Create log window */
-    hwndLog = CreateWindowEx(
-        WS_EX_CLIENTEDGE, LOG_WINDOW_CLASS, "Micropolis Log",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,                       /* Visible by default */
-        mainWindowX, mainWindowY + rect.bottom - rect.top + 10, /* Position below main window */
+    hwndLog = CreateWindowEx(WS_EX_TOOLWINDOW, LOG_WINDOW_CLASS, "Micropolis Log",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE, /* Visible by default */
+        mainWindowX, mainWindowY + rect.bottom - rect.top + 10,               /* Position below main window */
         LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
     if (hwndLog == NULL) {
