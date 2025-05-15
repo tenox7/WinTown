@@ -601,6 +601,9 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
  * Info window procedure - handles messages for the info window
  */
 LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    HMENU hMenu;
+    HMENU hViewMenu;
+
     switch (msg) {
     case WM_PAINT: {
         PAINTSTRUCT ps;
@@ -724,6 +727,15 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     case WM_CLOSE:
         /* Don't destroy, just hide the window */
         ShowWindow(hwnd, SW_HIDE);
+
+        /* Update menu checkmark */
+        if (hwndMain) {
+            hMenu = GetMenu(hwndMain);
+            hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+            if (hViewMenu) {
+                CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+            }
+        }
         return 0;
 
     case WM_DESTROY:
