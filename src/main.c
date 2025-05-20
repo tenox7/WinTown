@@ -369,11 +369,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     mainWindowY = rect.top;
 
     /* Create info window */
-    hwndInfo =
-        CreateWindowEx(WS_EX_CLIENTEDGE, INFO_WINDOW_CLASS, "Micropolis Info",
-                       WS_OVERLAPPEDWINDOW | WS_VISIBLE, mainWindowX + rect.right - rect.left + 10,
-                       mainWindowY, /* Position to right of main window */
-                       INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+    hwndInfo = CreateWindowEx(WS_EX_TOOLWINDOW, INFO_WINDOW_CLASS, "Micropolis Info",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE,
+        mainWindowX + rect.right - rect.left + 10, mainWindowY, /* Position to right of main window */
+        INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
     if (hwndInfo == NULL) {
         MessageBox(NULL, "Info Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -388,10 +387,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     logBuffer[0] = '\0';
 
     /* Create log window */
-    hwndLog = CreateWindowEx(
-        WS_EX_CLIENTEDGE, LOG_WINDOW_CLASS, "Micropolis Log",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,                       /* Visible by default */
-        mainWindowX, mainWindowY + rect.bottom - rect.top + 10, /* Position below main window */
+    hwndLog = CreateWindowEx(WS_EX_TOOLWINDOW, LOG_WINDOW_CLASS, "Micropolis Log",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE, /* Visible by default */
+        mainWindowX, mainWindowY + rect.bottom - rect.top + 10,               /* Position below main window */
         LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
     if (hwndLog == NULL) {
@@ -603,6 +601,9 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
  * Info window procedure - handles messages for the info window
  */
 LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    HMENU hMenu;
+    HMENU hViewMenu;
+
     switch (msg) {
     case WM_PAINT: {
         PAINTSTRUCT ps;
@@ -726,6 +727,15 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     case WM_CLOSE:
         /* Don't destroy, just hide the window */
         ShowWindow(hwnd, SW_HIDE);
+
+        /* Update menu checkmark */
+        if (hwndMain) {
+            hMenu = GetMenu(hwndMain);
+            hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+            if (hViewMenu) {
+                CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+            }
+        }
         return 0;
 
     case WM_DESTROY:
