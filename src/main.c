@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
+#include "gdifix.h"
 
 #define IDM_FILE_NEW 1001
 #define IDM_FILE_OPEN 1002
@@ -130,6 +131,7 @@ static BOOL isMouseDown = FALSE; /* Used for map dragging */
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
+char progPathName[MAX_PATH];
 char cityFileName[MAX_PATH]; /* Current city filename - used by other modules */
 static HMENU hMenu = NULL;
 static HMENU hFileMenu = NULL;
@@ -283,7 +285,6 @@ void swapShorts(short *buf, int len);
 void resizeBuffer(int cx, int cy);
 void scrollView(int dx, int dy);
 void openCityDialog(HWND hwnd);
-HBITMAP loadBitmapFile(const char *filename);
 int loadTileset(const char *filename);
 HPALETTE createSystemPalette(void);
 HMENU createMainMenu(void);
@@ -297,14 +298,51 @@ extern int SimRandom(int range);
 extern void SetValves(int r, int c, int i);
 extern const char *GetCityClassName(void);
 extern void RandomlySeedRand(void);
+
+
+BOOL WINAPI MyPathRemoveFileSpecA(char* path)
+{
+	char* filespec = path;
+	BOOL modified = FALSE;
+
+	if (!path || !*path) { return FALSE; }
+	if (*path == '\\') { filespec = ++path; }
+	if (*path == '\\') { filespec = ++path; }
+
+	while (*path)
+	{
+		if (*path == '\\')
+		{
+			filespec = path;
+		}
+		else if (*path == ':')
+		{
+			filespec = ++path;
+			if (*path == '\\') { filespec++; }
+		}
+		path = CharNextA(path);
+	}
+
+	if (*filespec)
+	{
+		*filespec = '\0';
+		modified = TRUE;
+	}
+
+	return modified;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    WNDCLASSEX wc, wcInfo;
+    WNDCLASS wc, wcInfo;
     MSG msg;
     RECT rect;
     int mainWindowX, mainWindowY;
 
+	GetModuleFileName(NULL, progPathName, MAX_PATH);
+	MyPathRemoveFileSpecA(progPathName);
+
     /* Register main window class */
-    wc.cbSize = sizeof(WNDCLASSEX);
+    //wc.cbSize = sizeof(WNDCLASS);
     wc.style = CS_HREDRAW | CS_VREDRAW | CS_BYTEALIGNWINDOW;
     wc.lpfnWndProc = wndProc;
     wc.cbClsExtra = 0;
@@ -315,15 +353,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszMenuName = NULL;
     wc.lpszClassName = "MicropolisNT";
-    wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+    //wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 
-    if (!RegisterClassEx(&wc)) {
+    if (!RegisterClass(&wc)) {
         MessageBox(NULL, "Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
 
     /* Register info window class */
-    wcInfo.cbSize = sizeof(WNDCLASSEX);
+    //wcInfo.cbSize = sizeof(WNDCLASS);
     wcInfo.style = CS_HREDRAW | CS_VREDRAW;
     wcInfo.lpfnWndProc = infoWndProc;
     wcInfo.cbClsExtra = 0;
@@ -334,9 +372,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcInfo.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wcInfo.lpszMenuName = NULL;
     wcInfo.lpszClassName = INFO_WINDOW_CLASS;
-    wcInfo.hIconSm = NULL;
+    //wcInfo.hIconSm = NULL;
 
-    if (!RegisterClassEx(&wcInfo)) {
+    if (!RegisterClass(&wcInfo)) {
         MessageBox(NULL, "Info Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
@@ -345,7 +383,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcInfo.lpfnWndProc = logWndProc;
     wcInfo.lpszClassName = LOG_WINDOW_CLASS;
 
-    if (!RegisterClassEx(&wcInfo)) {
+    if (!RegisterClass(&wcInfo)) {
         MessageBox(NULL, "Log Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
@@ -583,7 +621,7 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             hMenu = GetMenu(hwndMain);
             hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
             if (hViewMenu) {
-                CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                CHECK_MENU_RADIO_ITEM(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED,0,0);
             }
         }
         return 0;
@@ -754,7 +792,7 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 /* Update menu when simulation speed changes */
 void UpdateSimulationMenu(HWND hwnd, int speed) {
     /* Update menu checkmarks */
-    CheckMenuRadioItem(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
+    CHECK_MENU_RADIO_ITEM(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
 }
 
 LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -763,7 +801,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* Initialize toolbar */
         CreateToolbar(hwnd, 0, 0, 108, 600);
 
-        CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, 0, MF_BYPOSITION);
+        CHECK_MENU_RADIO_ITEM(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, 0, MF_BYPOSITION);
         /* Initialize simulation */
         DoSimInit();
         return 0;
@@ -923,7 +961,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_BULLDOZER:
             SelectTool(bulldozerState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_BULLDOZER,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_BULLDOZER,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -931,7 +969,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_ROAD:
             SelectTool(roadState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_ROAD,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_ROAD,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -939,7 +977,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_RAIL:
             SelectTool(railState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_RAIL,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_RAIL,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -947,7 +985,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_WIRE:
             SelectTool(wireState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_WIRE,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_WIRE,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -955,7 +993,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_PARK:
             SelectTool(parkState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_PARK,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_PARK,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -963,7 +1001,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_RESIDENTIAL:
             SelectTool(residentialState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_RESIDENTIAL,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_RESIDENTIAL,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -971,7 +1009,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_COMMERCIAL:
             SelectTool(commercialState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_COMMERCIAL,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_COMMERCIAL,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -979,7 +1017,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_INDUSTRIAL:
             SelectTool(industrialState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_INDUSTRIAL,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_INDUSTRIAL,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -987,7 +1025,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_FIRESTATION:
             SelectTool(fireState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_FIRESTATION,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_FIRESTATION,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -995,7 +1033,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_POLICESTATION:
             SelectTool(policeState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY,
                                IDM_TOOL_POLICESTATION, MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1003,7 +1041,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_STADIUM:
             SelectTool(stadiumState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_STADIUM,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_STADIUM,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1011,7 +1049,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_SEAPORT:
             SelectTool(seaportState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_SEAPORT,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_SEAPORT,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1019,7 +1057,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_POWERPLANT:
             SelectTool(powerState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_POWERPLANT,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_POWERPLANT,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1027,7 +1065,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_NUCLEAR:
             SelectTool(nuclearState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_NUCLEAR,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_NUCLEAR,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1035,7 +1073,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_AIRPORT:
             SelectTool(airportState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_AIRPORT,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_AIRPORT,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1043,7 +1081,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_TOOL_QUERY:
             SelectTool(queryState);
             isToolActive = TRUE;
-            CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_QUERY,
+            CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_QUERY,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
@@ -1060,7 +1098,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                               MF_BYCOMMAND);
 
                 if (changeTileset(hwnd, tilesetName)) {
-                    CheckMenuRadioItem(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, index,
+                    CHECK_MENU_RADIO_ITEM(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, index,
                                        MF_BYPOSITION);
                 }
                 return 0;
@@ -1281,7 +1319,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         cyClient = HIWORD(lParam);
 
         /* Get the toolbar window handle */
-        hwndToolbarWnd = FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL);
+        hwndToolbarWnd = FindWindow("MicropolisToolbar", NULL);
 
         /* If the toolbar exists, adjust its position */
         if (hwndToolbarWnd) {
@@ -1351,8 +1389,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         cleanupGraphics();
 
         /* Clean up toolbar */
-        if (FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL)) {
-            DestroyWindow(FindWindowEx(hwnd, NULL, "MicropolisToolbar", NULL));
+        if (FindWindow("MicropolisToolbar", NULL)) {
+            DestroyWindow(FindWindow("MicropolisToolbar", NULL));
         }
 
         /* Clean up toolbar bitmaps */
@@ -1502,6 +1540,7 @@ void initializeGraphics(HWND hwnd) {
     int width;
     int height;
     BITMAPINFOHEADER bi;
+    BITMAPINFO binfo;
     LPVOID bits;
     HBITMAP hbmOld;
     char errorMsg[256];
@@ -1535,6 +1574,7 @@ void initializeGraphics(HWND hwnd) {
     width = cxClient;
     height = cyClient;
 
+#if NEW32
     /* Setup 8-bit DIB section for our drawing buffer */
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
@@ -1545,6 +1585,24 @@ void initializeGraphics(HWND hwnd) {
     bi.biCompression = BI_RGB;
 
     hbmBuffer = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
+#else
+	/* Setup 8-bit DIB section for our drawing buffer */
+    ZeroMemory(&binfo, sizeof(BITMAPINFO));
+    ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = width;
+    bi.biHeight = -height; /* Negative for top-down DIB */
+    bi.biPlanes = 1;
+    bi.biBitCount = 8; /* 8 bits = 256 colors */
+    bi.biCompression = BI_RGB;
+
+	hbmBuffer = CreateDIBitmap(hdc, 
+		&bi,				// Pointer to BITMAPINFOHEADER
+		CBM_INIT,			// Initialize bitmap bits
+		NULL,				// Pointer to actual bitmap bits (if any)
+		&binfo,				// Pointer to BITMAPINFO
+		DIB_RGB_COLORS);		// Color usage
+#endif
 
     if (hbmBuffer == NULL) {
         error = GetLastError();
@@ -1562,14 +1620,15 @@ void initializeGraphics(HWND hwnd) {
 
     /* Use default.bmp tileset by default */
     strcpy(currentTileset, "default");
-    wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
-
+    wsprintf(tilePath, "%s\\tilesets\\%s.bmp", progPathName, currentTileset);
+wsprintf(errorMsg,"PLEASE LOAD TILESET %s\n",tilePath);
+OutputDebugString(errorMsg);
     /* Load the tileset with our 8-bit palette */
     if (!loadTileset(tilePath)) {
         OutputDebugString("Failed to load default tileset! Trying classic as fallback...");
         /* Fallback to classic if default is not available */
         strcpy(currentTileset, "classic");
-        wsprintf(tilePath, "tilesets\\%s.bmp", currentTileset);
+        wsprintf(tilePath, "%s\\tilesets\\%s.bmp", progPathName, currentTileset);
         
         if (!loadTileset(tilePath)) {
             OutputDebugString("Failed to load classic tileset too!");
@@ -1579,26 +1638,6 @@ void initializeGraphics(HWND hwnd) {
     ReleaseDC(hwnd, hdc);
 }
 
-HBITMAP loadBitmapFile(const char *filename) {
-    HBITMAP hBitmap;
-    DWORD error;
-    char errorMsg[256];
-
-    /* LR_CREATEDIBSECTION creates a DIB section bitmap that can be
-       selected into a memory DC. Using this flag makes the bitmap
-       compatible with our 8-bit/256 color rendering. */
-    hBitmap = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-
-    if (hBitmap == NULL) {
-        /* Debug output to help diagnose bitmap loading errors */
-        error = GetLastError();
-
-        wsprintf(errorMsg, "Failed to load bitmap: %s, Error: %d", filename, error);
-        OutputDebugString(errorMsg);
-    }
-
-    return hBitmap;
-}
 
 int loadTileset(const char *filename) {
     HDC hdc;
@@ -1618,8 +1657,8 @@ int loadTileset(const char *filename) {
     }
 
     /* Load the bitmap with explicit color control */
-    hbmTiles = LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, 
-                        LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+wsprintf(debugMsg, "Loading tileset %s\n",filename);
+    hbmTiles = LoadImageFromFile(filename, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
 
     if (hbmTiles == NULL) {
         /* Output debug message */
@@ -1629,6 +1668,8 @@ int loadTileset(const char *filename) {
         OutputDebugString(errorMsg);
         return 0;
     }
+
+wsprintf(debugMsg, "Tileset Info: %dx%d, %d bits/pixel", bm.bmWidth, bm.bmHeight,bm.bmBitsPixel);
 
     /* Verify that the bitmap was loaded properly */
     if (GetObject(hbmTiles, sizeof(BITMAP), &bm)) {
@@ -1670,7 +1711,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     BITMAP bm;
     char debugMsg[256];
 
-    wsprintf(tilesetPath, "tilesets\\%s.bmp", tilesetName);
+    wsprintf(tilesetPath, "%s\\tilesets\\%s.bmp", progPathName, tilesetName);
 
     if (hdcTiles) {
         DeleteDC(hdcTiles);
@@ -1683,8 +1724,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     }
 
     hbmTiles =
-        LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, 
-                 LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+        LoadImageFromFile(tilesetPath, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
 
     if (hbmTiles == NULL) {
         /* Output debug message */
@@ -1698,9 +1738,8 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
             wsprintf(errorMsg, "Trying to fallback to default tileset");
             OutputDebugString(errorMsg);
             
-            wsprintf(tilesetPath, "tilesets\\default.bmp");
-            hbmTiles = LoadImage(NULL, tilesetPath, IMAGE_BITMAP, 0, 0, 
-                              LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+            wsprintf(tilesetPath, "%s\\tilesets\\default.bmp", progPathName);
+            hbmTiles = LoadImageFromFile(tilesetPath, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
                               
             if (hbmTiles == NULL) {
                 /* If default also fails, give up */
@@ -1740,7 +1779,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     SetBkMode(hdcTiles, TRANSPARENT);
 
     /* If we used the fallback to default.bmp, use "default" as the tileset name */
-    if (strcmp(tilesetPath, "tilesets\\default.bmp") == 0 && strcmp(tilesetName, "default") != 0) {
+    if (strstr(tilesetPath, "tilesets\\default.bmp") != NULL && strcmp(tilesetName, "default") != 0) {
         strcpy(currentTileset, "default");
     } else {
         strcpy(currentTileset, tilesetName);
@@ -1788,6 +1827,7 @@ void resizeBuffer(int cx, int cy) {
     HBITMAP hbmNew;
     RECT rcBuffer;
     BITMAPINFOHEADER bi;
+    BITMAPINFO binfo;
     LPVOID bits;
     char errorMsg[256];
     DWORD error;
@@ -1804,6 +1844,7 @@ void resizeBuffer(int cx, int cy) {
         RealizePalette(hdc);
     }
 
+#if NEW32XX
     ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = cx;
@@ -1814,6 +1855,23 @@ void resizeBuffer(int cx, int cy) {
 
     /* Create DIB section with our palette */
     hbmNew = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, &bits, NULL, 0);
+#else
+    ZeroMemory(&binfo, sizeof(BITMAPINFO));
+    ZeroMemory(&bi, sizeof(BITMAPINFOHEADER));
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = cx;
+    bi.biHeight = -cy; /* Negative for top-down DIB */
+    bi.biPlanes = 1;
+    bi.biBitCount = 8; /* 8 bits = 256 colors */
+    bi.biCompression = BI_RGB;
+
+	hbmNew = CreateDIBitmap(hdc, 
+		&bi,				// Pointer to BITMAPINFOHEADER
+		CBM_INIT,			// Initialize bitmap bits
+		NULL,				// Pointer to actual bitmap bits (if any)
+		&binfo,				// Pointer to BITMAPINFO
+		DIB_RGB_COLORS);	// Color usage
+#endif
 
     if (hbmNew == NULL) {
         /* Debug output for DIB creation failure */
@@ -2853,7 +2911,7 @@ HMENU createMainMenu(void) {
     AppendMenu(hSimMenu, MF_STRING, IDM_SIM_FAST, "&Fast");
 
     /* Default simulation speed is medium */
-    CheckMenuRadioItem(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_MEDIUM, MF_BYCOMMAND);
+    CHECK_MENU_RADIO_ITEM(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_MEDIUM, MF_BYCOMMAND);
 
     /* Create scenario menu */
     hScenarioMenu = CreatePopupMenu();
@@ -2905,7 +2963,7 @@ HMENU createMainMenu(void) {
     AppendMenu(hToolMenu, MF_STRING, IDM_TOOL_QUERY, "&Query");
 
     /* Default tool is bulldozer */
-    CheckMenuRadioItem(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_BULLDOZER,
+    CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_BULLDOZER,
                        MF_BYCOMMAND);
 
     /* Create View menu */
@@ -2941,7 +2999,8 @@ void populateTilesetMenu(HMENU hSubMenu) {
     int menuId = IDM_TILESET_BASE;
     UINT menuFlags;
 
-    strcpy(searchPath, "tilesets\\*.bmp");
+    strcpy(searchPath, progPathName);
+    strcat(searchPath, "\\tilesets\\*.bmp");
 
     hFind = FindFirstFile(searchPath, &findData);
 

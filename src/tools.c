@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
+#include "gdifix.h"
 
 /* External reference to the toolbar width */
 extern int toolbarWidth;
@@ -1475,23 +1476,23 @@ static HBITMAP hToolBitmaps[17]; /* Tool bitmaps */
 
 /* File names for tool bitmaps - order matches toolbar position */
 static const char *toolBitmapFiles[17] = {
-    "residential",   /* 0 - Residential */
-    "commercial",    /* 1 - Commercial */
-    "industrial",    /* 2 - Industrial */
-    "firestation",   /* 3 - Fire Station */
-    "policestation", /* 4 - Police Station */
-    "powerline",     /* 5 - Wire */
+    "resident",   /* 0 - Residential */
+    "commerce",    /* 1 - Commercial */
+    "industrl",    /* 2 - Industrial */
+    "firest",   /* 3 - Fire Station */
+    "policest", /* 4 - Police Station */
+    "powerln",     /* 5 - Wire */
     "road",          /* 6 - Road */
     "rail",          /* 7 - Rail */
     "park",          /* 8 - Park */
     "stadium",       /* 9 - Stadium */
     "seaport",       /* 10 - Seaport */
-    "powerplant",    /* 11 - Coal Power Plant */
+    "powerpl",    /* 11 - Coal Power Plant */
     "nuclear",       /* 12 - Nuclear Power Plant */
     "airport",       /* 13 - Airport */
-    "bulldozer",     /* 14 - Bulldozer */
+    "bulldzr",     /* 14 - Bulldozer */
     "query",         /* 15 - Query */
-    "bulldozer"      /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
+    "bulldzr"      /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
 };
 
 /* Function to process toolbar button clicks */
@@ -1836,7 +1837,7 @@ void LoadToolbarBitmaps(void) {
 
         /* Load the bitmap */
         hToolBitmaps[i] =
-            LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+            LoadImageFromFile(filename, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
         if (hToolBitmaps[i] == NULL) {
             /* Log error if bitmap loading fails */
@@ -1984,15 +1985,15 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected) {
 
 /* Create toolbar window */
 void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
-    WNDCLASSEX wc;
+    WNDCLASS wc;
     RECT clientRect;
 
     /* Load the tool bitmaps */
     LoadToolbarBitmaps();
 
     /* Register the toolbar window class if not already done */
-    if (!GetClassInfoEx(NULL, "MicropolisToolbar", &wc)) {
-        wc.cbSize = sizeof(WNDCLASSEX);
+    if (!GetClassInfo(NULL, "MicropolisToolbar", &wc)) {
+        //wc.cbSize = sizeof(WNDCLASS);
         wc.style = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc = ToolbarProc;
         wc.cbClsExtra = 0;
@@ -2003,9 +2004,9 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
         wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
         wc.lpszMenuName = NULL;
         wc.lpszClassName = "MicropolisToolbar";
-        wc.hIconSm = NULL;
+        //wc.hIconSm = NULL;
 
-        RegisterClassEx(&wc);
+        RegisterClass(&wc);
     }
 
     /* Create the toolbar window */
