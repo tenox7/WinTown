@@ -11,13 +11,13 @@ LIBS = gdi32.lib user32.lib kernel32.lib COMDLG32.lib
 .c.obj:
         $(CC) $(CFLAGS) /c $*.c /Fo$*.obj
 
-ss.exe: $(OBJS)
-	link -out:ss.exe $(OBJS) $(LIBS)
+ntpolis.exe: $(OBJS)
+	link -out:ntpolis.exe $(OBJS) $(LIBS)
 
 
 
 clean:
 	del /q $(OBJS)
-	del /q ss.exe
+	del /q ntpolis.exe
 	del /q *.sbr
-	del /q ss.pch ss.pdb
+	del /q ntpolis.pch ntpolis.pdb
