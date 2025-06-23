@@ -38,6 +38,31 @@
 #define IDM_VIEW_LOGWINDOW 4101
 #define IDM_VIEW_POWER_OVERLAY 4102
 #define IDM_VIEW_DEBUG_LOGS 4103
+#define IDM_VIEW_MINIMAPWINDOW 4104
+
+/* Minimap window definitions */
+#define MINIMAP_WINDOW_CLASS "MicropolisMinimapWindow"
+#define MINIMAP_WINDOW_WIDTH 400
+#define MINIMAP_WINDOW_HEIGHT 380  /* 300 for map + margins + title/menu */
+#define MINIMAP_TIMER_ID 3
+#define MINIMAP_TIMER_INTERVAL 100 /* Update minimap every 100ms */
+#define MINIMAP_SCALE 3 /* 3x3 pixels per tile */
+
+/* Minimap view modes */
+#define MINIMAP_MODE_ALL 0
+#define MINIMAP_MODE_RESIDENTIAL 1
+#define MINIMAP_MODE_COMMERCIAL 2
+#define MINIMAP_MODE_INDUSTRIAL 3
+#define MINIMAP_MODE_POWER 4
+#define MINIMAP_MODE_TRANSPORT 5
+#define MINIMAP_MODE_POPULATION 6
+#define MINIMAP_MODE_TRAFFIC 7
+#define MINIMAP_MODE_POLLUTION 8
+#define MINIMAP_MODE_CRIME 9
+#define MINIMAP_MODE_LANDVALUE 10
+#define MINIMAP_MODE_FIRE 11
+#define MINIMAP_MODE_POLICE 12
+#define MINIMAP_MODE_COUNT 13
 
 /* Info window definitions */
 #define INFO_WINDOW_CLASS "MicropolisInfoWindow"
@@ -78,6 +103,10 @@
 #define LR_CREATEDIBSECTION 0x2000
 #endif
 
+#ifndef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 #ifndef LR_DEFAULTCOLOR
 #define LR_DEFAULTCOLOR 0
 #endif
@@ -109,6 +138,13 @@ short MiscHis[MISCHISTLEN / 2];
 HWND hwndMain = NULL; /* Main window handle - used by other modules */
 HWND hwndInfo = NULL; /* Info window handle for displaying city stats */
 HWND hwndLog = NULL;  /* Log window handle for displaying game events */
+HWND hwndMinimap = NULL; /* Minimap window handle for overview and navigation */
+
+/* Minimap window variables */
+static int minimapMode = MINIMAP_MODE_ALL; /* Current minimap display mode */
+static BOOL minimapDragging = FALSE; /* Is user dragging on minimap */
+static int minimapDragX = 0; /* Drag start position */
+static int minimapDragY = 0; /* Drag start position */
 
 /* Log window variables */
 HWND hwndLogText = NULL;        /* Handle to the edit control in the log window */
@@ -269,6 +305,7 @@ extern short ScoreWait;     /* Score wait for scenario */
 LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK infoWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK logWndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK minimapWndProc(HWND, UINT, WPARAM, LPARAM);
 
 /* Function to add a game log entry */
 void addGameLog(const char *format, ...);
@@ -388,6 +425,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
+    /* Register minimap window class */
+    wcInfo.lpfnWndProc = minimapWndProc;
+    wcInfo.lpszClassName = MINIMAP_WINDOW_CLASS;
+
+    if (!RegisterClass(&wcInfo)) {
+        MessageBox(NULL, "Minimap Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
     hMenu = createMainMenu();
 
     /* Create main window */
@@ -435,6 +481,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         /* Continue anyway, just without the log window */
     }
 
+    /* Create minimap window */
+    {
+        RECT desiredClientRect;
+        RECT windowRect;
+        int windowWidth, windowHeight;
+        
+        /* Calculate window size from desired client area size */
+        desiredClientRect.left = 0;
+        desiredClientRect.top = 0;
+        desiredClientRect.right = MINIMAP_WINDOW_WIDTH;
+        desiredClientRect.bottom = MINIMAP_WINDOW_HEIGHT;
+        
+        /* Adjust for window style to get actual window size needed */
+        windowRect = desiredClientRect;
+        AdjustWindowRectEx(&windowRect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
+                           FALSE, /* Menu is a popup menu, not a menu bar */
+                           WS_EX_TOOLWINDOW);
+        
+        windowWidth = windowRect.right - windowRect.left;
+        windowHeight = windowRect.bottom - windowRect.top;
+        
+        hwndMinimap = CreateWindowEx(WS_EX_TOOLWINDOW, MINIMAP_WINDOW_CLASS, "Micropolis Minimap",
+            WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE,
+            mainWindowX + INFO_WINDOW_WIDTH + rect.right - rect.left + 20, mainWindowY, /* Position to right of info window */
+            windowWidth, windowHeight, NULL, NULL, hInstance, NULL);
+    }
+
+    if (hwndMinimap == NULL) {
+        MessageBox(NULL, "Minimap Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        /* Continue anyway, just without the minimap window */
+    } else {
+        /* Start timer to update minimap window */
+        SetTimer(hwndMinimap, MINIMAP_TIMER_ID, MINIMAP_TIMER_INTERVAL, NULL);
+    }
+
     /* Initialize graphics first */
     initializeGraphics(hwndMain);
     
@@ -454,6 +535,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     /* Clean up info window timer */
     if (hwndInfo) {
         KillTimer(hwndInfo, INFO_TIMER_ID);
+    }
+
+    /* Clean up minimap window timer */
+    if (hwndMinimap) {
+        KillTimer(hwndMinimap, MINIMAP_TIMER_ID);
     }
 
     return msg.wParam;
@@ -785,6 +871,507 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+/* Minimap window procedure
+ * Displays a miniature view of the entire city with various overlay modes
+ * Allows panning the main view by clicking and dragging
+ */
+LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    HMENU hMenu;
+    HMENU hViewMenu;
+    RECT rect;
+    POINT pt;
+
+    switch (msg) {
+    case WM_CREATE: {
+        /* Don't create menu here - we'll create it on right-click instead */
+        return 0;
+    }
+
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc;
+        HDC hdcMem;
+        HBITMAP hbmMem, hbmOld;
+        HBRUSH hBrush;
+        int mapWidth, mapHeight, mapX, mapY;
+        int density, intensity, level, value, coverage;
+        int x, y;
+        short tileValue;
+        int tileType;
+        COLORREF color;
+        int viewX, viewY, viewW, viewH;
+        
+        hdc = BeginPaint(hwnd, &ps);
+        GetClientRect(hwnd, &rect);
+
+        /* Create memory DC for double buffering */
+        hdcMem = CreateCompatibleDC(hdc);
+        hbmMem = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
+        hbmOld = SelectObject(hdcMem, hbmMem);
+
+        /* Fill background */
+        FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+
+        /* Calculate minimap dimensions */
+        mapWidth = WORLD_X * MINIMAP_SCALE;
+        mapHeight = WORLD_Y * MINIMAP_SCALE;
+        mapX = (rect.right - mapWidth) / 2;
+        mapY = 5; /* Position at top of client area */
+        
+        /* Draw a test rectangle to verify rendering works */
+        if (mapX < 0) mapX = 0;
+        
+        /* Draw a white border around where the map should be */
+        {
+            HPEN hTestPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+            HPEN hOldTestPen = SelectObject(hdcMem, hTestPen);
+            HBRUSH hOldTestBrush = SelectObject(hdcMem, GetStockObject(NULL_BRUSH));
+            
+            Rectangle(hdcMem, mapX - 2, mapY - 2, mapX + mapWidth + 2, mapY + mapHeight + 2);
+            
+            SelectObject(hdcMem, hOldTestPen);
+            SelectObject(hdcMem, hOldTestBrush);
+            DeleteObject(hTestPen);
+        }
+
+        /* Draw the minimap based on current mode */
+        for (y = 0; y < WORLD_Y; y++) {
+            for (x = 0; x < WORLD_X; x++) {
+                tileValue = Map[y][x];
+                tileType = tileValue & LOMASK;
+                color = RGB(0, 0, 0); /* Default black */
+
+                switch (minimapMode) {
+                case MINIMAP_MODE_ALL:
+                    /* Show basic terrain and zones */
+                    if (tileType >= RESBASE && tileType < HOSPITAL) {
+                        color = RGB(0, 255, 0); /* Residential - green */
+                    } else if (tileType >= COMBASE && tileType < INDBASE) {
+                        color = RGB(0, 0, 255); /* Commercial - blue */
+                    } else if (tileType >= INDBASE && tileType < PORTBASE) {
+                        color = RGB(255, 255, 0); /* Industrial - yellow */
+                    } else if (tileType >= ROADBASE && tileType <= LASTROAD) {
+                        color = RGB(128, 128, 128); /* Roads - gray */
+                    } else if (tileType >= RAILBASE && tileType <= LASTRAIL) {
+                        color = RGB(192, 192, 192); /* Rails - light gray */
+                    } else if (tileType >= POWERBASE && tileType <= LASTPOWER) {
+                        color = RGB(255, 0, 0); /* Power lines - red */
+                    } else if (tileType >= RIVER && tileType <= LASTRIVEDGE) {
+                        color = RGB(0, 128, 255); /* Water - blue */
+                    } else if (tileType >= TREEBASE && tileType <= WOODS5) {
+                        color = RGB(0, 128, 0); /* Trees - dark green */
+                    } else if (tileType != 0) {
+                        /* Any other non-zero tile - show as dim white */
+                        color = RGB(64, 64, 64);
+                    }
+                    break;
+
+                case MINIMAP_MODE_RESIDENTIAL:
+                    if (tileType >= RESBASE && tileType < HOSPITAL) {
+                        density = calcResPop(tileType);
+                        if (density > 0) {
+                            intensity = min(255, density * 25);
+                            color = RGB(0, intensity, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_COMMERCIAL:
+                    if (tileType >= COMBASE && tileType < INDBASE) {
+                        density = calcComPop(tileType);
+                        if (density > 0) {
+                            intensity = min(255, density * 25);
+                            color = RGB(0, 0, intensity);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_INDUSTRIAL:
+                    if (tileType >= INDBASE && tileType < PORTBASE) {
+                        density = calcIndPop(tileType);
+                        if (density > 0) {
+                            intensity = min(255, density * 25);
+                            color = RGB(intensity, intensity, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_POWER:
+                    if (tileValue & POWERBIT) {
+                        color = RGB(255, 255, 0); /* Powered - yellow */
+                    } else if (tileValue & CONDBIT) {
+                        color = RGB(128, 0, 0); /* Unpowered conductor - dark red */
+                    }
+                    break;
+
+                case MINIMAP_MODE_TRANSPORT:
+                    if (tileType >= ROADBASE && tileType <= LASTROAD) {
+                        color = RGB(255, 255, 255); /* Roads - white */
+                    } else if (tileType >= RAILBASE && tileType <= LASTRAIL) {
+                        color = RGB(192, 192, 192); /* Rails - light gray */
+                    }
+                    break;
+
+                case MINIMAP_MODE_POPULATION:
+                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                        density = PopDensity[y/2][x/2];
+                        if (density > 0) {
+                            intensity = min(255, density * 2);
+                            color = RGB(intensity, 0, intensity);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_TRAFFIC:
+                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                        density = TrfDensity[y/2][x/2];
+                        if (density > 0) {
+                            intensity = min(255, density);
+                            color = RGB(intensity, intensity/2, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_POLLUTION:
+                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                        level = PollutionMem[y/2][x/2];
+                        if (level > 0) {
+                            intensity = min(255, level * 2);
+                            color = RGB(intensity, intensity/2, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_CRIME:
+                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                        level = CrimeMem[y/2][x/2];
+                        if (level > 0) {
+                            intensity = min(255, level * 2);
+                            color = RGB(intensity, 0, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_LANDVALUE:
+                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                        value = LandValueMem[y/2][x/2];
+                        if (value > 0) {
+                            intensity = min(255, value * 2);
+                            color = RGB(0, intensity, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_FIRE:
+                    if (x < WORLD_X/4 && y < WORLD_Y/4) {
+                        coverage = FireRate[y/4][x/4];
+                        if (coverage > 0) {
+                            intensity = min(255, coverage * 8);
+                            color = RGB(intensity, 0, 0);
+                        }
+                    }
+                    break;
+
+                case MINIMAP_MODE_POLICE:
+                    if (x < WORLD_X/4 && y < WORLD_Y/4) {
+                        coverage = PoliceMapEffect[y/4][x/4];
+                        if (coverage > 0) {
+                            intensity = min(255, coverage * 8);
+                            color = RGB(0, 0, intensity);
+                        }
+                    }
+                    break;
+                }
+
+                /* Draw the pixel */
+                if (color != RGB(0, 0, 0)) {
+                    RECT tileRect;
+                    tileRect.left = mapX + x * MINIMAP_SCALE;
+                    tileRect.top = mapY + y * MINIMAP_SCALE;
+                    tileRect.right = tileRect.left + MINIMAP_SCALE;
+                    tileRect.bottom = tileRect.top + MINIMAP_SCALE;
+                    
+                    hBrush = CreateSolidBrush(color);
+                    FillRect(hdcMem, &tileRect, hBrush);
+                    DeleteObject(hBrush);
+                }
+                
+                /* Always draw something for dirt/empty tiles in ALL mode */
+                if (minimapMode == MINIMAP_MODE_ALL && color == RGB(0, 0, 0)) {
+                    RECT tileRect;
+                    tileRect.left = mapX + x * MINIMAP_SCALE;
+                    tileRect.top = mapY + y * MINIMAP_SCALE;
+                    tileRect.right = tileRect.left + MINIMAP_SCALE;
+                    tileRect.bottom = tileRect.top + MINIMAP_SCALE;
+                    
+                    hBrush = CreateSolidBrush(RGB(32, 32, 32));
+                    FillRect(hdcMem, &tileRect, hBrush);
+                    DeleteObject(hBrush);
+                }
+            }
+        }
+
+        /* Draw viewport rectangle showing current view */
+        if (hwndMain) {
+            HPEN hPen, hOldPen;
+            HBRUSH hOldBrush;
+            
+            /* Calculate viewport position in minimap coordinates */
+            viewX = mapX + (xOffset / TILE_SIZE) * MINIMAP_SCALE;
+            viewY = mapY + (yOffset / TILE_SIZE) * MINIMAP_SCALE;
+            viewW = ((cxClient - toolbarWidth) / TILE_SIZE) * MINIMAP_SCALE;
+            viewH = (cyClient / TILE_SIZE) * MINIMAP_SCALE;
+
+            /* Draw white outline */
+            hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+            hOldPen = SelectObject(hdcMem, hPen);
+            hOldBrush = SelectObject(hdcMem, GetStockObject(NULL_BRUSH));
+            
+            Rectangle(hdcMem, viewX - 1, viewY - 1, viewX + viewW + 1, viewY + viewH + 1);
+            
+            /* Draw yellow inner rectangle */
+            DeleteObject(hPen);
+            hPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 0));
+            SelectObject(hdcMem, hPen);
+            
+            Rectangle(hdcMem, viewX, viewY, viewX + viewW, viewY + viewH);
+            
+            SelectObject(hdcMem, hOldPen);
+            SelectObject(hdcMem, hOldBrush);
+            DeleteObject(hPen);
+        }
+
+        /* Draw mode label at bottom instead of top to avoid overlap */
+        SetBkMode(hdcMem, TRANSPARENT);
+        SetTextColor(hdcMem, RGB(255, 255, 255));
+        
+        {
+            int labelY = mapY + mapHeight + 10; /* Position below minimap */
+            switch (minimapMode) {
+            case MINIMAP_MODE_ALL: TextOut(hdcMem, 5, labelY, "Mode: All", 9); break;
+            case MINIMAP_MODE_RESIDENTIAL: TextOut(hdcMem, 5, labelY, "Mode: Residential", 17); break;
+            case MINIMAP_MODE_COMMERCIAL: TextOut(hdcMem, 5, labelY, "Mode: Commercial", 16); break;
+            case MINIMAP_MODE_INDUSTRIAL: TextOut(hdcMem, 5, labelY, "Mode: Industrial", 16); break;
+            case MINIMAP_MODE_POWER: TextOut(hdcMem, 5, labelY, "Mode: Power Grid", 16); break;
+            case MINIMAP_MODE_TRANSPORT: TextOut(hdcMem, 5, labelY, "Mode: Transportation", 20); break;
+            case MINIMAP_MODE_POPULATION: TextOut(hdcMem, 5, labelY, "Mode: Population Density", 24); break;
+            case MINIMAP_MODE_TRAFFIC: TextOut(hdcMem, 5, labelY, "Mode: Traffic Density", 21); break;
+            case MINIMAP_MODE_POLLUTION: TextOut(hdcMem, 5, labelY, "Mode: Pollution", 15); break;
+            case MINIMAP_MODE_CRIME: TextOut(hdcMem, 5, labelY, "Mode: Crime Rate", 16); break;
+            case MINIMAP_MODE_LANDVALUE: TextOut(hdcMem, 5, labelY, "Mode: Land Value", 16); break;
+            case MINIMAP_MODE_FIRE: TextOut(hdcMem, 5, labelY, "Mode: Fire Coverage", 19); break;
+            case MINIMAP_MODE_POLICE: TextOut(hdcMem, 5, labelY, "Mode: Police Coverage", 21); break;
+            }
+        }
+
+        /* Removed debug text - minimap is working properly now */
+        
+        /* Blit to screen */
+        BitBlt(hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY);
+
+        /* Cleanup */
+        SelectObject(hdcMem, hbmOld);
+        DeleteObject(hbmMem);
+        DeleteDC(hdcMem);
+        
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+
+    case WM_LBUTTONDOWN: {
+        int mapWidth, mapHeight, mapX, mapY;
+        int tileX, tileY;
+        
+        /* Start dragging to pan view */
+        GetClientRect(hwnd, &rect);
+        mapWidth = WORLD_X * MINIMAP_SCALE;
+        mapHeight = WORLD_Y * MINIMAP_SCALE;
+        mapX = (rect.right - mapWidth) / 2;
+        mapY = 5; /* Same as in WM_PAINT */
+        
+        pt.x = LOWORD(lParam);
+        pt.y = HIWORD(lParam);
+        
+        /* Check if click is within minimap bounds */
+        if (pt.x >= mapX && pt.x < mapX + mapWidth &&
+            pt.y >= mapY && pt.y < mapY + mapHeight) {
+            minimapDragging = TRUE;
+            minimapDragX = pt.x;
+            minimapDragY = pt.y;
+            SetCapture(hwnd);
+            
+            /* Pan to clicked location */
+            tileX = (pt.x - mapX) / MINIMAP_SCALE;
+            tileY = (pt.y - mapY) / MINIMAP_SCALE;
+            
+            /* Center view on clicked tile */
+            xOffset = (tileX * TILE_SIZE) - ((cxClient - toolbarWidth) / 2);
+            yOffset = (tileY * TILE_SIZE) - (cyClient / 2);
+            
+            /* Clamp to valid range */
+            if (xOffset < 0) xOffset = 0;
+            if (yOffset < 0) yOffset = 0;
+            if (xOffset > WORLD_X * TILE_SIZE - (cxClient - toolbarWidth)) {
+                xOffset = WORLD_X * TILE_SIZE - (cxClient - toolbarWidth);
+            }
+            if (yOffset > WORLD_Y * TILE_SIZE - cyClient) {
+                yOffset = WORLD_Y * TILE_SIZE - cyClient;
+            }
+            
+            /* Redraw main window */
+            InvalidateRect(hwndMain, NULL, FALSE);
+            InvalidateRect(hwnd, NULL, FALSE);
+        }
+        return 0;
+    }
+
+    case WM_MOUSEMOVE: {
+        if (minimapDragging) {
+            int mapWidth, mapHeight, mapX, mapY;
+            int tileX, tileY;
+            
+            GetClientRect(hwnd, &rect);
+            mapWidth = WORLD_X * MINIMAP_SCALE;
+            mapHeight = WORLD_Y * MINIMAP_SCALE;
+            mapX = (rect.right - mapWidth) / 2;
+            mapY = 5; /* Same as in WM_PAINT */
+            
+            pt.x = LOWORD(lParam);
+            pt.y = HIWORD(lParam);
+            
+            /* Clamp to minimap bounds */
+            if (pt.x < mapX) pt.x = mapX;
+            if (pt.y < mapY) pt.y = mapY;
+            if (pt.x >= mapX + mapWidth) pt.x = mapX + mapWidth - 1;
+            if (pt.y >= mapY + mapHeight) pt.y = mapY + mapHeight - 1;
+            
+            /* Pan to dragged location */
+            tileX = (pt.x - mapX) / MINIMAP_SCALE;
+            tileY = (pt.y - mapY) / MINIMAP_SCALE;
+            
+            /* Center view on dragged tile */
+            xOffset = (tileX * TILE_SIZE) - ((cxClient - toolbarWidth) / 2);
+            yOffset = (tileY * TILE_SIZE) - (cyClient / 2);
+            
+            /* Clamp to valid range */
+            if (xOffset < 0) xOffset = 0;
+            if (yOffset < 0) yOffset = 0;
+            if (xOffset > WORLD_X * TILE_SIZE - (cxClient - toolbarWidth)) {
+                xOffset = WORLD_X * TILE_SIZE - (cxClient - toolbarWidth);
+            }
+            if (yOffset > WORLD_Y * TILE_SIZE - cyClient) {
+                yOffset = WORLD_Y * TILE_SIZE - cyClient;
+            }
+            
+            /* Redraw main window */
+            InvalidateRect(hwndMain, NULL, FALSE);
+            InvalidateRect(hwnd, NULL, FALSE);
+        }
+        return 0;
+    }
+
+    case WM_LBUTTONUP: {
+        if (minimapDragging) {
+            minimapDragging = FALSE;
+            ReleaseCapture();
+        }
+        return 0;
+    }
+    
+    case WM_RBUTTONDOWN: {
+        /* Show popup menu for mode selection */
+        HMENU hPopup = CreatePopupMenu();
+        POINT ptScreen;
+        
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_ALL ? MF_CHECKED : 0), 
+                   1000 + MINIMAP_MODE_ALL, "All");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_RESIDENTIAL ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_RESIDENTIAL, "Residential");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_COMMERCIAL ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_COMMERCIAL, "Commercial");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_INDUSTRIAL ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_INDUSTRIAL, "Industrial");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_POWER ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_POWER, "Power Grid");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_TRANSPORT ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_TRANSPORT, "Transportation");
+        AppendMenu(hPopup, MF_SEPARATOR, 0, NULL);
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_POPULATION ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_POPULATION, "Population Density");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_TRAFFIC ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_TRAFFIC, "Traffic Density");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_POLLUTION ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_POLLUTION, "Pollution");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_CRIME ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_CRIME, "Crime Rate");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_LANDVALUE ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_LANDVALUE, "Land Value");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_FIRE ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_FIRE, "Fire Coverage");
+        AppendMenu(hPopup, MF_STRING | (minimapMode == MINIMAP_MODE_POLICE ? MF_CHECKED : 0),
+                   1000 + MINIMAP_MODE_POLICE, "Police Coverage");
+                   
+        /* Get cursor position for popup menu */
+        GetCursorPos(&ptScreen);
+        
+        /* Show the popup menu */
+        TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON, 
+                       ptScreen.x, ptScreen.y, 0, hwnd, NULL);
+                       
+        DestroyMenu(hPopup);
+        return 0;
+    }
+
+    case WM_COMMAND: {
+        /* Handle mode selection from menu */
+        int mode = LOWORD(wParam) - 1000;
+        
+        if (mode >= MINIMAP_MODE_ALL && mode < MINIMAP_MODE_COUNT) {
+            minimapMode = mode;
+            InvalidateRect(hwnd, NULL, FALSE);
+        }
+        return 0;
+    }
+
+    case WM_TIMER:
+        if (wParam == MINIMAP_TIMER_ID) {
+            /* Repaint the window to update the minimap */
+            InvalidateRect(hwnd, NULL, FALSE);
+            return 0;
+        }
+        break;
+
+    case WM_GETMINMAXINFO: {
+        MINMAXINFO* mmi = (MINMAXINFO*)lParam;
+        /* Set minimum window size to ensure map fits */
+        mmi->ptMinTrackSize.x = MINIMAP_WINDOW_WIDTH;
+        mmi->ptMinTrackSize.y = MINIMAP_WINDOW_HEIGHT;
+        return 0;
+    }
+
+    case WM_CLOSE:
+        /* Don't destroy, just hide the window */
+        ShowWindow(hwnd, SW_HIDE);
+
+        /* Update menu checkmark */
+        if (hwndMain) {
+            hMenu = GetMenu(hwndMain);
+            hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+            if (hViewMenu) {
+                CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+            }
+        }
+        return 0;
+
+    case WM_DESTROY:
+        KillTimer(hwnd, MINIMAP_TIMER_ID);
+        hwndMinimap = NULL;
+        return 0;
+    }
+
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
 /* These constants should match those in simulation.c */
 #define SIM_TIMER_ID 1
 #define SIM_TIMER_INTERVAL 50
@@ -955,6 +1542,25 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             /* Force a redraw to show/hide the overlay */
             InvalidateRect(hwnd, NULL, TRUE);
         }
+            return 0;
+
+        case IDM_VIEW_MINIMAPWINDOW:
+            if (hwndMinimap) {
+                HMENU hMenu = GetMenu(hwnd);
+                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                UINT state = GetMenuState(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND);
+
+                if (state & MF_CHECKED) {
+                    /* Hide minimap window */
+                    CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                    ShowWindow(hwndMinimap, SW_HIDE);
+                } else {
+                    /* Show minimap window */
+                    CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                    ShowWindow(hwndMinimap, SW_SHOW);
+                    SetFocus(hwnd); /* Keep focus on main window */
+                }
+            }
             return 0;
 
         /* Tool menu items */
@@ -2974,6 +3580,9 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_LOGWINDOW, "&Log Window");
     /* Check it by default since the log window is now shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_CHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_MINIMAPWINDOW, "&Minimap Window");
+    /* Check it by default since the minimap window is shown on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_CHECKED);
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
