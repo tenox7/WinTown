@@ -795,8 +795,12 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         TextOut(hdc, 10, y, buffer, lstrlen(buffer));
         y += 20;
 
-        /* Draw population */
-        wsprintf(buffer, "Population: %d", (int)CityPop);
+        /* Draw population - handle large values */
+        if (CityPop < 0) {
+            wsprintf(buffer, "Population: ERROR (%ld)", CityPop);
+        } else {
+            wsprintf(buffer, "Population: %ld", CityPop);
+        }
         TextOut(hdc, 10, y, buffer, lstrlen(buffer));
         y += 20;
 

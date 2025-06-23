@@ -40,144 +40,65 @@ static void DoSPZ(int x, int y);
 /* SetSmoke function is now external from animation.c */
 static int EvalLot(int x, int y);
 static void BuildHouse(int x, int y, int value);
-static void ResPlop(int x, int y, int value);
-static void ComPlop(int x, int y, int value);
-static void IndPlop(int x, int y, int value);
+static void ResPlop(int x, int y, int den, int value);
+static void ComPlop(int x, int y, int den);
+static void IndPlop(int x, int y, int den);
 static int ZonePlop(int x, int y, int base);
 static int GetCRVal(int x, int y);
-static void DoResIn(int pop, int value, int x, int y);
-static void DoComIn(int pop, int x, int y);
-static void DoIndIn(int pop, int x, int y);
+static void DoResIn(int pop, int value);
+static void DoComIn(int pop, int value);
+static void DoIndIn(int pop, int value);
 
-/* Calculate population in a residential zone */
+/* Calculate population in a residential zone - matches original Micropolis */
 int calcResPop(int zone) {
-    int pop;
-
-    /* Check if in residential range */
-    if (zone >= RESBASE && zone < RESBASE + 8) {
-        /* Low value */
-        pop = zone - RESBASE;
-        pop = pop << 3;
-        return pop;
+    short CzDen;
+    
+    /* Sanity check the input */
+    if (zone < RESBASE || zone > LASTZONE) {
+        return 0;  /* Invalid zone tile */
     }
-
-    if (zone >= RESBASE + 8 && zone < RESBASE + 16) {
-        /* Medium value */
-        pop = zone - RESBASE - 8;
-        pop = pop << 3;
-        pop += 32;
-        return pop;
-    }
-
-    if (zone >= RESBASE + 16 && zone < RESBASE + 24) {
-        /* High value */
-        pop = zone - RESBASE - 16;
-        pop = pop << 3;
-        pop += 64;
-        return pop;
-    }
-
-    /* Continue checking other residential zone types */
-    if (zone >= RESBASE + 24 && zone <= LASTRES) {
-        /* Higher density residential */
-        return 16 + (zone - RESBASE - 24) / 8 * 16;
-    }
-
-    if (zone == HOSPITAL) {
-        return 30;
-    }
-    if (zone == CHURCH) {
-        return 10;
-    }
-
-    return 0;
+    
+    /* Use original RZPop algorithm from s_zone.c */
+    CzDen = (((zone - RZB) / 9) % 4);
+    return ((CzDen * 8) + 16);
 }
 
-/* Calculate population in a commercial zone */
+/* Calculate population in a commercial zone - matches original Micropolis */
 int calcComPop(int zone) {
-    int pop;
-
-    /* Check if in commercial range */
-    if (zone >= COMBASE && zone < COMBASE + 8) {
-        /* Low value */
-        pop = zone - COMBASE;
-        pop = pop << 3;
-        return pop;
+    short CzDen;
+    
+    /* Sanity check the input */
+    if (zone < COMBASE || zone > LASTZONE) {
+        return 0;  /* Invalid zone tile */
     }
-
-    if (zone >= COMBASE + 8 && zone < COMBASE + 16) {
-        /* Medium value */
-        pop = zone - COMBASE - 8;
-        pop = pop << 3;
-        pop += 32;
-        return pop;
-    }
-
-    if (zone >= COMBASE + 16 && zone < COMBASE + 24) {
-        /* High value */
-        pop = zone - COMBASE - 16;
-        pop = pop << 3;
-        pop += 64;
-        return pop;
-    }
-
-    /* Continue checking other commercial zone types */
-    if (zone >= COMBASE + 24 && zone <= LASTCOM) {
-        /* Higher density commercial */
-        return 16 + (zone - COMBASE - 24) / 8 * 16;
-    }
-
-    return 0;
+    
+    /* Use original CZPop algorithm from s_zone.c */
+    if (zone == COMCLR) return (0);
+    CzDen = (((zone - CZB) / 9) % 5) + 1;
+    return (CzDen);
 }
 
-/* Calculate population in an industrial zone */
+/* Calculate population in an industrial zone - matches original Micropolis */
 int calcIndPop(int zone) {
-    int pop;
-
-    /* Check if in industrial range */
-    if (zone >= INDBASE && zone < INDBASE + 8) {
-        /* Low value */
-        pop = zone - INDBASE;
-        pop = pop << 3;
-        return pop;
+    short CzDen;
+    
+    /* Sanity check the input */
+    if (zone < INDBASE || zone > LASTZONE) {
+        return 0;  /* Invalid zone tile */
     }
-
-    if (zone >= INDBASE + 8 && zone < INDBASE + 16) {
-        /* Medium value */
-        pop = zone - INDBASE - 8;
-        pop = pop << 3;
-        pop += 32;
-        return pop;
-    }
-
-    if (zone >= INDBASE + 16 && zone < INDBASE + 24) {
-        /* High value */
-        pop = zone - INDBASE - 16;
-        pop = pop << 3;
-        pop += 64;
-        return pop;
-    }
-
-    /* Continue checking other industrial zone types */
-    if (zone >= INDBASE + 24 && zone <= LASTIND) {
-        /* Higher density industrial */
-        return 16 + (zone - INDBASE - 24) / 8 * 16;
-    }
-
-    /* Special case for certain building types */
-    if (zone == AIRPORT || zone == PORT) {
-        return 40;
-    }
-
-    return 0;
+    
+    /* Use original IZPop algorithm from s_zone.c */
+    if (zone == INDCLR) return (0);
+    CzDen = (((zone - IZB) / 9) % 4) + 1;
+    return (CzDen);
 }
-static void IncROG(int x, int y);
+static void IncROG(int amount);
 static void DoResOut(int pop, int value, int x, int y);
 static void DoComOut(int pop, int x, int y);
 static void DoIndOut(int pop, int x, int y);
-static int EvalRes(int x, int y);
-static int EvalCom(int x, int y);
-static int EvalInd(int x, int y);
+static int EvalRes(int traf);
+static int EvalCom(int traf);
+static int EvalInd(int traf);
 static int DoFreePop(int x, int y);
 static void SetZPower(int x, int y);
 /* Using global calcResPop, calcComPop, calcIndPop from simulation.h */
@@ -268,9 +189,9 @@ static void DoHospChur(int x, int y) {
     if (z == HOSPITAL) {
         /* Add hospital population to census directly */
         if (zonePowered) {
-            ResPop += 30;
+            TempResPop += 30;
         } else {
-            ResPop += 5; /* Even unpowered hospitals have some population */
+            TempResPop += 5; /* Even unpowered hospitals have some population */
         }
 
         /* Also increment trade zone count on some cycles */
@@ -283,9 +204,9 @@ static void DoHospChur(int x, int y) {
     if (z == CHURCH) {
         /* Add church population to census directly */
         if (zonePowered) {
-            ResPop += 10;
+            TempResPop += 10;
         } else {
-            ResPop += 2; /* Even unpowered churches have some population */
+            TempResPop += 2; /* Even unpowered churches have some population */
         }
 
         /* Also increment residential zone count on some cycles */
@@ -327,7 +248,7 @@ static void DoSPZ(int x, int y) {
         ypos = (y - 1) + ZoneRandom(3);
 
         /* Add stadium population to census directly */
-        ComPop += 50; /* Stadiums contribute to commercial population */
+        TempComPop += 50; /* Stadiums contribute to commercial population */
 
         /* Additional random chance to increase commercial zone */
         if (ZoneRandom(5) == 1) {
@@ -369,8 +290,16 @@ static void DoIndustrial(int x, int y) {
 
     tpop = IZPop;
 
-    /* Get actual zone population */
-    pop = calcIndPop(zone);
+    /* Get actual zone population - pass only the tile ID without flags */
+    pop = calcIndPop(zone & LOMASK);
+    
+    /* Debug check for negative or extreme values */
+    if (pop < 0 || pop > 1000) {
+        char debugMsg[256];
+        wsprintf(debugMsg, "WARNING: Industrial zone at (%d,%d) has unusual pop=%d from zone=%d (tile=%d)\n", 
+                 x, y, pop, zone, zone & LOMASK);
+        OutputDebugString(debugMsg);
+    }
     
     /* Make sure even empty zones contribute some population */
     if (pop == 0 && zonePowered) {
@@ -378,7 +307,7 @@ static void DoIndustrial(int x, int y) {
     }
 
     /* Add to total industrial population for the census */
-    IndPop += pop;
+    TempIndPop += pop;
 
     /* Generate traffic from industrial zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
@@ -403,10 +332,10 @@ static void DoIndustrial(int x, int y) {
             return;
         }
 
-        value = EvalInd(x, y);
+        value = EvalInd(1);  /* Pass 1 for traffic good */
 
         if (value > 0) {
-            DoIndIn(tpop, x, y);
+            DoIndIn(tpop, value);
         } else if (value < 0) {
             DoIndOut(tpop, x, y);
         }
@@ -436,8 +365,8 @@ static void DoCommercial(int x, int y) {
 
     tpop = CZPop;
 
-    /* Get actual zone population */
-    pop = calcComPop(zone);
+    /* Get actual zone population - pass only the tile ID without flags */
+    pop = calcComPop(zone & LOMASK);
     
     /* Make sure even empty zones contribute some population */
     if (pop == 0 && zonePowered) {
@@ -445,7 +374,7 @@ static void DoCommercial(int x, int y) {
     }
 
     /* Add to total commercial population for the census */
-    ComPop += pop;
+    TempComPop += pop;
 
     /* Generate traffic from commercial zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
@@ -470,10 +399,10 @@ static void DoCommercial(int x, int y) {
             return;
         }
 
-        value = EvalCom(x, y);
+        value = EvalCom(1);  /* Pass 1 for traffic good */
 
         if (value > 0) {
-            DoComIn(tpop, x, y);
+            DoComIn(tpop, value);
         } else if (value < 0) {
             DoComOut(tpop, x, y);
         }
@@ -501,8 +430,8 @@ static void DoResidential(int x, int y) {
 
     tpop = RZPop;
 
-    /* Get actual zone population */
-    pop = calcResPop(zone);
+    /* Get actual zone population - pass only the tile ID without flags */
+    pop = calcResPop(zone & LOMASK);
 
     /* Make sure even empty zones contribute some population */
     if (pop == 0 && zonePowered) {
@@ -510,7 +439,7 @@ static void DoResidential(int x, int y) {
     }
 
     /* Add to total residential population for the census */
-    ResPop += pop;
+    TempResPop += pop;
 
     /* Generate traffic from residential zones at a certain rate */
     if (pop > 0 && !(CityTime & 15)) {
@@ -541,10 +470,10 @@ static void DoResidential(int x, int y) {
             return;
         }
 
-        value = EvalRes(x, y);
+        value = EvalRes(1);  /* Pass 1 for traffic good */
 
         if (value > 0) {
-            DoResIn(tpop, value, x, y);
+            DoResIn(tpop, value);
         } else if (value < 0) {
             DoResOut(tpop, value, x, y);
         }
@@ -556,189 +485,70 @@ static void DoResidential(int x, int y) {
     }
 }
 
-/* Calculate land value for a location */
+/* Calculate land value for a location - matches original Micropolis */
 static int GetCRVal(int x, int y) {
-    int landVal;
-
-    landVal = LandValueMem[y >> 1][x >> 1];
-
-    /* Check if it's connected to power */
-    if (!(Map[y][x] & POWERBIT)) {
-        landVal -= 20;
-
-        /* No power = bad location */
-        if (landVal < 0) {
-            landVal = 0;
-        }
-
-        if (landVal < 30) {
-            return -1;
-        }
-    }
-
-    return landVal;
+    register short LVal;
+    
+    LVal = LandValueMem[SMapY >>1][SMapX >>1];
+    LVal -= PollutionMem[SMapY >>1][SMapX >>1];
+    if (LVal < 30) return (0);
+    if (LVal < 80) return (1);
+    if (LVal < 150) return (2);
+    return (3);
 }
 
-/* Handle residential zone growth */
-static void DoResIn(int pop, int value, int x, int y) {
-    short base;
+/* Handle residential zone growth - matches original Micropolis */
+static void DoResIn(int pop, int value) {
     short z;
-    short deltaValue;
-    short growthRate = 1;
-
-    /* Increase growth likelihood */
-    if (RValve > 500) {
-        growthRate = 2; /* More aggressive growth with high demand */
-    }
-
-    if (pop > 0) {
-        /* Less restrictive population requirement for growth */
-        if (pop < 6 + value / 12) {
-            IncROG(x, y);
+    
+    z = PollutionMem[SMapY >>1][SMapX >>1];
+    if (z > 128) return;
+    
+    if (Map[SMapY][SMapX] == FREEZ) {
+        if (pop < 8) {
+            BuildHouse(SMapX, SMapY, value);
+            IncROG(1);
             return;
         }
+        if (PopDensity[SMapY >>1][SMapX >>1] > 64) {
+            ResPlop(SMapX, SMapY, 0, value);
+            IncROG(8);
+            return;
+        }
+        return;
     }
-
-    /* Zone is ready for growth! */
-    base = (Map[y][x] & LOMASK) - RESBASE;
-
-    z = RZPop;
-    if (z < 0) {
-        z = 0;
-    }
-
-    if (base < 3) {
-        /* Low-value residential building: 0, 1, 2 */
-        /* Increased chance of growth */
-        if (ZoneRandom(3) || (RValve > 300 && ZoneRandom(2))) {
-            Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base + growthRate);
-            IncROG(x, y);
-
-            /* Debug the growth */
-            {
-                char debugMsg[256];
-                wsprintf(debugMsg, "ZONE GROWTH: Residential base %d grew to %d at (%d,%d)\n", base,
-                         base + growthRate, x, y);
-                OutputDebugString(debugMsg);
-            }
-        }
-    } else if (base < 6) {
-        /* Medium-value residential building: 3, 4, 5 */
-        deltaValue = 0;
-
-        if (value >= 80) {
-            deltaValue = 1;
-        }
-
-        if (value >= 150) {
-            deltaValue = 2;
-        }
-
-        Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base + deltaValue);
-
-        /* Increased chance of growth */
-        if (ZoneRandom(12) < 3 || (RValve > 400 && ZoneRandom(10) < 3)) {
-            ResPlop(x, y, ZoneRandom(2) + base - 3);
-            IncROG(x, y);
-
-            /* Debug the growth */
-            {
-                char debugMsg[256];
-                wsprintf(debugMsg, "ZONE GROWTH: Medium residential at (%d,%d) upgraded\n", x, y);
-                OutputDebugString(debugMsg);
-            }
-        }
-    } else {
-        /* Big residential building: 6, 7, 8 */
-        Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base);
-
-        /* Increased chance of growth */
-        if ((value > 120 && ZoneRandom(8) < 2) || (RValve > 500 && ZoneRandom(10) < 3)) {
-            if (ZoneRandom(2)) {
-                BuildHouse(x, y, value);
-            } else {
-                ResPlop(x, y, ZoneRandom(3) + 3);
-            }
-
-            /* Debug the growth */
-            {
-                char debugMsg[256];
-                wsprintf(debugMsg, "ZONE GROWTH: Large residential at (%d,%d) upgraded\n", x, y);
-                OutputDebugString(debugMsg);
-            }
-        }
+    if (pop < 40) {
+        ResPlop(SMapX, SMapY, (pop / 8) - 1, value);
+        IncROG(8);
     }
 }
 
-/* Handle commercial zone growth */
-static void DoComIn(int pop, int x, int y) {
-    short base;
+/* Handle commercial zone growth - matches original Micropolis */
+static void DoComIn(int pop, int value) {
+    register short z;
+    
+    z = LandValueMem[SMapY >>1][SMapX >>1];
+    z = z >>5;
+    if (pop > z) return;
+    
+    if (pop < 5) {
+        ComPlop(SMapX, SMapY, pop);
+        IncROG(8);
+    }
+}
 
-    /* Reduced population threshold for growth */
+/* Handle industrial zone growth - matches original Micropolis */
+static void DoIndIn(int pop, int value) {
     if (pop < 4) {
-        IncROG(x, y);
-        return;
-    }
-
-    /* Zone is ready for growth! */
-    base = (Map[y][x] & LOMASK) - COMBASE;
-
-    /* Increased chance of growth - more likely if CValve (commercial demand) is high */
-    if (ZoneRandom(3) == 0 || (CValve > 400 && ZoneRandom(5) < 2)) {
-        if (ZoneRandom(2) == 0) {
-            ComPlop(x, y, ZoneRandom(5));
-        } else {
-            ComPlop(x, y, ZoneRandom(4) + 5);
-        }
-        IncROG(x, y);
-
-        /* Debug the growth */
-        {
-            char debugMsg[256];
-            wsprintf(debugMsg, "ZONE GROWTH: Commercial zone at (%d,%d) upgraded\n", x, y);
-            OutputDebugString(debugMsg);
-        }
+        IndPlop(SMapX, SMapY, pop);
+        IncROG(8);
     }
 }
 
-/* Handle industrial zone growth */
-static void DoIndIn(int pop, int x, int y) {
-    /* Reduced population threshold for growth */
-    if (pop < 3) {
-        IncROG(x, y);
-        return;
-    }
-
-    /* Zone is ready for growth! */
-    /* Increased chance of growth - more likely if IValve (industrial demand) is high */
-    if (ZoneRandom(3) == 0 || (IValve > 400 && ZoneRandom(5) < 2)) {
-        if (ZoneRandom(2) == 0) {
-            IndPlop(x, y, ZoneRandom(4));
-        } else {
-            IndPlop(x, y, ZoneRandom(4) + 4);
-        }
-        IncROG(x, y);
-
-        /* Debug the growth */
-        {
-            char debugMsg[256];
-            wsprintf(debugMsg, "ZONE GROWTH: Industrial zone at (%d,%d) upgraded\n", x, y);
-            OutputDebugString(debugMsg);
-        }
-    }
-}
-
-/* Increment Rate of Growth map */
-static void IncROG(int x, int y) {
-    /* Increment the rate of growth map */
-    if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
-        short xx;
-        short yy;
-
-        xx = x >> 3;
-        yy = y >> 3;
-        /* Rate of growth map would be incremented here */
-    }
+/* Increment Rate of Growth map - matches original Micropolis */
+static void IncROG(int amount) {
+    /* RateOGMem[SMapX>>3][SMapY>>3] += amount<<2; */
+    /* Rate of Growth tracking not implemented yet */
 }
 
 /* Handle residential zone decline */
@@ -838,18 +648,21 @@ static void BuildHouse(int x, int y, int value) {
 }
 
 /* Place a residential zone */
-static void ResPlop(int x, int y, int value) {
-    ZonePlop(x, y, RESBASE + value);
+static void ResPlop(int x, int y, int den, int value) {
+    /* den parameter is density offset for residential */
+    ZonePlop(x, y, RESBASE + (den * 9) + value);
 }
 
 /* Place a commercial zone */
-static void ComPlop(int x, int y, int value) {
-    ZonePlop(x, y, COMBASE + value);
+static void ComPlop(int x, int y, int den) {
+    /* den parameter is density value for commercial */
+    ZonePlop(x, y, COMBASE + (den * 9));
 }
 
 /* Place an industrial zone */
-static void IndPlop(int x, int y, int value) {
-    ZonePlop(x, y, INDBASE + value);
+static void IndPlop(int x, int y, int den) {
+    /* den parameter is density value for industrial */
+    ZonePlop(x, y, INDBASE + (den * 9));
 }
 
 /* Evaluate a lot for building a house */
@@ -927,99 +740,37 @@ static int ZonePlop(int xpos, int ypos, int base) {
     return 1;
 }
 
-/* Evaluate residential zone desirability */
-static int EvalRes(int x, int y) {
-    int value;
-
-    value = LandValueMem[y >> 1][x >> 1];
-
-    /* Reduced minimum value requirement */
-    if (value < 20) {
-        return -1;
-    }
-
-    /* Increased tolerance for pollution */
-    if (value < 80) {
-        if (PollutionMem[y >> 1][x >> 1] > 100) { /* Was 80 */
-            return -1;
-        }
-    } else {
-        if (PollutionMem[y >> 1][x >> 1] > 60) { /* Was 40 */
-            return -1;
-        }
-    }
-
-    /* Increased tolerance for crime */
-    if (CrimeMem[y >> 1][x >> 1] > 220) { /* Was 190 */
-        return -1;
-    }
-
-    /* Less restrictive RValve requirements */
-    if ((value > 30) && RValve < -100) { /* Was 0 */
-        return 0;
-    }
-
-    if ((value > 80) && RValve < 0) { /* Was 20 */
-        return 0;
-    }
-
-    if ((value > 150) && RValve < 20) { /* Was 40 */
-        return 0;
-    }
-
-    /* Bump up values slightly to encourage more growth */
-    return value + 10;
+/* Evaluate residential zone desirability - matches original Micropolis */
+static int EvalRes(int traf) {
+    register short Value;
+    
+    if (traf < 0) return (-3000);
+    
+    Value = LandValueMem[SMapY >>1][SMapX >>1];
+    Value -= PollutionMem[SMapY >>1][SMapX >>1];
+    
+    if (Value < 0) Value = 0;        /* Cap at 0 */
+    else Value = Value <<5;
+    
+    if (Value > 6000) Value = 6000;  /* Cap at 6000 */
+    
+    Value = Value - 3000;
+    return (Value);
 }
 
-/* Evaluate commercial zone desirability */
-static int EvalCom(int x, int y) {
-    int value;
-
-    value = ComRate[y >> 1][x >> 1];
-
-    /* Reduced minimum requirement */
-    if (value < 1) {
-        return -1;
-    }
-
-    /* Less restrictive CValve requirements */
-    if (value < 20 && CValve < -50) { /* Was 0 */
-        return -1;
-    }
-
-    if (value < 50 && CValve < 0) { /* Was 10 */
-        return -1;
-    }
-
-    if (value < 100 && CValve < 10) { /* Was 20 */
-        return 0;
-    }
-
-    if (value < 150) {
-        return value + 10; /* Boost value to encourage growth */
-    }
-
-    if (CValve < 20) { /* Was 40 */
-        return 0;
-    }
-
-    /* Boost high values */
-    return value + 20;
+/* Evaluate commercial zone desirability - matches original Micropolis */
+static int EvalCom(int traf) {
+    short Value;
+    
+    if (traf < 0) return (-3000);
+    Value = ComRate[SMapY >>3][SMapX >>3];
+    return (Value);
 }
 
-/* Evaluate industrial zone desirability */
-static int EvalInd(int x, int y) {
-    /* Less restrictive IValve requirements */
-    if (IValve < -50) { /* Was 0 */
-        return -1;
-    }
-
-    if (IValve < 20) { /* Was 50 */
-        return 0;
-    }
-
-    /* Boost value to encourage growth */
-    return IValve + 50;
+/* Evaluate industrial zone desirability - matches original Micropolis */
+static int EvalInd(int traf) {
+    if (traf < 0) return (-1000);
+    return (0);
 }
 
 /* Count population of free houses */

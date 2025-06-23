@@ -79,6 +79,11 @@ int TotalPop = 0;
 int LastTotalPop = 0;
 float Delta = 1.0f;
 
+/* Temporary census accumulation variables to prevent display flicker */
+int TempResPop = 0;
+int TempComPop = 0;
+int TempIndPop = 0;
+
 /* Infrastructure counts */
 int PwrdZCnt = 0;
 int UnpwrdZCnt = 0;
@@ -203,25 +208,14 @@ void DoSimInit(void) {
     CityMonth = 0;
 
     /* Population counters */
-    /* For a new city, set minimum population */
-    if (oldCityPop == 0) {
-        /* Set minimum default values */
-        ResPop = 1;
-        ComPop = 1;
-        IndPop = 1;
-        TotalPop = 3;
-        CityPop = 100; /* Minimum city population to display */
-        LastTotalPop = 3;
-    } else {
-        /* Preserve population from previous values */
-        ResPop = oldResPop > 0 ? oldResPop : 1;
-        ComPop = oldComPop > 0 ? oldComPop : 1;
-        IndPop = oldIndPop > 0 ? oldIndPop : 1;
-        TotalPop = oldTotalPop > 0 ? oldTotalPop : 3;
-        CityPop = oldCityPop > 0 ? oldCityPop : 100;
-        CityClass = oldCityClass;
-        LastTotalPop = oldTotalPop > 0 ? oldTotalPop : 3;
-    }
+    /* Initialize population values - don't force minimums */
+    ResPop = oldResPop;
+    ComPop = oldComPop;
+    IndPop = oldIndPop;
+    TotalPop = oldTotalPop;
+    CityPop = oldCityPop;
+    CityClass = oldCityClass;
+    LastTotalPop = oldTotalPop;
 
     /* Set initial growth demand */
     SetValves(500, 300, 100);
@@ -340,6 +334,11 @@ void Simulate(int mod16) {
     case 9:
         /* Process taxes, maintenance, city evaluation if needed */
         /* ClearCensus is now done in case 1 before map scanning */
+        
+        /* Copy temporary census values to display variables after map scan is complete */
+        ResPop = TempResPop;
+        ComPop = TempComPop;
+        IndPop = TempIndPop;
 
         /* Every 4 cycles, take census for graphs */
         if ((Scycle % CENSUSRATE) == 0) {
@@ -373,8 +372,9 @@ void Simulate(int mod16) {
         /* Update city population more frequently than just at census time */
         if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
             CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
-        } else if (CityPop == 0) {
-            CityPop = 100; /* Minimum population display */
+        } else {
+            /* No zones means no population */
+            CityPop = 0;
         }
 
         /* Run animations for smoother motion */
@@ -494,6 +494,11 @@ void DoTimeStuff(void) {
     CityTime++;
 
     CityMonth++;
+    
+    /* Log RCI values monthly for debugging */
+    addDebugLog("Monthly RCI: Residential=%d Commercial=%d Industrial=%d (Month %d)", 
+                ResPop, ComPop, IndPop, CityMonth);
+    
     if (CityMonth > 11) {
         CityMonth = 0;
         CityYear++;
@@ -698,12 +703,11 @@ void ClearCensus(void) {
     PwrdZCnt = 0;
     UnpwrdZCnt = 0;
 
-    /* Population MUST be reset to allow recounting and growth/decline */
-    /* This is the key difference: always reset these values regardless of SkipCensusReset */
-    ResPop = 0;
-    ComPop = 0;
-    IndPop = 0;
-    TotalPop = 0;
+    /* Reset TEMPORARY census variables, not display variables */
+    /* This prevents display flicker during census calculation */
+    TempResPop = 0;
+    TempComPop = 0;
+    TempIndPop = 0;
 
     /* DEBUG: Increment counter to track census resets */
     DebugCensusReset++;
@@ -722,16 +726,40 @@ void TakeCensus(void) {
     /* Calculate total population - normalize for simulation */
     TotalPop = ResPop + ComPop + IndPop;
 
-    /* Calculate new city population from zone populations using the official formula */
-    newCityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    /* Sanity check population values before calculation */
+    if (ResPop < 0 || ComPop < 0 || IndPop < 0) {
+        char debugMsg[256];
+        wsprintf(debugMsg, "WARNING: Negative zone population detected! R=%d C=%d I=%d\n", 
+                 ResPop, ComPop, IndPop);
+        OutputDebugString(debugMsg);
+        
+        /* Clamp to zero */
+        if (ResPop < 0) ResPop = 0;
+        if (ComPop < 0) ComPop = 0;
+        if (IndPop < 0) IndPop = 0;
+    }
 
-    /* If we have real zone population, update CityPop with the new value */
+    /* Calculate new city population from zone populations using the official formula */
+    newCityPop = ((QUAD)ResPop + ((QUAD)ComPop * 8L) + ((QUAD)IndPop * 8L)) * 20L;
+
+    /* Sanity check the result */
+    if (newCityPop < 0) {
+        char debugMsg[256];
+        wsprintf(debugMsg, "ERROR: Negative CityPop calculated! R=%d C=%d I=%d -> %ld\n", 
+                 ResPop, ComPop, IndPop, newCityPop);
+        OutputDebugString(debugMsg);
+        addDebugLog("ERROR: Negative population! R=%d C=%d I=%d", ResPop, ComPop, IndPop);
+        
+        /* Try to recover by using a simpler formula */
+        newCityPop = (QUAD)(ResPop + ComPop + IndPop) * 100L;
+    }
+
+    /* Update CityPop based on current zone populations */
     if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
         CityPop = newCityPop;
-    }
-    /* If we don't have zone population but have previous CityPop, maintain it */
-    else if (CityPop == 0 && PrevCityPop > 0) {
-        CityPop = PrevCityPop;
+    } else {
+        /* No zones means no population */
+        CityPop = 0;
     }
 
     /* CRITICAL: Make sure we have some population value if there are zones */
@@ -771,26 +799,18 @@ void TakeCensus(void) {
         CityClass++; /* Megalopolis */
     }
 
-    /* Make sure CityPop is never zero if we have zones */
-    if (CityPop == 0) {
-        if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
-            /* Calculate from zone counts */
-            CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    /* Only set minimum population if we actually have zones */
+    if (CityPop == 0 && (ResPop > 0 || ComPop > 0 || IndPop > 0)) {
+        /* Calculate from zone counts */
+        CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
 
-            /* If still zero, use minimum value */
-            if (CityPop == 0) {
-                CityPop = 100; /* Minimum village size */
-                CityClass = 0; /* Village */
-            }
-        } else if (PrevCityPop > 0) {
-            /* If we lost all zones but had population before, maintain it */
-            CityPop = PrevCityPop;
-        } else {
-            /* Absolute minimum to prevent zero display */
-            CityPop = 100;
-            CityClass = 0;
+        /* If still zero despite having zones, use minimum value */
+        if (CityPop == 0) {
+            CityPop = 100; /* Minimum village size */
+            CityClass = 0; /* Village */
         }
     }
+    /* If no zones, population should remain 0 */
 
     /* Track population changes for growth rate calculations */
     if (CityPop > PrevCityPop) {

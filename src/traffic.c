@@ -103,8 +103,9 @@ static int FindPRoad(void) {
 
 /* Check if we've reached the destination */
 static int DriveDone(void) {
-    static short TARGL[3] = {COMBASE, INDBASE, RESBASE}; /* Destinations (low range) */
-    static short TARGH[3] = {LASTCOM, LASTIND, LASTRES}; /* Destinations (high range) */
+    /* Match original Micropolis traffic destinations from s_traf.c */
+    static short TARGL[3] = {COMBASE, LHTHR, LHTHR};     /* R>C C>I I>R */
+    static short TARGH[3] = {NUCLEAR, PORT, COMBASE};    /* for destinations */
     int z, l, h;
 
     l = TARGL[Zsource];

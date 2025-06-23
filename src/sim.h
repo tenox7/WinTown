@@ -372,6 +372,11 @@ extern int TotalPop;     /* Total population */
 extern int LastTotalPop; /* Previous total population */
 extern float Delta;      /* Population change coefficient */
 
+/* Temporary census accumulation variables to prevent display flicker */
+extern int TempResPop;   /* Temporary residential population during census */
+extern int TempComPop;   /* Temporary commercial population during census */
+extern int TempIndPop;   /* Temporary industrial population during census */
+
 /* Infrastructure counts */
 extern int PwrdZCnt;     /* Number of powered zones */
 extern int UnpwrdZCnt;   /* Number of unpowered zones */
