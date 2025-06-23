@@ -1,5 +1,10 @@
 # MicropolisNT TODO
 
+## Major Bugs
+
+- After a year or so some zones get scrabled to all roads or all no power tiles!
+- Some tilesets cause 100% CPU peg - may be num color related?
+
 ## Major Features Missing
 - Save game
 - New game / map generator
