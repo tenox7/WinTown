@@ -504,7 +504,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         hwndMinimap = CreateWindowEx(WS_EX_TOOLWINDOW, MINIMAP_WINDOW_CLASS, "Micropolis Minimap",
             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE,
-            mainWindowX + INFO_WINDOW_WIDTH + rect.right - rect.left + 20, mainWindowY, /* Position to right of info window */
+            mainWindowX + rect.right - rect.left + 10, mainWindowY + INFO_WINDOW_HEIGHT + 10, /* Position underneath info window */
             windowWidth, windowHeight, NULL, NULL, hInstance, NULL);
     }
 
