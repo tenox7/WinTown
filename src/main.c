@@ -1014,17 +1014,23 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     break;
 
                 case MINIMAP_MODE_POPULATION:
-                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                    /* PopDensity is half-size array, so check bounds and access correctly */
+                    if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         density = PopDensity[y/2][x/2];
                         if (density > 0) {
                             intensity = min(255, density * 2);
                             color = RGB(intensity, 0, intensity);
                         }
+                        /* Debug: show any residential areas in faint color even if no density */
+                        else if (tileType >= RESBASE && tileType < HOSPITAL) {
+                            color = RGB(32, 0, 32); /* Very faint purple for residential with no density */
+                        }
                     }
                     break;
 
                 case MINIMAP_MODE_TRAFFIC:
-                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                    /* TrfDensity is half-size array, so check bounds and access correctly */
+                    if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         density = TrfDensity[y/2][x/2];
                         if (density > 0) {
                             intensity = min(255, density);
@@ -1034,7 +1040,8 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     break;
 
                 case MINIMAP_MODE_POLLUTION:
-                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                    /* PollutionMem is half-size array, so check bounds and access correctly */
+                    if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         level = PollutionMem[y/2][x/2];
                         if (level > 0) {
                             intensity = min(255, level * 2);
@@ -1044,7 +1051,8 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     break;
 
                 case MINIMAP_MODE_CRIME:
-                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                    /* CrimeMem is half-size array, so check bounds and access correctly */
+                    if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         level = CrimeMem[y/2][x/2];
                         if (level > 0) {
                             intensity = min(255, level * 2);
@@ -1054,7 +1062,8 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     break;
 
                 case MINIMAP_MODE_LANDVALUE:
-                    if (x < WORLD_X/2 && y < WORLD_Y/2) {
+                    /* LandValueMem is half-size array, so check bounds and access correctly */
+                    if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         value = LandValueMem[y/2][x/2];
                         if (value > 0) {
                             intensity = min(255, value * 2);
