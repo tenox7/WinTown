@@ -42,8 +42,8 @@
 
 /* Minimap window definitions */
 #define MINIMAP_WINDOW_CLASS "MicropolisMinimapWindow"
-#define MINIMAP_WINDOW_WIDTH 400
-#define MINIMAP_WINDOW_HEIGHT 380  /* 300 for map + margins + title/menu */
+#define MINIMAP_WINDOW_WIDTH 360  /* WORLD_X * MINIMAP_SCALE = 120 * 3 */
+#define MINIMAP_WINDOW_HEIGHT 320  /* WORLD_Y * MINIMAP_SCALE + space for mode label = 100 * 3 + 20 */
 #define MINIMAP_TIMER_ID 3
 #define MINIMAP_TIMER_INTERVAL 100 /* Update minimap every 100ms */
 #define MINIMAP_SCALE 3 /* 3x3 pixels per tile */
@@ -915,11 +915,8 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         /* Calculate minimap dimensions */
         mapWidth = WORLD_X * MINIMAP_SCALE;
         mapHeight = WORLD_Y * MINIMAP_SCALE;
-        mapX = (rect.right - mapWidth) / 2;
-        mapY = 5; /* Position at top of client area */
-        
-        /* Draw a test rectangle to verify rendering works */
-        if (mapX < 0) mapX = 0;
+        mapX = 0; /* Position at left edge - no padding */
+        mapY = 0; /* Position at top edge - no padding */
         
         /* Draw a white border around where the map should be */
         {
@@ -1146,7 +1143,7 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         SetTextColor(hdcMem, RGB(255, 255, 255));
         
         {
-            int labelY = mapY + mapHeight + 10; /* Position below minimap */
+            int labelY = mapY + mapHeight + 5; /* Position below minimap with small gap */
             switch (minimapMode) {
             case MINIMAP_MODE_ALL: TextOut(hdcMem, 5, labelY, "Mode: All", 9); break;
             case MINIMAP_MODE_RESIDENTIAL: TextOut(hdcMem, 5, labelY, "Mode: Residential", 17); break;
@@ -1186,8 +1183,8 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         GetClientRect(hwnd, &rect);
         mapWidth = WORLD_X * MINIMAP_SCALE;
         mapHeight = WORLD_Y * MINIMAP_SCALE;
-        mapX = (rect.right - mapWidth) / 2;
-        mapY = 5; /* Same as in WM_PAINT */
+        mapX = 0; /* Same as in WM_PAINT */
+        mapY = 0; /* Same as in WM_PAINT */
         
         pt.x = LOWORD(lParam);
         pt.y = HIWORD(lParam);
@@ -1233,8 +1230,8 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             GetClientRect(hwnd, &rect);
             mapWidth = WORLD_X * MINIMAP_SCALE;
             mapHeight = WORLD_Y * MINIMAP_SCALE;
-            mapX = (rect.right - mapWidth) / 2;
-            mapY = 5; /* Same as in WM_PAINT */
+            mapX = 0; /* Same as in WM_PAINT */
+            mapY = 0; /* Same as in WM_PAINT */
             
             pt.x = LOWORD(lParam);
             pt.y = HIWORD(lParam);
