@@ -12,10 +12,8 @@
 - Impeachment
 - Scenarios as real scenarios, not just map load
 - Bridges
+- Minimap stats not working: Population, pollution, crime, land, fire police
 
-
-## Major Bugs To Fix
-- Color map issues
 
 ## Cosmetic
 - Panning button fix
