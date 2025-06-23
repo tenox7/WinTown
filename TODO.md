@@ -5,7 +5,8 @@
 - New game / map generator
 - Difficulty level
 - Trains, ships, ferries, planes, helicpters
-- Budgets, reporting, money system
+- Budgets, reporting, economy, money system
+- Crime, fire, pollution, etc
 - Charts/graphs
 - Alerts (crime, pollution, traffic)
 - Disasters
@@ -19,8 +20,8 @@
 - Panning button fix
 - Middle tile (RCI/Power) gets destroyed on zone upgrade
 - Buttons / sizing / layout / etc
-- More debug overlays eg for power, traffic, etc
-- Power overlay over tiles, roads and train tracks
+- Some overlays are not working, like crime, fire etc
+- Power DEBUG over tiles, roads and train tracks
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Wrong tiles, eg power lines
