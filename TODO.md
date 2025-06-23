@@ -22,6 +22,9 @@
 
 
 ## Cosmetic
+- Tile picker debug app
+- Helicopter / plane etc wrong colors / colormap
+- ^^^ Wrong direction sprite
 - Panning button fix
 - Middle tile (RCI/Power) gets destroyed on zone upgrade
 - Buttons / sizing / layout / etc
@@ -29,4 +32,6 @@
 - Power DEBUG over tiles, roads and train tracks
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
-- Wrong tiles, eg power lines
+- Wrong tiles, eg power lines, middle tile
+- Log window stop scrolling
+

@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "sprite.h"
 #include "tools.h"
 #include <commdlg.h>
 #include <stdarg.h>
@@ -39,6 +40,13 @@
 #define IDM_VIEW_POWER_OVERLAY 4102
 #define IDM_VIEW_DEBUG_LOGS 4103
 #define IDM_VIEW_MINIMAPWINDOW 4104
+
+/* Spawn menu IDs */
+#define IDM_SPAWN_HELICOPTER 6001
+#define IDM_SPAWN_AIRPLANE 6002
+#define IDM_SPAWN_TRAIN 6003
+#define IDM_SPAWN_SHIP 6004
+#define IDM_SPAWN_BUS 6005
 
 /* Minimap window definitions */
 #define MINIMAP_WINDOW_CLASS "MicropolisMinimapWindow"
@@ -157,6 +165,10 @@ static HBITMAP hbmTiles = NULL;
 static HDC hdcTiles = NULL;
 static HPALETTE hPalette = NULL;
 
+/* Sprite bitmaps - array indexed by sprite type and frame */
+static HBITMAP hbmSprites[9][16] = {0}; /* 9 sprite types, max 16 frames each */
+static HDC hdcSprites = NULL;
+
 static int cxClient = 0;
 static int cyClient = 0;
 static int xOffset = 0;
@@ -175,6 +187,7 @@ static HMENU hTilesetMenu = NULL;
 static HMENU hSimMenu = NULL;
 static HMENU hScenarioMenu = NULL;
 static HMENU hToolMenu = NULL;
+static HMENU hSpawnMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 static int powerOverlayEnabled = 0; /* Power overlay display toggle */
 
@@ -314,6 +327,9 @@ void addDebugLog(const char *format, ...);
 void initializeGraphics(HWND hwnd);
 void cleanupGraphics(void);
 int loadCity(char *filename);
+void loadSpriteBitmaps(void);
+void DrawTransparentBitmap(HDC hdcDest, int xDest, int yDest, int width, int height,
+                          HDC hdcSrc, int xSrc, int ySrc, COLORREF transparentColor);
 int loadFile(char *filename);
 void drawCity(HDC hdc);
 void drawTile(HDC hdc, int x, int y, short tileValue);
@@ -1398,6 +1414,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* Initialize toolbar */
         CreateToolbar(hwnd, 0, 0, 108, 600);
 
+        /* Load sprite bitmaps */
+        loadSpriteBitmaps();
+
         CHECK_MENU_RADIO_ITEM(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, 0, MF_BYPOSITION);
         /* Initialize simulation */
         DoSimInit();
@@ -1700,6 +1719,108 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CHECK_MENU_RADIO_ITEM(hToolMenu, IDM_TOOL_BULLDOZER, IDM_TOOL_QUERY, IDM_TOOL_QUERY,
                                MF_BYCOMMAND);
             SetCursor(LoadCursor(NULL, IDC_ARROW));
+            return 0;
+
+        /* Spawn menu items */
+        case IDM_SPAWN_HELICOPTER:
+            {
+                SimSprite *sprite;
+                int x, y;
+                int spriteCount;
+                
+                /* Debug info */
+                spriteCount = GetSpriteCount();
+                addGameLog("DEBUG: Current sprite count: %d", spriteCount);
+                
+                /* Spawn helicopter at center of visible area */
+                x = (xOffset + (cxClient / 2)) & ~15; /* Align to 16-pixel grid */
+                y = (yOffset + (cyClient / 2)) & ~15;
+                
+                addGameLog("DEBUG: Spawning helicopter at x=%d, y=%d", x, y);
+                
+                sprite = NewSprite(SPRITE_HELICOPTER, x, y);
+                if (sprite) {
+                    sprite->control = -1; /* Autonomous mode */
+                    addGameLog("SUCCESS: Helicopter spawned at %d,%d", x, y);
+                    addGameLog("DEBUG: Helicopter frame=%d, dir=%d", sprite->frame, sprite->dir);
+                } else {
+                    addGameLog("FAILED: Could not spawn helicopter");
+                    addGameLog("DEBUG: Max sprites=%d, current=%d", MAX_SPRITES, spriteCount);
+                }
+            }
+            return 0;
+
+        case IDM_SPAWN_AIRPLANE:
+            {
+                SimSprite *sprite;
+                int x, y;
+                
+                /* Spawn airplane at center of visible area */
+                x = (xOffset + (cxClient / 2)) & ~15;
+                y = (yOffset + (cyClient / 2)) & ~15;
+                
+                sprite = NewSprite(SPRITE_AIRPLANE, x, y);
+                if (sprite) {
+                    sprite->control = -10; /* Takeoff mode */
+                    addGameLog("Airplane spawned");
+                } else {
+                    addGameLog("Could not spawn airplane - too many sprites");
+                }
+            }
+            return 0;
+
+        case IDM_SPAWN_TRAIN:
+            {
+                SimSprite *sprite;
+                int x, y;
+                
+                /* Spawn train at center of visible area */
+                x = (xOffset + (cxClient / 2)) & ~15;
+                y = (yOffset + (cyClient / 2)) & ~15;
+                
+                sprite = NewSprite(SPRITE_TRAIN, x, y);
+                if (sprite) {
+                    addGameLog("Train spawned");
+                } else {
+                    addGameLog("Could not spawn train - too many sprites");
+                }
+            }
+            return 0;
+
+        case IDM_SPAWN_SHIP:
+            {
+                SimSprite *sprite;
+                int x, y;
+                
+                /* Spawn ship at center of visible area */
+                x = (xOffset + (cxClient / 2)) & ~15;
+                y = (yOffset + (cyClient / 2)) & ~15;
+                
+                sprite = NewSprite(SPRITE_SHIP, x, y);
+                if (sprite) {
+                    addGameLog("Ship spawned");
+                } else {
+                    addGameLog("Could not spawn ship - too many sprites");
+                }
+            }
+            return 0;
+
+        case IDM_SPAWN_BUS:
+            {
+                SimSprite *sprite;
+                int x, y;
+                
+                /* Spawn bus at center of visible area */
+                x = (xOffset + (cxClient / 2)) & ~15;
+                y = (yOffset + (cyClient / 2)) & ~15;
+                
+                sprite = NewSprite(SPRITE_BUS, x, y);
+                if (sprite) {
+                    addGameLog("Bus spawned");
+                } else {
+                    addGameLog("Could not spawn bus - too many sprites");
+                }
+            }
             return 0;
 
         default:
@@ -3479,6 +3600,132 @@ void drawCity(HDC hdc) {
         }
     }
 
+    /* Draw sprites (helicopters, planes, trains, ships, buses) */
+    {
+        int i;
+        HBRUSH hSpriteBrush;
+        HPEN hSpritePen;
+        HPEN hOldPen;
+        HBRUSH hOldBrush;
+        
+        for (i = 0; i < MAX_SPRITES; i++) {
+            SimSprite *sprite = GetSprite(i);
+            if (sprite != NULL) {
+                int spriteScreenX = sprite->x - xOffset;
+                int spriteScreenY = sprite->y - yOffset;
+                
+                /* Check if sprite is visible on screen */
+                if (spriteScreenX >= -32 && spriteScreenX < cxClient &&
+                    spriteScreenY >= -32 && spriteScreenY < cyClient) {
+                    
+                    /* Different colors for different sprite types */
+                    switch (sprite->type) {
+                        case SPRITE_HELICOPTER:
+                            hSpriteBrush = CreateSolidBrush(RGB(0, 255, 0)); /* Green */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(0, 128, 0));
+                            break;
+                        case SPRITE_AIRPLANE:
+                            hSpriteBrush = CreateSolidBrush(RGB(255, 255, 255)); /* White */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(128, 128, 128));
+                            break;
+                        case SPRITE_TRAIN:
+                            hSpriteBrush = CreateSolidBrush(RGB(128, 64, 0)); /* Brown */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(64, 32, 0));
+                            break;
+                        case SPRITE_SHIP:
+                            hSpriteBrush = CreateSolidBrush(RGB(0, 128, 255)); /* Blue */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(0, 64, 128));
+                            break;
+                        case SPRITE_BUS:
+                            hSpriteBrush = CreateSolidBrush(RGB(255, 255, 0)); /* Yellow */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(128, 128, 0));
+                            break;
+                        case SPRITE_EXPLOSION:
+                            hSpriteBrush = CreateSolidBrush(RGB(255, 128, 0)); /* Orange */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
+                            break;
+                        default:
+                            hSpriteBrush = CreateSolidBrush(RGB(255, 0, 255)); /* Magenta */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
+                            break;
+                    }
+                    
+                    hOldBrush = SelectObject(hdc, hSpriteBrush);
+                    hOldPen = SelectObject(hdc, hSpritePen);
+                    
+                    /* Draw sprite bitmap with transparency */
+                    if (sprite->type >= SPRITE_TRAIN && sprite->type <= SPRITE_BUS) {
+                        HBITMAP hbmSprite;
+                        int frameIndex;
+                        
+                        /* Get appropriate frame for the sprite */
+                        frameIndex = sprite->frame - 1;
+                        if (frameIndex < 0) frameIndex = 0;
+                        
+                        /* Adjust frame index based on sprite type */
+                        switch (sprite->type) {
+                            case SPRITE_HELICOPTER:
+                                if (frameIndex > 7) frameIndex = frameIndex % 8;
+                                break;
+                            case SPRITE_AIRPLANE:
+                                if (frameIndex > 10) frameIndex = frameIndex % 11;
+                                break;
+                            case SPRITE_SHIP:
+                                if (frameIndex > 7) frameIndex = frameIndex % 8;
+                                break;
+                            case SPRITE_TRAIN:
+                                if (frameIndex > 4) frameIndex = frameIndex % 5;
+                                break;
+                            case SPRITE_BUS:
+                                if (frameIndex > 3) frameIndex = frameIndex % 4;
+                                break;
+                            case SPRITE_EXPLOSION:
+                                if (frameIndex > 5) frameIndex = frameIndex % 6;
+                                break;
+                        }
+                        
+                        /* Get the sprite bitmap */
+                        hbmSprite = hbmSprites[sprite->type][frameIndex];
+                        
+                        if (hbmSprite && hdcSprites) {
+                            HBITMAP hOldBitmap;
+                            HPALETTE hOldPalette = NULL;
+                            
+                            /* Select sprite bitmap into DC */
+                            hOldBitmap = SelectObject(hdcSprites, hbmSprite);
+                            
+                            /* Ensure palette is selected in sprite DC */
+                            if (hPalette) {
+                                hOldPalette = SelectPalette(hdcSprites, hPalette, FALSE);
+                                RealizePalette(hdcSprites);
+                            }
+                            
+                            /* Draw sprite with transparency (magenta is transparent) */
+                            DrawTransparentBitmap(hdc, spriteScreenX - 16, spriteScreenY - 16, 
+                                                32, 32, hdcSprites, 0, 0, RGB(255, 0, 255));
+                            
+                            /* Restore palette and DC */
+                            if (hOldPalette) {
+                                SelectPalette(hdcSprites, hOldPalette, FALSE);
+                            }
+                            SelectObject(hdcSprites, hOldBitmap);
+                        } else {
+                            /* Fallback if sprite not loaded */
+                            Rectangle(hdc, spriteScreenX - 8, spriteScreenY - 8,
+                                     spriteScreenX + 8, spriteScreenY + 8);
+                        }
+                    }
+                    
+                    /* Cleanup GDI objects */
+                    SelectObject(hdc, hOldBrush);
+                    SelectObject(hdc, hOldPen);
+                    DeleteObject(hSpriteBrush);
+                    DeleteObject(hSpritePen);
+                }
+            }
+        }
+    }
+
     /* Setup text drawing */
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, RGB(255, 255, 255));
@@ -3600,13 +3847,123 @@ HMENU createMainMenu(void) {
     /* Check it by default since debug logs are now enabled on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_CHECKED);
 
+    /* Spawn Menu */
+    hSpawnMenu = CreatePopupMenu();
+    AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_HELICOPTER, "&Helicopter");
+    AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_AIRPLANE, "&Airplane");
+    AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_TRAIN, "&Train");
+    AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_SHIP, "&Ship");
+    AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_BUS, "&Bus");
+
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hSpawnMenu, "S&pawn");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hViewMenu, "&View");
 
     return hMainMenu;
+}
+
+/* Load sprite bitmaps from images directory */
+void loadSpriteBitmaps(void) {
+    char filename[MAX_PATH];
+    int type, frame;
+    int maxFrames[9] = {5, 8, 11, 8, 16, 3, 6, 4, 0}; /* Max frames per sprite type */
+    char *prefix[9] = {"train", "helicopter", "airplane", "ship", "monster", "tornado", "explosion", "bus", NULL};
+    
+    /* Create sprite DC if not exists */
+    if (!hdcSprites) {
+        HDC hdcScreen = GetDC(NULL);
+        hdcSprites = CreateCompatibleDC(hdcScreen);
+        ReleaseDC(NULL, hdcScreen);
+        
+        /* Apply palette to sprite DC if we have one */
+        if (hPalette) {
+            SelectPalette(hdcSprites, hPalette, FALSE);
+            RealizePalette(hdcSprites);
+        }
+    }
+    
+    /* Load each sprite type */
+    for (type = 0; type < 8; type++) {
+        for (frame = 0; frame < maxFrames[type]; frame++) {
+            /* Build filename */
+            wsprintf(filename, "%s\\images\\%s-%d.bmp", progPathName, prefix[type], frame);
+            
+            /* Load bitmap with proper palette support */
+            hbmSprites[type + 1][frame] = (HBITMAP)LoadImageFromFile(filename, 
+                                                              LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+            
+            if (!hbmSprites[type + 1][frame]) {
+                /* Try without path in case images are in current directory */
+                wsprintf(filename, "images\\%s-%d.bmp", prefix[type], frame);
+                hbmSprites[type + 1][frame] = (HBITMAP)LoadImageFromFile(filename, 
+                                                                  LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+                
+                if (hbmSprites[type + 1][frame]) {
+                    addDebugLog("Loaded sprite: %s", filename);
+                } else {
+                    addDebugLog("Failed to load sprite: %s", filename);
+                }
+            } else {
+                addDebugLog("Loaded sprite: %s", filename);
+            }
+        }
+    }
+}
+
+/* Draw bitmap with transparency (magenta = transparent) */
+void DrawTransparentBitmap(HDC hdcDest, int xDest, int yDest, int width, int height,
+                          HDC hdcSrc, int xSrc, int ySrc, COLORREF transparentColor) {
+    HDC hdcMask, hdcImage;
+    HBITMAP hbmMask, hbmImage;
+    HBITMAP hbmOldMask, hbmOldImage;
+    
+    /* Create mask DC */
+    hdcMask = CreateCompatibleDC(hdcDest);
+    hbmMask = CreateBitmap(width, height, 1, 1, NULL);
+    hbmOldMask = SelectObject(hdcMask, hbmMask);
+    
+    /* Create image DC with full color support */
+    hdcImage = CreateCompatibleDC(hdcDest);
+    hbmImage = CreateCompatibleBitmap(hdcDest, width, height);
+    hbmOldImage = SelectObject(hdcImage, hbmImage);
+    
+    /* Ensure palettes match */
+    if (hPalette) {
+        SelectPalette(hdcImage, hPalette, FALSE);
+        RealizePalette(hdcImage);
+    }
+    
+    /* Copy source image to our image DC */
+    BitBlt(hdcImage, 0, 0, width, height, hdcSrc, xSrc, ySrc, SRCCOPY);
+    
+    /* Create mask: transparent color becomes white (1), rest black (0) */
+    SetBkColor(hdcImage, transparentColor);
+    BitBlt(hdcMask, 0, 0, width, height, hdcImage, 0, 0, SRCCOPY);
+    
+    /* Make transparent areas black in the source image */
+    SetBkColor(hdcImage, RGB(0,0,0));
+    SetTextColor(hdcImage, RGB(255,255,255));
+    BitBlt(hdcImage, 0, 0, width, height, hdcMask, 0, 0, SRCAND);
+    
+    /* Make opaque areas white in the mask (invert it) */
+    BitBlt(hdcMask, 0, 0, width, height, hdcMask, 0, 0, NOTSRCCOPY);
+    
+    /* Apply mask to destination (AND operation - preserves destination where mask is white) */
+    BitBlt(hdcDest, xDest, yDest, width, height, hdcMask, 0, 0, SRCAND);
+    
+    /* Paint image over destination (OR operation - adds sprite to punched hole) */
+    BitBlt(hdcDest, xDest, yDest, width, height, hdcImage, 0, 0, SRCPAINT);
+    
+    /* Cleanup */
+    SelectObject(hdcMask, hbmOldMask);
+    DeleteObject(hbmMask);
+    DeleteDC(hdcMask);
+    SelectObject(hdcImage, hbmOldImage);
+    DeleteObject(hbmImage);
+    DeleteDC(hdcImage);
 }
 
 void populateTilesetMenu(HMENU hSubMenu) {

@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "sprite.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -236,6 +237,9 @@ void DoSimInit(void) {
     /* Initialize budget system */
     InitBudget();
 
+    /* Initialize sprite system */
+    InitSprites();
+
     /* Generate a random disaster wait period */
     DisasterWait = SimRandom(51) + 49;
 
@@ -309,6 +313,9 @@ void Simulate(int mod16) {
 
         /* Process tile animations */
         AnimateTiles();
+
+        /* Move transportation sprites */
+        MoveSprites();
         break;
 
     case 1:
@@ -384,6 +391,12 @@ void Simulate(int mod16) {
     case 11:
         /* Process power grid updates */
         DoPowerScan();
+
+        /* Generate transportation sprites */
+        GenerateTrains();
+        GenerateShips();
+        GenerateAircraft();
+        GenerateHelicopters();
 
         /* Check if population has gone to zero (but not initially) */
         if (TotalPop > 0 || LastTotalPop == 0) {
