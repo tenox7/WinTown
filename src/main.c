@@ -40,6 +40,7 @@
 #define IDM_VIEW_POWER_OVERLAY 4102
 #define IDM_VIEW_DEBUG_LOGS 4103
 #define IDM_VIEW_MINIMAPWINDOW 4104
+#define IDM_VIEW_TILESWINDOW 4105
 
 /* Spawn menu IDs */
 #define IDM_SPAWN_HELICOPTER 6001
@@ -86,6 +87,11 @@
 #define LOG_TEXT_ID 101      /* ID for the text edit control */
 #define MAX_LOG_BUFFER 32000 /* Maximum size for the log text buffer */
 #define MAX_LOG_ENTRIES 100  /* Maximum number of log entries to keep */
+
+/* Tiles debug window definitions */
+#define TILES_WINDOW_CLASS "MicropolisTilesWindow"
+#define TILES_WINDOW_WIDTH 560  /* 32 tiles * 16 pixels + scrollbar + border */
+#define TILES_WINDOW_HEIGHT 520 /* 30 tiles * 16 pixels + title bar + border */
 
 /* Tool menu IDs */
 #define IDM_TOOL_BASE 5000
@@ -147,10 +153,16 @@ HWND hwndMain = NULL; /* Main window handle - used by other modules */
 HWND hwndInfo = NULL; /* Info window handle for displaying city stats */
 HWND hwndLog = NULL;  /* Log window handle for displaying game events */
 HWND hwndMinimap = NULL; /* Minimap window handle for overview and navigation */
+HWND hwndTiles = NULL; /* Tiles debug window handle for tileset inspection */
 
 /* Minimap window variables */
 static int minimapMode = MINIMAP_MODE_ALL; /* Current minimap display mode */
 static BOOL minimapDragging = FALSE; /* Is user dragging on minimap */
+
+/* Tiles debug window variables */
+static BOOL tilesWindowVisible = FALSE; /* Track tiles window visibility */
+static int selectedTileX = -1; /* Selected tile X coordinate (-1 = no selection) */
+static int selectedTileY = -1; /* Selected tile Y coordinate (-1 = no selection) */
 static int minimapDragX = 0; /* Drag start position */
 static int minimapDragY = 0; /* Drag start position */
 
@@ -319,6 +331,7 @@ LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK infoWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK logWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK minimapWndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK tilesWndProc(HWND, UINT, WPARAM, LPARAM);
 
 /* Function to add a game log entry */
 void addGameLog(const char *format, ...);
@@ -450,6 +463,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
+    /* Register tiles debug window class */
+    wcInfo.lpfnWndProc = tilesWndProc;
+    wcInfo.lpszClassName = TILES_WINDOW_CLASS;
+
+    if (!RegisterClass(&wcInfo)) {
+        MessageBox(NULL, "Tiles Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
     hMenu = createMainMenu();
 
     /* Create main window */
@@ -530,6 +552,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     } else {
         /* Start timer to update minimap window */
         SetTimer(hwndMinimap, MINIMAP_TIMER_ID, MINIMAP_TIMER_INTERVAL, NULL);
+    }
+
+    /* Create tiles debug window (hidden by default) */
+    hwndTiles = CreateWindowEx(WS_EX_TOOLWINDOW, TILES_WINDOW_CLASS, "Micropolis Tiles Debug",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
+        100, 100, /* Simple fixed position for testing */
+        TILES_WINDOW_WIDTH, TILES_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+
+    if (hwndTiles == NULL) {
+        MessageBox(NULL, "Tiles Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        addDebugLog("Tiles window creation failed");
+        /* Continue anyway, just without the tiles window */
+    } else {
+        addDebugLog("Tiles window created successfully: hwnd=%p", hwndTiles);
     }
 
     /* Initialize graphics first */
@@ -1398,6 +1434,176 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+/* Tiles debug window procedure
+ * Displays the current tileset for debugging and inspection
+ * Shows tile coordinates on mouse hover in window title
+ */
+LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    HMENU hMenu;
+    HMENU hViewMenu;
+    PAINTSTRUCT ps;
+    HDC hdc;
+    HDC hdcMem;
+    HBITMAP hbmOld;
+    RECT rect;
+    int tileX, tileY, tileIndex;
+    int startX, startY, endX, endY;
+    int drawX, drawY;
+    int newMouseX, newMouseY;
+    char titleBuffer[256];
+    static int mouseX = -1;
+    static int mouseY = -1;
+
+    switch (msg) {
+    case WM_CREATE:
+        addDebugLog("Tiles window WM_CREATE received");
+        return 0;
+
+    case WM_PAINT:
+        addDebugLog("Tiles window WM_PAINT received");
+        hdc = BeginPaint(hwnd, &ps);
+        GetClientRect(hwnd, &rect);
+
+        addDebugLog("hdcTiles: %p, hbmTiles: %p", hdcTiles, hbmTiles);
+        /* Use the existing hdcTiles that's already configured */
+        if (hdcTiles && hbmTiles) {
+            addDebugLog("Using existing hdcTiles");
+
+            /* Calculate which tiles to draw based on client area */
+            startX = 0;
+            startY = 0;
+            endX = min(TILES_IN_ROW, (rect.right / TILE_SIZE) + 1);
+            endY = min(30, (rect.bottom / TILE_SIZE) + 1); /* 30 rows of tiles */
+
+            addDebugLog("Drawing tiles from (%d,%d) to (%d,%d), rect: %dx%d", 
+                       startX, startY, endX, endY, rect.right, rect.bottom);
+
+            /* Draw tiles */
+            for (tileY = startY; tileY < endY; tileY++) {
+                for (tileX = startX; tileX < endX; tileX++) {
+                    tileIndex = tileY * TILES_IN_ROW + tileX;
+                    if (tileIndex < TILE_TOTAL_COUNT) {
+                        drawX = tileX * TILE_SIZE;
+                        drawY = tileY * TILE_SIZE;
+
+                        /* Copy tile from tileset bitmap using existing hdcTiles */
+                        BitBlt(hdc, drawX, drawY, TILE_SIZE, TILE_SIZE,
+                               hdcTiles, tileX * TILE_SIZE, tileY * TILE_SIZE, SRCCOPY);
+                    }
+                }
+            }
+            
+            /* Draw yellow selection square if a tile is selected */
+            if (selectedTileX >= 0 && selectedTileY >= 0 && 
+                selectedTileX < TILES_IN_ROW && selectedTileY < 30) {
+                HPEN hYellowPen, hOldPen;
+                HBRUSH hOldBrush;
+                int selX, selY;
+                
+                selX = selectedTileX * TILE_SIZE;
+                selY = selectedTileY * TILE_SIZE;
+                
+                /* Create yellow pen for selection border */
+                hYellowPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+                hOldPen = SelectObject(hdc, hYellowPen);
+                hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH)); /* Hollow brush */
+                
+                /* Draw yellow rectangle around selected tile */
+                Rectangle(hdc, selX, selY, selX + TILE_SIZE, selY + TILE_SIZE);
+                
+                /* Restore original pen and brush */
+                SelectObject(hdc, hOldPen);
+                SelectObject(hdc, hOldBrush);
+                DeleteObject(hYellowPen);
+            }
+        } else {
+            addDebugLog("Cannot draw tiles: hdcTiles=%p, hbmTiles=%p", hdcTiles, hbmTiles);
+            /* Fill with a gray background to show the window is working */
+            FillRect(hdc, &rect, GetStockObject(GRAY_BRUSH));
+        }
+
+        EndPaint(hwnd, &ps);
+        return 0;
+
+    case WM_MOUSEMOVE:
+        newMouseX = LOWORD(lParam);
+        newMouseY = HIWORD(lParam);
+        
+        /* Only update if mouse position actually changed */
+        if (newMouseX != mouseX || newMouseY != mouseY) {
+            tileX = newMouseX / TILE_SIZE;
+            tileY = newMouseY / TILE_SIZE;
+            tileIndex = tileY * TILES_IN_ROW + tileX;
+
+            mouseX = newMouseX;
+            mouseY = newMouseY;
+
+            /* Update window title with tile coordinates and selection info */
+            if (tileX >= 0 && tileX < TILES_IN_ROW && tileY >= 0 && tileY < 30) {
+                if (selectedTileX >= 0 && selectedTileY >= 0) {
+                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Hover: %d (X:%d, Y:%d) | Selected: %d (X:%d, Y:%d)", 
+                             tileIndex, tileX, tileY, 
+                             selectedTileY * TILES_IN_ROW + selectedTileX, selectedTileX, selectedTileY);
+                } else {
+                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Hover: %d (X:%d, Y:%d) | Click to select", 
+                             tileIndex, tileX, tileY);
+                }
+            } else {
+                if (selectedTileX >= 0 && selectedTileY >= 0) {
+                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Selected: %d (X:%d, Y:%d)", 
+                             selectedTileY * TILES_IN_ROW + selectedTileX, selectedTileX, selectedTileY);
+                } else {
+                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Click to select a tile");
+                }
+            }
+            SetWindowText(hwnd, titleBuffer);
+        }
+        return 0;
+
+    case WM_LBUTTONDOWN:
+        newMouseX = LOWORD(lParam);
+        newMouseY = HIWORD(lParam);
+        
+        /* Calculate which tile was clicked */
+        tileX = newMouseX / TILE_SIZE;
+        tileY = newMouseY / TILE_SIZE;
+        
+        /* Update selection if click is within valid tile area */
+        if (tileX >= 0 && tileX < TILES_IN_ROW && tileY >= 0 && tileY < 30) {
+            selectedTileX = tileX;
+            selectedTileY = tileY;
+            
+            /* Force repaint to show new selection */
+            InvalidateRect(hwnd, NULL, FALSE);
+            
+            addDebugLog("Selected tile at (%d,%d), index: %d", tileX, tileY, tileY * TILES_IN_ROW + tileX);
+        }
+        return 0;
+
+    case WM_CLOSE:
+        /* Hide window instead of destroying it */
+        ShowWindow(hwnd, SW_HIDE);
+        tilesWindowVisible = FALSE;
+        
+        /* Reset selection when closing */
+        selectedTileX = -1;
+        selectedTileY = -1;
+        
+        hMenu = GetMenu(hwndMain);
+        hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+        if (hViewMenu) {
+            CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+        }
+        return 0;
+
+    case WM_DESTROY:
+        hwndTiles = NULL;
+        return 0;
+    }
+
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
 /* These constants should match those in simulation.c */
 #define SIM_TIMER_ID 1
 #define SIM_TIMER_INTERVAL 50
@@ -1589,6 +1795,32 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     ShowWindow(hwndMinimap, SW_SHOW);
                     SetFocus(hwnd); /* Keep focus on main window */
                 }
+            }
+            return 0;
+
+        case IDM_VIEW_TILESWINDOW:
+            addDebugLog("Tiles window menu clicked, hwndTiles=%p", hwndTiles);
+            if (hwndTiles) {
+                HMENU hMenu = GetMenu(hwnd);
+                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+
+                addDebugLog("Current tilesWindowVisible: %d", tilesWindowVisible);
+                if (tilesWindowVisible) {
+                    /* Hide tiles debug window */
+                    addDebugLog("Hiding tiles window");
+                    tilesWindowVisible = FALSE;
+                    CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                    ShowWindow(hwndTiles, SW_HIDE);
+                } else {
+                    /* Show tiles debug window */
+                    addDebugLog("Showing tiles window");
+                    tilesWindowVisible = TRUE;
+                    CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                    ShowWindow(hwndTiles, SW_SHOW);
+                    SetFocus(hwnd); /* Keep focus on main window */
+                }
+            } else {
+                addDebugLog("hwndTiles is NULL - cannot show tiles window");
             }
             return 0;
 
@@ -2527,6 +2759,11 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
 
     /* Force a full redraw */
     InvalidateRect(hwnd, NULL, TRUE);
+    
+    /* Also invalidate tiles debug window if it exists and is visible */
+    if (hwndTiles && tilesWindowVisible) {
+        InvalidateRect(hwndTiles, NULL, TRUE);
+    }
 
     ReleaseDC(hwndMain, hdc);
     return 1;
@@ -3840,6 +4077,9 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_MINIMAPWINDOW, "&Minimap Window");
     /* Check it by default since the minimap window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_CHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILESWINDOW, "&Tiles Debug");
+    /* Leave unchecked by default since the tiles window is hidden on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_UNCHECKED);
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
