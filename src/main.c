@@ -403,9 +403,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MSG msg;
     RECT rect;
     int mainWindowX, mainWindowY;
+    FILE *logFile;
 
 	GetModuleFileName(NULL, progPathName, MAX_PATH);
 	MyPathRemoveFileSpecA(progPathName);
+	
+	/* Clear the log file at startup */
+	logFile = fopen("metropolis.log", "w");
+	if (logFile) {
+	    fprintf(logFile, "=== MicropolisNT Log Started ===\n");
+	    fclose(logFile);
+	}
 
     /* Register main window class */
     //wc.cbSize = sizeof(WNDCLASS);
@@ -607,11 +615,7 @@ void addGameLog(const char *format, ...) {
     SYSTEMTIME st;
     int len;
     int textLen;
-
-    /* Only proceed if we have a text control */
-    if (!hwndLogText) {
-        return;
-    }
+    FILE *logFile;
 
     /* Get current time */
     GetLocalTime(&st);
@@ -621,6 +625,18 @@ void addGameLog(const char *format, ...) {
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
+    
+    /* ALWAYS write to log file, regardless of window state */
+    logFile = fopen("metropolis.log", "a");
+    if (logFile) {
+        fprintf(logFile, "%s%s\n", timeBuffer, buffer);
+        fclose(logFile);
+    }
+
+    /* Only update window if we have a text control */
+    if (!hwndLogText) {
+        return;
+    }
 
     /* Add time prefix + message + newline to the log buffer */
     len = lstrlen(timeBuffer) + lstrlen(buffer) + 2; /* +2 for newline and null terminator */
@@ -672,11 +688,7 @@ void addDebugLog(const char *format, ...) {
     va_list args;
     char buffer[512];
     char debugPrefix[16] = "[DEBUG] ";
-
-    /* Only process debug logs if debug logging is enabled */
-    if (!showDebugLogs || !hwndLogText) {
-        return;
-    }
+    char fullMessage[512];
 
     /* Format debug message */
     va_start(args, format);
@@ -684,14 +696,11 @@ void addDebugLog(const char *format, ...) {
     va_end(args);
 
     /* Create a new message with debug prefix */
-    {
-        char fullMessage[512];
-        strcpy(fullMessage, debugPrefix);
-        strcat(fullMessage, buffer);
+    strcpy(fullMessage, debugPrefix);
+    strcat(fullMessage, buffer);
 
-        /* Add to log with the debug prefix (addGameLog will add the timestamp) */
-        addGameLog("%s", fullMessage);
-    }
+    /* ALWAYS write to log file via addGameLog */
+    addGameLog("%s", fullMessage);
 }
 
 /**
