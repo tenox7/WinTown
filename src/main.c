@@ -1816,8 +1816,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     addDebugLog("Showing tiles window");
                     tilesWindowVisible = TRUE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_BYCOMMAND | MF_CHECKED);
-                    ShowWindow(hwndTiles, SW_SHOW);
-                    SetFocus(hwnd); /* Keep focus on main window */
+                    ShowWindow(hwndTiles, SW_SHOWNORMAL);
+                    SetForegroundWindow(hwndTiles);
                 }
             } else {
                 addDebugLog("hwndTiles is NULL - cannot show tiles window");
