@@ -59,7 +59,8 @@ int calcResPop(int zone) {
     }
     
     /* Use original RZPop algorithm from s_zone.c */
-    CzDen = (((zone - RZB) / 9) % 4);
+    /* Note: zones range from RESBASE to RESBASE+many, not from RZB */
+    CzDen = (((zone - RESBASE) / 9) % 4);
     return ((CzDen * 8) + 16);
 }
 
@@ -74,7 +75,8 @@ int calcComPop(int zone) {
     
     /* Use original CZPop algorithm from s_zone.c */
     if (zone == COMCLR) return (0);
-    CzDen = (((zone - CZB) / 9) % 5) + 1;
+    /* Note: zones range from COMBASE to COMBASE+many, not from CZB */
+    CzDen = (((zone - COMBASE) / 9) % 5) + 1;
     return (CzDen);
 }
 
@@ -89,7 +91,8 @@ int calcIndPop(int zone) {
     
     /* Use original IZPop algorithm from s_zone.c */
     if (zone == INDCLR) return (0);
-    CzDen = (((zone - IZB) / 9) % 4) + 1;
+    /* Note: zones range from INDBASE to INDBASE+many, not from IZB */
+    CzDen = (((zone - INDBASE) / 9) % 4) + 1;
     return (CzDen);
 }
 static void IncROG(int amount);
@@ -419,6 +422,7 @@ static void DoResidential(int x, int y) {
     short tpop;
     int pop;
     int zonePowered;
+    short tileId;
 
     zone = Map[y][x];
     if (!(zone & ZONEBIT)) {
@@ -431,8 +435,9 @@ static void DoResidential(int x, int y) {
     tpop = RZPop;
 
     /* Get actual zone population - pass only the tile ID without flags */
-    pop = calcResPop(zone & LOMASK);
-
+    tileId = zone & LOMASK;
+    pop = calcResPop(tileId);
+    
     /* Make sure even empty zones contribute some population */
     if (pop == 0 && zonePowered) {
         pop = 1;  /* Minimum population for any powered residential zone */
@@ -456,17 +461,36 @@ static void DoResidential(int x, int y) {
     /* Process growth or decline based on power status */
     if ((CityTime & 7) == 0) {
         int value;
+        short oldTile;
+        short newTile;
+
+        /* Save old tile for debugging */
+        oldTile = Map[y][x] & LOMASK;
 
         value = GetCRVal(x, y);
 
         if (value < 0) {
             DoResOut(tpop, value, x, y);
+            
+            /* Check if tile was corrupted */
+            newTile = Map[y][x] & LOMASK;
+            if (newTile >= ROADBASE && newTile <= LASTROAD && oldTile >= RESBASE && oldTile < COMBASE) {
+                addDebugLog("CORRUPTION: Res zone at %d,%d changed from %d to road %d (month=%d)", 
+                           x, y, oldTile, newTile, CityMonth);
+            }
             return;
         }
 
         /* No growth in unpowered zones */
         if (!zonePowered) {
             DoResOut(tpop, -500, x, y);
+            
+            /* Check if tile was corrupted */
+            newTile = Map[y][x] & LOMASK;
+            if (newTile >= ROADBASE && newTile <= LASTROAD && oldTile >= RESBASE && oldTile < COMBASE) {
+                addDebugLog("CORRUPTION: Unpowered res zone at %d,%d changed from %d to road %d (month=%d)", 
+                           x, y, oldTile, newTile, CityMonth);
+            }
             return;
         }
 
@@ -476,6 +500,13 @@ static void DoResidential(int x, int y) {
             DoResIn(tpop, value);
         } else if (value < 0) {
             DoResOut(tpop, value, x, y);
+            
+            /* Check if tile was corrupted */
+            newTile = Map[y][x] & LOMASK;
+            if (newTile >= ROADBASE && newTile <= LASTROAD && oldTile >= RESBASE && oldTile < COMBASE) {
+                addDebugLog("CORRUPTION: Declining res zone at %d,%d changed from %d to road %d (month=%d)", 
+                           x, y, oldTile, newTile, CityMonth);
+            }
         }
     }
 
@@ -500,25 +531,39 @@ static int GetCRVal(int x, int y) {
 /* Handle residential zone growth - matches original Micropolis */
 static void DoResIn(int pop, int value) {
     short z;
+    int zoneValue;
     
     z = PollutionMem[SMapY >>1][SMapX >>1];
     if (z > 128) return;
     
+    /* Convert the evaluation value to a zone value (0-3) */
+    zoneValue = GetCRVal(SMapX, SMapY);
+    if (zoneValue < 0) zoneValue = 0;
+    if (zoneValue > 3) zoneValue = 3;
+    
     if (Map[SMapY][SMapX] == FREEZ) {
         if (pop < 8) {
-            BuildHouse(SMapX, SMapY, value);
+            BuildHouse(SMapX, SMapY, zoneValue);
             IncROG(1);
             return;
         }
         if (PopDensity[SMapY >>1][SMapX >>1] > 64) {
-            ResPlop(SMapX, SMapY, 0, value);
+            ResPlop(SMapX, SMapY, 0, zoneValue);
             IncROG(8);
             return;
         }
         return;
     }
     if (pop < 40) {
-        ResPlop(SMapX, SMapY, (pop / 8) - 1, value);
+        int density = (pop / 8) - 1;
+        
+        /* Validate density to prevent negative values */
+        if (density < 0) {
+            /* This is normal when pop is less than 8 */
+            density = 0;
+        }
+        
+        ResPlop(SMapX, SMapY, density, zoneValue);
         IncROG(8);
     }
 }
@@ -554,8 +599,16 @@ static void IncROG(int amount) {
 /* Handle residential zone decline */
 static void DoResOut(int pop, int value, int x, int y) {
     short base;
+    short originalTile;
 
-    base = (Map[y][x] & LOMASK) - RESBASE;
+    originalTile = Map[y][x] & LOMASK;
+    base = originalTile - RESBASE;
+
+    /* Validate base calculation */
+    if (base < 0 || base > (COMBASE - RESBASE)) {
+        addDebugLog("ERROR: Invalid res base %d from tile %d at %d,%d", base, originalTile, x, y);
+        return;
+    }
 
     if (base == 0) {
         return;
@@ -563,10 +616,20 @@ static void DoResOut(int pop, int value, int x, int y) {
 
     if (pop > 16) {
         /* Turn to small house */
-        Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base - 1);
+        short newTile = RESBASE + base - 1;
+        if (newTile < RESBASE || newTile >= COMBASE) {
+            addDebugLog("ERROR: Invalid decline tile %d at %d,%d", newTile, x, y);
+            return;
+        }
+        Map[y][x] = (Map[y][x] & ALLBITS) | newTile;
     } else if ((base > 0) && (ZoneRandom(4) == 0)) {
         /* Gradually decay */
-        Map[y][x] = (Map[y][x] & ALLBITS) | (RESBASE + base - 1);
+        short newTile = RESBASE + base - 1;
+        if (newTile < RESBASE || newTile >= COMBASE) {
+            addDebugLog("ERROR: Invalid decay tile %d at %d,%d", newTile, x, y);
+            return;
+        }
+        Map[y][x] = (Map[y][x] & ALLBITS) | newTile;
     }
 
     /* Check for complete ruin */
@@ -581,6 +644,7 @@ static void DoResOut(int pop, int value, int x, int y) {
             z2 = Map[y][x] & LOMASK;
             if ((z2 < COMBASE) || (z2 > LASTIND)) {
                 Map[y][x] = z1;
+                addDebugLog("Zone ruined to rubble at %d,%d (month=%d)", x, y, CityMonth);
             }
         }
     }
@@ -649,8 +713,31 @@ static void BuildHouse(int x, int y, int value) {
 
 /* Place a residential zone */
 static void ResPlop(int x, int y, int den, int value) {
+    int targetTile;
+    
+    /* Validate density parameter */
+    if (den < 0 || den > 4) {
+        addDebugLog("ERROR: Invalid residential density %d at %d,%d", den, x, y);
+        return;
+    }
+    
+    /* Validate value parameter */
+    if (value < 0 || value > 8) {
+        addDebugLog("ERROR: Invalid residential value %d at %d,%d", value, x, y);
+        return;
+    }
+    
     /* den parameter is density offset for residential */
-    ZonePlop(x, y, RESBASE + (den * 9) + value);
+    targetTile = RESBASE + (den * 9) + value;
+    
+    /* Final validation */
+    if (targetTile < RESBASE || targetTile >= COMBASE) {
+        addDebugLog("ERROR: ResPlop tile %d out of range at %d,%d (den=%d val=%d)", 
+                   targetTile, x, y, den, value);
+        return;
+    }
+    
+    ZonePlop(x, y, targetTile);
 }
 
 /* Place a commercial zone */
@@ -701,6 +788,7 @@ static int ZonePlop(int xpos, int ypos, int base) {
     short x;
     short y;
     short z;
+    short newTile;
 
     /* Bounds check */
     if (xpos < 0 || xpos >= WORLD_X || ypos < 0 || ypos >= WORLD_Y) {
@@ -709,6 +797,12 @@ static int ZonePlop(int xpos, int ypos, int base) {
 
     /* Make sure center tile is bulldozable */
     if (!(Map[ypos][xpos] & BULLBIT)) {
+        return 0;
+    }
+
+    /* Additional validation for base value */
+    if (base < RESBASE || base > LASTZONE) {
+        addDebugLog("ERROR: Invalid zone base %d at %d,%d", base, xpos, ypos);
         return 0;
     }
 
@@ -728,7 +822,17 @@ static int ZonePlop(int xpos, int ypos, int base) {
 
                     if ((z < ROADS) || (z > LASTRAIL)) {
                         if (Map[y][x] & BULLBIT) {
-                            Map[y][x] = (Map[y][x] & MASKBITS) | (base + BSIZE + ZoneRandom(2)) |
+                            /* Calculate new tile value with bounds checking */
+                            newTile = base + BSIZE + ZoneRandom(2);
+                            
+                            /* Validate the new tile value */
+                            if (newTile < 0 || newTile > LASTZONE) {
+                                addDebugLog("ERROR: Invalid tile calc %d = %d + %d + rand at %d,%d", 
+                                           newTile, base, BSIZE, x, y);
+                                continue;
+                            }
+                            
+                            Map[y][x] = (Map[y][x] & MASKBITS) | newTile |
                                         CONDBIT | BURNBIT | BULLBIT;
                         }
                     }
