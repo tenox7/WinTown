@@ -24,7 +24,7 @@ MicropolisNT is licensed under the GNU General Public License version 3 (GPL-3.0
 
 MicropolisNT is based on the following prior art and open-source projects:
 
-- **SimCity** - Created by Will Wright and published by Maxis in 1989. Later ported to Unix platforms by [DUX Software](https://web.archive.org/web/19970714233606/http://www.dux.com/simctyux.html), and finally opensourced by Electronic Arts and released by [Don Hopkins](https://www.donhopkins.com/home/micropolis/) for the [One Laptop Per Child program](https://wiki.laptop.org/go/Micropolis) 
+- [SimCity](https://en.wikipedia.org/wiki/SimCity_(1989_video_game)) Created by Will Wright and published by Maxis in 1989. Later ported to Unix platforms by [DUX Software](https://web.archive.org/web/19970714233606/http://www.dux.com/simctyux.html), and finally opensourced by Electronic Arts and released by [Don Hopkins](https://www.donhopkins.com/home/micropolis/) for the [One Laptop Per Child program](https://wiki.laptop.org/go/Micropolis) 
 - [Micropolis](https://github.com/SimHacker/micropolis)
 - [MicropolisActivity](https://github.com/SimHacker/micropolis/tree/master/micropolis-activity)
 - [MicropolisCore](https://github.com/SimHacker/MicropolisCore)
