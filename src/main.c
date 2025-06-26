@@ -403,17 +403,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MSG msg;
     RECT rect;
     int mainWindowX, mainWindowY;
-    FILE *logFile;
 
 	GetModuleFileName(NULL, progPathName, MAX_PATH);
 	MyPathRemoveFileSpecA(progPathName);
-	
-	/* Clear the log file at startup */
-	logFile = fopen("metropolis.log", "w");
-	if (logFile) {
-	    fprintf(logFile, "=== MicropolisNT Log Started ===\n");
-	    fclose(logFile);
-	}
 
     /* Register main window class */
     //wc.cbSize = sizeof(WNDCLASS);
@@ -615,7 +607,6 @@ void addGameLog(const char *format, ...) {
     SYSTEMTIME st;
     int len;
     int textLen;
-    FILE *logFile;
 
     /* Get current time */
     GetLocalTime(&st);
@@ -626,13 +617,6 @@ void addGameLog(const char *format, ...) {
     vsprintf(buffer, format, args);
     va_end(args);
     
-    /* ALWAYS write to log file, regardless of window state */
-    logFile = fopen("metropolis.log", "a");
-    if (logFile) {
-        fprintf(logFile, "%s%s\n", timeBuffer, buffer);
-        fclose(logFile);
-    }
-
     /* Only update window if we have a text control */
     if (!hwndLogText) {
         return;
@@ -741,7 +725,7 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         logBuffer[0] = '\0';
 
         /* Add initial log message */
-        addGameLog("Log window initialized");
+        addGameLog("=== MicropolisNT Log Started ===");
 
         return 0;
     }
