@@ -118,16 +118,16 @@ void SetSmoke(int x, int y) {
                 /* Set the appropriate smoke tile with animation */
                 switch (i) {
                 case 0:
-                    Map[yy][xx] = COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    Map[yy][xx] = (short)(COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
                     break;
                 case 1:
-                    Map[yy][xx] = COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    Map[yy][xx] = (short)(COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
                     break;
                 case 2:
-                    Map[yy][xx] = COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    Map[yy][xx] = (short)(COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
                     break;
                 case 3:
-                    Map[yy][xx] = COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                    Map[yy][xx] = (short)(COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
                     break;
                 }
             }
@@ -280,7 +280,7 @@ void UpdateNuclearPower(int x, int y) {
 
         if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
             /* Set the nuclear swirl animation bit with appropriate flags */
-            Map[yy][xx] = NUCLEAR_SWIRL | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+            Map[yy][xx] = (short)(NUCLEAR_SWIRL | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
         }
     }
 }

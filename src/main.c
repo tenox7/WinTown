@@ -1514,8 +1514,6 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HMENU hViewMenu;
     PAINTSTRUCT ps;
     HDC hdc;
-    HDC hdcMem;
-    HBITMAP hbmOld;
     RECT rect;
     int tileX, tileY, tileIndex;
     int startX, startY, endX, endY;
@@ -2351,7 +2349,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     }
 
     case WM_SIZE: {
-        RECT rcClient;
         HWND hwndToolbarWnd;
 
         /* Get full client area */
@@ -2581,7 +2578,6 @@ void initializeGraphics(HWND hwnd) {
     int height;
     BITMAPINFOHEADER bi;
     BITMAPINFO binfo;
-    LPVOID bits;
     HBITMAP hbmOld;
     char errorMsg[256];
     DWORD error;
@@ -2873,7 +2869,6 @@ void resizeBuffer(int cx, int cy) {
     RECT rcBuffer;
     BITMAPINFOHEADER bi;
     BITMAPINFO binfo;
-    LPVOID bits;
     char errorMsg[256];
     DWORD error;
 
@@ -2954,7 +2949,6 @@ void resizeBuffer(int cx, int cy) {
 
 void scrollView(int dx, int dy) {
     RECT rcClient;
-    RECT updateRect;
     HRGN hRgn;
 
     /* Adjust offsets */
@@ -3602,34 +3596,11 @@ void drawCity(HDC hdc) {
     int startY;
     int endX;
     int endY;
-    int barWidth;
-    int maxHeight;
-    int spacing;
-    int rciStartX;
-    int rciStartY;
-    int rHeight;
-    int cHeight;
-    int iHeight;
-    int localR;
-    int localC;
-    int localI;
     int cityMonth;
     int cityYear;
     int fundValue;
     int popValue;
     RECT rcClient;
-    RECT rciRect;
-    HBRUSH hResBrush;
-    HBRUSH hComBrush;
-    HBRUSH hIndBrush;
-    HPEN hCenterPen;
-    HPEN hOldPen;
-    char *baseName;
-    char *lastSlash;
-    char *lastFwdSlash;
-    char nameBuffer[MAX_PATH];
-    char buffer[256];
-    char *dot;
 
     /* Copy simulation values to local variables for display */
     cityMonth = CityMonth;

@@ -1501,7 +1501,6 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     PAINTSTRUCT ps;
     RECT rect;
     int buttonY;
-    int toolId;
     int i;
     int row;
     int col;
@@ -2129,7 +2128,6 @@ int CheckFunds(int cost) {
 
 /* Apply the bulldozer tool */
 int DoBulldozer(int mapX, int mapY) {
-    short result;
     short tile;
     int zoneSize;
     int deltaH = 0;

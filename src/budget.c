@@ -9,9 +9,9 @@ extern void addGameLog(const char *format, ...);
 extern void addDebugLog(const char *format, ...);
 
 /* Budget values */
-float RoadPercent = 1.0;   /* Road funding percentage (0.0-1.0) */
-float PolicePercent = 1.0; /* Police funding percentage (0.0-1.0) */
-float FirePercent = 1.0;   /* Fire funding percentage (0.0-1.0) */
+float RoadPercent = 1.0f;   /* Road funding percentage (0.0-1.0) */
+float PolicePercent = 1.0f; /* Police funding percentage (0.0-1.0) */
+float FirePercent = 1.0f;   /* Fire funding percentage (0.0-1.0) */
 
 QUAD RoadFund = 0;   /* Required road funding amount */
 QUAD PoliceFund = 0; /* Required police funding amount */
@@ -27,9 +27,9 @@ int AutoBudget = 1; /* Auto-budget enabled flag */
 /* Budget initialization */
 void InitBudget(void) {
     /* Set initial percentages to 100% */
-    FirePercent = 1.0;
-    PolicePercent = 1.0;
-    RoadPercent = 1.0;
+    FirePercent = 1.0f;
+    PolicePercent = 1.0f;
+    RoadPercent = 1.0f;
 
     /* Default to auto-budget */
     AutoBudget = 1;
@@ -50,7 +50,6 @@ void InitBudget(void) {
 
 /* Tax collection function - called yearly */
 void CollectTax(void) {
-    int z;
     int taxable;
     float r;
     QUAD income;
@@ -168,18 +167,18 @@ void DoBudget(void) {
                     if (yumDuckets > 0) {
                         PolicePercent = ((float)yumDuckets) / ((float)PoliceFund);
                     } else {
-                        PolicePercent = 0.0;
+                        PolicePercent = 0.0f;
                     }
                 }
             } else {
                 /* Partial fire funding */
                 FireSpend = yumDuckets;
                 PoliceSpend = 0;
-                PolicePercent = 0.0;
+                PolicePercent = 0.0f;
                 if (yumDuckets > 0) {
                     FirePercent = ((float)yumDuckets) / ((float)FireFund);
                 } else {
-                    FirePercent = 0.0;
+                    FirePercent = 0.0f;
                 }
             }
         } else {
@@ -188,22 +187,22 @@ void DoBudget(void) {
             if (yumDuckets > 0) {
                 RoadPercent = ((float)yumDuckets) / ((float)RoadFund);
             } else {
-                RoadPercent = 0.0;
+                RoadPercent = 0.0f;
             }
 
             FireSpend = 0;
             PoliceSpend = 0;
-            FirePercent = 0.0;
-            PolicePercent = 0.0;
+            FirePercent = 0.0f;
+            PolicePercent = 0.0f;
         }
     } else {
         /* No required funding */
         FireSpend = 0;
         PoliceSpend = 0;
         RoadSpend = 0;
-        FirePercent = 1.0;
-        PolicePercent = 1.0;
-        RoadPercent = 1.0;
+        FirePercent = 1.0f;
+        PolicePercent = 1.0f;
+        RoadPercent = 1.0f;
     }
 
     /* Calculate effective rates */

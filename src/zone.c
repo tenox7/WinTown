@@ -7,6 +7,9 @@
 #include <string.h>
 #include <windows.h>
 
+/* External log functions */
+extern void addDebugLog(const char *format, ...);
+
 /* Population table values for different zone types */
 /* These are local overrides for specific use in this file */
 #define LOCAL_RZB 0    /* Residential base level (different from simulation.h) */
