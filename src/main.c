@@ -171,6 +171,7 @@ HWND hwndLogText = NULL;        /* Handle to the edit control in the log window 
 char logBuffer[MAX_LOG_BUFFER]; /* Buffer to hold all log text */
 int logBufferPos = 0;           /* Current position in log buffer */
 int showDebugLogs = 1; /* Flag to control whether debug logs are shown (enabled by default) */
+static BOOL logAutoScroll = TRUE; /* Auto-scroll enabled by default */
 static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
 static HBITMAP hbmTiles = NULL;
@@ -656,13 +657,34 @@ void addGameLog(const char *format, ...) {
     logBuffer[logBufferPos++] = '\n';
     logBuffer[logBufferPos] = '\0';
 
-    /* Update the text control */
-    SetWindowText(hwndLogText, logBuffer);
-
-    /* Scroll to the bottom */
-    textLen = GetWindowTextLength(hwndLogText);
-    SendMessage(hwndLogText, EM_SETSEL, textLen, textLen);
-    SendMessage(hwndLogText, EM_SCROLLCARET, 0, 0);
+    /* Save current scroll position if auto-scroll is disabled */
+    if (!logAutoScroll && hwndLogText) {
+        int firstVisibleLine;
+        
+        /* Get current first visible line */
+        firstVisibleLine = SendMessage(hwndLogText, EM_GETFIRSTVISIBLELINE, 0, 0);
+        
+        /* Update the text control */
+        SetWindowText(hwndLogText, logBuffer);
+        
+        /* Restore scroll position by scrolling to the same line */
+        if (firstVisibleLine > 0) {
+            int currentFirstLine = SendMessage(hwndLogText, EM_GETFIRSTVISIBLELINE, 0, 0);
+            int linesToScroll = firstVisibleLine - currentFirstLine;
+            SendMessage(hwndLogText, EM_LINESCROLL, 0, linesToScroll);
+        }
+    } else {
+        /* Update the text control */
+        SetWindowText(hwndLogText, logBuffer);
+        
+        /* Auto-scroll to bottom if enabled */
+        if (logAutoScroll) {
+            /* Scroll to the bottom */
+            textLen = GetWindowTextLength(hwndLogText);
+            SendMessage(hwndLogText, EM_SETSEL, textLen, textLen);
+            SendMessage(hwndLogText, EM_SCROLLCARET, 0, 0);
+        }
+    }
 }
 
 /**
@@ -753,6 +775,62 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
             if (hViewMenu) {
                 CHECK_MENU_RADIO_ITEM(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED,0,0);
+            }
+        }
+        return 0;
+
+    case WM_COMMAND:
+        /* Check if this is a notification from the edit control */
+        if (LOWORD(wParam) == LOG_TEXT_ID && hwndLogText) {
+            if (HIWORD(wParam) == EN_VSCROLL) {
+                /* The user is scrolling - check if we're at the bottom */
+                SCROLLINFO si;
+                int scrollPos, scrollMax, pageSize;
+                
+                si.cbSize = sizeof(SCROLLINFO);
+                si.fMask = SIF_POS | SIF_RANGE | SIF_PAGE;
+                GetScrollInfo(hwndLogText, SB_VERT, &si);
+                
+                scrollPos = si.nPos;
+                scrollMax = si.nMax;
+                pageSize = si.nPage;
+                
+                /* Check if scrolled to bottom (within a small margin) */
+                if (scrollPos + (int)pageSize >= scrollMax - 2) {
+                    /* At bottom - enable auto-scroll */
+                    logAutoScroll = TRUE;
+                } else {
+                    /* Not at bottom - disable auto-scroll */
+                    logAutoScroll = FALSE;
+                }
+            }
+        }
+        return 0;
+        
+    case WM_VSCROLL:
+        /* The edit control scrollbar was moved - check position after default processing */
+        DefWindowProc(hwnd, msg, wParam, lParam);
+        
+        if (hwndLogText) {
+            SCROLLINFO si;
+            int scrollPos, scrollMax, pageSize;
+            
+            /* Check the new position */
+            si.cbSize = sizeof(SCROLLINFO);
+            si.fMask = SIF_POS | SIF_RANGE | SIF_PAGE;
+            GetScrollInfo(hwndLogText, SB_VERT, &si);
+            
+            scrollPos = si.nPos;
+            scrollMax = si.nMax;
+            pageSize = si.nPage;
+            
+            /* Check if scrolled to bottom (within a small margin) */
+            if (scrollMax > 0 && scrollPos + (int)pageSize >= scrollMax - 2) {
+                /* At bottom - enable auto-scroll */
+                logAutoScroll = TRUE;
+            } else {
+                /* Not at bottom - disable auto-scroll */
+                logAutoScroll = FALSE;
             }
         }
         return 0;
