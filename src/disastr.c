@@ -26,6 +26,94 @@ static const short yDelta[4] = {-1, 0, 1, 0};
 /* Use the constant from simulation.h */
 #define LOCAL_LASTZONE LASTZONE /* Last zone tile for disaster purposes */
 
+/* Disaster popup tracking */
+static int disasterPopupActive = 0;  /* Is a disaster popup currently showing? */
+static int lastDisasterType = -1;    /* Type of last disaster shown */
+static int lastDisasterTime = 0;     /* Time of last disaster popup */
+static int disasterCount = 0;        /* Count of same disaster type */
+
+/* Disaster types */
+#define DISASTER_EARTHQUAKE 0
+#define DISASTER_FIRE       1
+#define DISASTER_FLOOD      2
+#define DISASTER_TORNADO    3
+#define DISASTER_MELTDOWN   4
+
+/* Custom window procedure for centering message boxes */
+static LRESULT CALLBACK DisasterDlgProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    RECT rcParent, rcDlg;
+    int x, y, w, h;
+    HWND hDlg;
+    
+    if (nCode == HCBT_ACTIVATE) {
+        /* Get the dialog handle */
+        hDlg = (HWND)wParam;
+        
+        /* Get parent window rect */
+        GetWindowRect(hwndMain, &rcParent);
+        
+        /* Get dialog rect */
+        GetWindowRect(hDlg, &rcDlg);
+        
+        /* Calculate centered position */
+        w = rcDlg.right - rcDlg.left;
+        h = rcDlg.bottom - rcDlg.top;
+        x = rcParent.left + ((rcParent.right - rcParent.left) - w) / 2;
+        y = rcParent.top + ((rcParent.bottom - rcParent.top) - h) / 2;
+        
+        /* Move the dialog to center */
+        SetWindowPos(hDlg, HWND_TOP, x, y, 0, 0, SWP_NOSIZE);
+        
+        /* Return FALSE to allow normal processing */
+        return FALSE;
+    }
+    
+    /* Call next hook if not our message */
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+/* Show disaster message with popup prevention */
+static void showDisasterMessage(const char *message, int disasterType) {
+    extern int CityTime;
+    HHOOK hHook;
+    
+    /* Don't show if a popup is already active */
+    if (disasterPopupActive) {
+        return;
+    }
+    
+    /* Don't show if same disaster type was shown recently (within 100 time units) */
+    if (disasterType == lastDisasterType && (CityTime - lastDisasterTime) < 100) {
+        disasterCount++;
+        /* Only show every 5th occurrence of same disaster */
+        if (disasterCount % 5 != 0) {
+            return;
+        }
+    } else {
+        /* Reset count for new disaster type */
+        disasterCount = 1;
+    }
+    
+    /* Update tracking variables */
+    disasterPopupActive = 1;
+    lastDisasterType = disasterType;
+    lastDisasterTime = CityTime;
+    
+    /* Install a Windows hook to center the message box */
+    hHook = SetWindowsHookEx(WH_CBT, DisasterDlgProc, NULL, GetCurrentThreadId());
+    
+    /* Show the message box - it will be centered by the hook */
+    MessageBox(hwndMain, message, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+    
+    /* Remove the hook */
+    if (hHook) {
+        UnhookWindowsHookEx(hHook);
+    }
+    
+    /* Clear the active flag */
+    disasterPopupActive = 0;
+}
+
 /* Trigger an earthquake disaster */
 void doEarthquake(void) {
     int x, y, z;
@@ -51,7 +139,7 @@ void doEarthquake(void) {
     addGameLog("DISASTER: EARTHQUAKE!!!");
     addGameLog("Epicenter at coordinates %d,%d", epicenterX, epicenterY);
     addDebugLog("Earthquake: Magnitude %d, Duration %d", (time / 100), time);
-    MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+    showDisasterMessage(buf, DISASTER_EARTHQUAKE);
 
     for (z = 0; z < time; z++) {
         /* Get random coordinates but ensure they are within bounds */
@@ -115,7 +203,7 @@ void makeExplosion(int x, int y) {
     addGameLog("DISASTER: Explosion at %d,%d!", x, y);
     addDebugLog("Explosion created at coordinates %d,%d", x, y);
 
-    MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+    showDisasterMessage(buf, DISASTER_FIRE);
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
@@ -140,7 +228,7 @@ void makeFire(int x, int y) {
     addGameLog("DISASTER: Fire reported at %d,%d!", x, y);
     addDebugLog("Fire created at coordinates %d,%d", x, y);
 
-    MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+    showDisasterMessage(buf, DISASTER_FIRE);
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
@@ -270,7 +358,7 @@ void makeMonster(void) {
     {
         char buf[256];
         wsprintf(buf, "Monster attack reported in the city!");
-        MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+        showDisasterMessage(buf, DISASTER_FIRE);
     }
 
     /* Force redraw */
@@ -319,7 +407,7 @@ void makeFlood(void) {
 
                             /* Notify user */
                             wsprintf(buf, "Flooding reported at %d,%d!", xx, yy);
-                            MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+                            showDisasterMessage(buf, DISASTER_FLOOD);
 
                             /* Start spreading the flood - limit to 100 iterations */
                             for (i = 0; i < 100; i++) {
@@ -386,7 +474,7 @@ void makeMeltdown(void) {
                     "Nuclear meltdown at coordinates %d,%d, spreading radiation in 20x20 area", x,
                     y);
 
-                MessageBox(hwndMain, buf, "Disaster", MB_ICONEXCLAMATION | MB_OK);
+                showDisasterMessage(buf, DISASTER_MELTDOWN);
 
                 /* Create radiation in a 20x20 area around the plant */
                 for (i = 0; i < 40; i++) {
