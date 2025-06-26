@@ -76,7 +76,7 @@
 /* Info window definitions */
 #define INFO_WINDOW_CLASS "MicropolisInfoWindow"
 #define INFO_WINDOW_WIDTH 300
-#define INFO_WINDOW_HEIGHT 200
+#define INFO_WINDOW_HEIGHT 300
 #define INFO_TIMER_ID 2
 #define INFO_TIMER_INTERVAL 500 /* Update info window every 500ms */
 
