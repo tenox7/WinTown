@@ -24,10 +24,10 @@ MicropolisNT is licensed under the GNU General Public License version 3 (GPL-3.0
 
 MicropolisNT is based on the following prior art and open-source projects:
 
-- **SimCity** - Created by Will Wright and published by Maxis in 1989. Later ported to Unix platforms by [DUX Software](https://web.archive.org/web/19970714233606/http://www.dux.com/simctyux.html), and finally released as open source by Electronic Arts for the [One Laptop Per Child program](https://wiki.laptop.org/go/Micropolis).
-- **Micropolis** - The original open-source release of Micropolis by Don Hopkins and Electronic Arts, https://github.com/SimHacker/micropolis | https://www.donhopkins.com/home/micropolis/
-- **MicropolisActivity** - Micropolis Activity | https://github.com/SimHacker/micropolis/tree/master/micropolis-activity
-- **MicropolisCore** - Micropolis Core | https://github.com/SimHacker/MicropolisCore
-- **MicropolisJS** - A JavaScript port of Micropolis, https://github.com/graememcc/micropolisJS
+- **SimCity** - Created by Will Wright and published by Maxis in 1989. Later ported to Unix platforms by [DUX Software](https://web.archive.org/web/19970714233606/http://www.dux.com/simctyux.html), and finally opensourced by Electronic Arts and released by [Don Hopkins](https://www.donhopkins.com/home/micropolis/) for the [One Laptop Per Child program](https://wiki.laptop.org/go/Micropolis) 
+- [Micropolis](https://github.com/SimHacker/micropolis)
+- [MicropolisActivity](https://github.com/SimHacker/micropolis/tree/master/micropolis-activity)
+- [MicropolisCore](https://github.com/SimHacker/MicropolisCore)
+- [MicropolisJS](https://github.com/graememcc/micropolisJS)
 
 All code and assets from these projects have been used in accordance with their respective licenses, which are primarily GPL-3.0 with the EA additional terms. This project maintains the same licensing terms.
