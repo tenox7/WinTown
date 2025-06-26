@@ -31,4 +31,5 @@
 - Power DEBUG over tiles, roads and train tracks
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
+- Rubble tiles
 
