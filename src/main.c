@@ -1830,17 +1830,20 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_VIEW_POWER_OVERLAY: {
             HMENU hMenu = GetMenu(hwnd);
             HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
-            UINT state = GetMenuState(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND);
-
-            /* Toggle power overlay */
-            powerOverlayEnabled = (state & MF_CHECKED) ? 0 : 1;
-
+            
+            /* Simply toggle based on current variable state */
+            powerOverlayEnabled = !powerOverlayEnabled;
+            
             if (powerOverlayEnabled) {
                 /* Enable power overlay */
                 CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_CHECKED);
+                addGameLog("Power overlay enabled");
+                /* Update power grid immediately when overlay is enabled */
+                DoPowerScan();
             } else {
                 /* Disable power overlay */
                 CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_UNCHECKED);
+                addGameLog("Power overlay disabled");
             }
 
             /* Force a redraw to show/hide the overlay */
