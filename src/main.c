@@ -1692,7 +1692,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* Load sprite bitmaps */
         loadSpriteBitmaps();
 
-        CHECK_MENU_RADIO_ITEM(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, 0, MF_BYPOSITION);
+        /* Initial tileset check will be handled by populateTilesetMenu */
         /* Initialize simulation */
         DoSimInit();
         return 0;
@@ -2139,8 +2139,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                               MF_BYCOMMAND);
 
                 if (changeTileset(hwnd, tilesetName)) {
-                    CHECK_MENU_RADIO_ITEM(hTilesetMenu, 0, GetMenuItemCount(hTilesetMenu) - 1, index,
-                                       MF_BYPOSITION);
+                    CHECK_MENU_RADIO_ITEM(hTilesetMenu, IDM_TILESET_BASE, IDM_TILESET_MAX - 1, 
+                                       LOWORD(wParam), MF_BYCOMMAND);
                 }
                 return 0;
             }
@@ -2584,6 +2584,7 @@ void initializeGraphics(HWND hwnd) {
     HBITMAP hbmOld;
     char errorMsg[256];
     DWORD error;
+    LPVOID bits;
 
     hdc = GetDC(hwnd);
 

@@ -1,4 +1,3 @@
-
 #ifndef _GDI_FIX
 #define _GDI_FIX
 
@@ -23,18 +22,24 @@
 
 HANDLE LoadImageFromFile (LPCSTR filename, UINT fuLoad);
 
-    // Define an alternative or provide a placeholder for older versions
+/* CheckMenuRadioItem compatibility */
+#if(_MSC_VER < 1000)
+    /* Simple fallback for older versions - uncheck all then check selected */
     #define CHECK_MENU_RADIO_ITEM(hmenu, first, last, check, flags) \
-        // Add your fallback implementation here, if necessary
-
+        { int __i; \
+          for (__i = (first); __i <= (last); __i++) { \
+              CheckMenuItem((hmenu), __i, MF_UNCHECKED | (flags)); \
+          } \
+          CheckMenuItem((hmenu), (check), MF_CHECKED | (flags)); \
+        }
 #else
-
-    // Use CheckMenuRadioItem if it's supported
+    /* Use CheckMenuRadioItem if it's supported */
     #define CHECK_MENU_RADIO_ITEM(hmenu, first, last, check, flags) \
         CheckMenuRadioItem((hmenu), (first), (last), (check), (flags))
 
-// use original Ex calls/structures where availble
+/* use original Ex calls/structures where available */
 #define NEW32 1
 
 #endif
 
+#endif /* _GDI_FIX */
