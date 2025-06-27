@@ -356,6 +356,7 @@ int loadTileset(const char *filename);
 HPALETTE createSystemPalette(void);
 HMENU createMainMenu(void);
 void populateTilesetMenu(HMENU hSubMenu);
+void refreshTilesetMenu(void);
 int changeTileset(HWND hwnd, const char *tilesetName);
 void ForceFullCensus(void);
 void createNewMap(HWND hwnd);
@@ -1695,6 +1696,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* Initial tileset check will be handled by populateTilesetMenu */
         /* Initialize simulation */
         DoSimInit();
+        
+        /* Refresh tileset menu after initialization to pick up any new tilesets */
+        refreshTilesetMenu();
         return 0;
 
     case WM_COMMAND:
@@ -3319,6 +3323,9 @@ int loadCity(char *filename) {
         addDebugLog("R-C-I population: %d, %d, %d", ResPop, ComPop, IndPop);
     }
 
+    /* Refresh tileset menu to show any new tilesets */
+    refreshTilesetMenu();
+
     return 1;
 }
 
@@ -4256,10 +4263,14 @@ void populateTilesetMenu(HMENU hSubMenu) {
     WIN32_FIND_DATA findData;
     HANDLE hFind;
     char searchPath[MAX_PATH];
+    char tilesetNames[IDM_TILESET_MAX - IDM_TILESET_BASE][MAX_PATH];
     char fileName[MAX_PATH];
     char *dot;
     int menuId = IDM_TILESET_BASE;
     UINT menuFlags;
+    int count = 0;
+    int i, j;
+    char temp[MAX_PATH];
 
     strcpy(searchPath, progPathName);
     strcat(searchPath, "\\tilesets\\*.bmp");
@@ -4267,6 +4278,7 @@ void populateTilesetMenu(HMENU hSubMenu) {
     hFind = FindFirstFile(searchPath, &findData);
 
     if (hFind != INVALID_HANDLE_VALUE) {
+        /* First, collect all tileset names */
         do {
             if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) {
                 continue;
@@ -4278,19 +4290,60 @@ void populateTilesetMenu(HMENU hSubMenu) {
                 *dot = '\0';
             }
 
+            /* Store the name if we haven't exceeded the limit */
+            if (count < (IDM_TILESET_MAX - IDM_TILESET_BASE)) {
+                strcpy(tilesetNames[count], fileName);
+                count++;
+            }
+
+        } while (FindNextFile(hFind, &findData));
+
+        FindClose(hFind);
+
+        /* Sort the tileset names alphabetically using bubble sort */
+        for (i = 0; i < count - 1; i++) {
+            for (j = 0; j < count - i - 1; j++) {
+                if (strcmp(tilesetNames[j], tilesetNames[j + 1]) > 0) {
+                    strcpy(temp, tilesetNames[j]);
+                    strcpy(tilesetNames[j], tilesetNames[j + 1]);
+                    strcpy(tilesetNames[j + 1], temp);
+                }
+            }
+        }
+
+        /* Add sorted names to menu */
+        for (i = 0; i < count; i++) {
             menuFlags = MF_STRING;
-            if (strcmp(fileName, currentTileset) == 0) {
+            if (strcmp(tilesetNames[i], currentTileset) == 0) {
                 menuFlags |= MF_CHECKED;
             }
 
-            AppendMenu(hSubMenu, menuFlags, menuId++, fileName);
-
-        } while (FindNextFile(hFind, &findData) && menuId < IDM_TILESET_MAX);
-
-        FindClose(hFind);
+            AppendMenu(hSubMenu, menuFlags, menuId++, tilesetNames[i]);
+        }
     } else {
         AppendMenu(hSubMenu, MF_GRAYED, 0, "No tilesets found");
     }
+}
+
+/**
+ * Refreshes the tileset menu by clearing and repopulating it
+ */
+void refreshTilesetMenu(void) {
+    int count;
+    int i;
+    
+    if (hTilesetMenu == NULL) {
+        return;
+    }
+    
+    /* Remove all existing menu items */
+    count = GetMenuItemCount(hTilesetMenu);
+    for (i = count - 1; i >= 0; i--) {
+        RemoveMenu(hTilesetMenu, i, MF_BYPOSITION);
+    }
+    
+    /* Repopulate the menu with current tilesets */
+    populateTilesetMenu(hTilesetMenu);
 }
 
 /**
@@ -4345,4 +4398,7 @@ void createNewMap(HWND hwnd) {
     if (hwndInfo) {
         InvalidateRect(hwndInfo, NULL, TRUE);
     }
+    
+    /* Refresh tileset menu to show any new tilesets */
+    refreshTilesetMenu();
 }
