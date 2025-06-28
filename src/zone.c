@@ -353,6 +353,9 @@ static void DoIndustrial(int x, int y) {
     
     /* Check if zone has power */
     zonePowered = (Map[y][x] & POWERBIT) != 0;
+    
+    /* Add smoke animation to powered industrial zones */
+    SetSmoke(x, y);
 
     tpop = IZPop;
 

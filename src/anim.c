@@ -87,49 +87,87 @@ int GetAnimationEnabled(void) {
     return AnimationEnabled;
 }
 
-/* Add smoke animation to coal power plants */
+/* Add smoke animation to industrial zones and coal power plants */
 void SetSmoke(int x, int y) {
-    int i;
+    /* Tables for industrial smoke positions and animations */
+    static short AniThis[8] = { 1, 0, 1, 1, 0, 0, 1, 1 };
+    static short DX1[8] = { -1, 0, 1, 0, 0, 0, 0, 1 };
+    static short DY1[8] = { -1, 0, -1, -1, 0, 0, -1, -1 };
+    static short AniTabA[8] = { 0, 0, 32, 40, 0, 0, 48, 56 };
+    static short AniTabC[8] = { IND1, 0, IND2, IND4, 0, 0, IND6, IND8 };
+    short tile, z;
     int xx, yy;
+    int i;
+    int isPowerPlant = 0;
 
     /* Skip if the position is invalid */
     if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
         return;
     }
 
-    /* Check if this is a power plant */
-    if ((Map[y][x] & LOMASK) != POWERPLANT) {
+    tile = Map[y][x] & LOMASK;
+    
+    /* Check if this is a power plant - handle separately */
+    if (tile == POWERPLANT) {
+        isPowerPlant = 1;
+        /* Power plant smoke handling */
+        for (i = 0; i < 4; i++) {
+            xx = x + smokeOffsetX[i];
+            yy = y + smokeOffsetY[i];
+
+            /* Make sure the smoke position is valid */
+            if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+                /* Only set the tile if it doesn't already have the animation bit set
+                   or if it's not already a smoke tile. This avoids resetting the
+                   animation sequence and makes it flow better. */
+                if (!(Map[yy][xx] & ANIMBIT) || (Map[yy][xx] & LOMASK) < COALSMOKE1 ||
+                    (Map[yy][xx] & LOMASK) > COALSMOKE4 + 4) {
+
+                    /* Set the appropriate smoke tile with animation */
+                    switch (i) {
+                    case 0:
+                        Map[yy][xx] = (short)(COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        break;
+                    case 1:
+                        Map[yy][xx] = (short)(COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        break;
+                    case 2:
+                        Map[yy][xx] = (short)(COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        break;
+                    case 3:
+                        Map[yy][xx] = (short)(COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        break;
+                    }
+                }
+            }
+        }
         return;
     }
-
-    /* Set smoke on the appropriate tiles */
-    for (i = 0; i < 4; i++) {
-        xx = x + smokeOffsetX[i];
-        yy = y + smokeOffsetY[i];
-
-        /* Make sure the smoke position is valid */
+    
+    /* Handle industrial zones */
+    if (tile < INDBASE || tile > LASTIND) {
+        return;  /* Not an industrial zone */
+    }
+    
+    /* Only animate powered zones */
+    if (!(Map[y][x] & POWERBIT)) {
+        return;
+    }
+    
+    /* Calculate which industrial building type (0-7) */
+    z = (tile - INDBASE) >> 3;
+    z = z & 7;
+    
+    /* Check if this industrial type should have smoke */
+    if (AniThis[z]) {
+        xx = x + DX1[z];
+        yy = y + DY1[z];
+        
         if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
-            /* Only set the tile if it doesn't already have the animation bit set
-               or if it's not already a smoke tile. This avoids resetting the
-               animation sequence and makes it flow better. */
-            if (!(Map[yy][xx] & ANIMBIT) || (Map[yy][xx] & LOMASK) < COALSMOKE1 ||
-                (Map[yy][xx] & LOMASK) > COALSMOKE4 + 4) {
-
-                /* Set the appropriate smoke tile with animation */
-                switch (i) {
-                case 0:
-                    Map[yy][xx] = (short)(COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
-                    break;
-                case 1:
-                    Map[yy][xx] = (short)(COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
-                    break;
-                case 2:
-                    Map[yy][xx] = (short)(COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
-                    break;
-                case 3:
-                    Map[yy][xx] = (short)(COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
-                    break;
-                }
+            /* Only animate if it's the right base tile */
+            if ((Map[yy][xx] & LOMASK) == AniTabC[z]) {
+                /* Set the animated smoke tile */
+                Map[yy][xx] = (SMOKEBASE + AniTabA[z]) | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
             }
         }
     }
