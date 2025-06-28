@@ -15,6 +15,9 @@
 extern void addGameLog(const char *format, ...);
 extern void addDebugLog(const char *format, ...);
 
+/* External cheat flags */
+extern int disastersDisabled;
+
 /* Map data */
 Byte PopDensity[WORLD_Y / 2][WORLD_X / 2];
 Byte TrfDensity[WORLD_Y / 2][WORLD_X / 2];
@@ -476,8 +479,10 @@ void Simulate(int mod16) {
     case 15:
         /* Process fire analysis and disasters (at a reduced rate) */
         if ((Scycle % 4) == 0) {
-            /* Process fire spreading */
-            spreadFire();
+            /* Process fire spreading - skip if disasters are disabled */
+            if (!disastersDisabled) {
+                spreadFire();
+            }
 
             /* Log fire information */
             if (FirePop > 0) {
@@ -486,7 +491,7 @@ void Simulate(int mod16) {
         }
 
         /* Process disasters */
-        if (DisasterEvent) {
+        if (DisasterEvent && !disastersDisabled) {
             /* Process scenario-based disasters */
             scenarioDisaster();
         }
@@ -610,7 +615,11 @@ void DoTimeStuff(void) {
     }
 
     /* Manage disasters */
-    if (DisasterEvent) {
+    if (disastersDisabled) {
+        /* Clear any active disasters if cheat is enabled */
+        DisasterEvent = 0;
+        DisasterWait = 0;
+    } else if (DisasterEvent) {
         DisasterWait = 0;
     } else {
         if (DisasterWait > 0) {

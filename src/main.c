@@ -49,6 +49,9 @@
 #define IDM_SPAWN_SHIP 6004
 #define IDM_SPAWN_BUS 6005
 
+/* Cheats menu IDs */
+#define IDM_CHEATS_DISABLE_DISASTERS 7001
+
 /* Minimap window definitions */
 #define MINIMAP_WINDOW_CLASS "MicropolisMinimapWindow"
 #define MINIMAP_WINDOW_WIDTH 360  /* WORLD_X * MINIMAP_SCALE = 120 * 3 */
@@ -201,8 +204,10 @@ static HMENU hSimMenu = NULL;
 static HMENU hScenarioMenu = NULL;
 static HMENU hToolMenu = NULL;
 static HMENU hSpawnMenu = NULL;
+static HMENU hCheatsMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 static int powerOverlayEnabled = 0; /* Power overlay display toggle */
+int disastersDisabled = 0; /* Cheat flag to disable disasters - global for other modules */
 
 /* External reference to scenario variables (defined in scenarios.c) */
 extern short ScenarioID;    /* Current scenario ID (0 = none) */
@@ -2127,6 +2132,44 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     addGameLog("Bus spawned");
                 } else {
                     addGameLog("Could not spawn bus - too many sprites");
+                }
+            }
+            return 0;
+            
+        /* Cheats menu items */
+        case IDM_CHEATS_DISABLE_DISASTERS:
+            {
+                disastersDisabled = !disastersDisabled;
+                CheckMenuItem(hCheatsMenu, IDM_CHEATS_DISABLE_DISASTERS, 
+                            disastersDisabled ? MF_CHECKED : MF_UNCHECKED);
+                
+                if (disastersDisabled) {
+                    int x, y;
+                    short tile;
+                    int firesExtinguished = 0;
+                    
+                    addGameLog("CHEAT: Disasters disabled");
+                    /* Clear any active disasters */
+                    DisasterEvent = 0;
+                    DisasterWait = 0;
+                    
+                    /* Extinguish all existing fires */
+                    for (y = 0; y < WORLD_Y; y++) {
+                        for (x = 0; x < WORLD_X; x++) {
+                            tile = Map[y][x] & LOMASK;
+                            if (tile >= TILE_FIRE && tile <= TILE_LASTFIRE) {
+                                Map[y][x] = TILE_RUBBLE | BULLBIT;
+                                firesExtinguished++;
+                            }
+                        }
+                    }
+                    
+                    if (firesExtinguished > 0) {
+                        addGameLog("CHEAT: Extinguished %d fires", firesExtinguished);
+                        InvalidateRect(hwnd, NULL, FALSE);
+                    }
+                } else {
+                    addGameLog("CHEAT: Disasters enabled");
                 }
             }
             return 0;
@@ -4147,12 +4190,17 @@ HMENU createMainMenu(void) {
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_TRAIN, "&Train");
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_SHIP, "&Ship");
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_BUS, "&Bus");
+    
+    /* Cheats Menu */
+    hCheatsMenu = CreatePopupMenu();
+    AppendMenu(hCheatsMenu, MF_STRING, IDM_CHEATS_DISABLE_DISASTERS, "&Disable Disasters");
 
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSpawnMenu, "S&pawn");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hCheatsMenu, "&Cheats");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hViewMenu, "&View");
 
     return hMainMenu;

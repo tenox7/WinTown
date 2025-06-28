@@ -12,6 +12,9 @@
 extern void addGameLog(const char *format, ...);
 extern void addDebugLog(const char *format, ...);
 
+/* External cheat flags */
+extern int disastersDisabled;
+
 /* Scenario variables */
 short ScenarioID = 0;    /* Current scenario ID (0 = none) */
 short DisasterEvent = 0; /* Current disaster type */
@@ -367,8 +370,8 @@ int loadScenario(int scenarioId) {
 void scenarioDisaster(void) {
     static int disasterX, disasterY;
 
-    /* Early return if no disaster or waiting period is over */
-    if (DisasterEvent == 0 || DisasterWait == 0) {
+    /* Early return if no disaster, waiting period is over, or disasters are disabled */
+    if (DisasterEvent == 0 || DisasterWait == 0 || disastersDisabled) {
         return;
     }
 

@@ -7,6 +7,9 @@
 #include "sim.h"
 #include <math.h>
 
+/* External cheat flags */
+extern int disastersDisabled;
+
 /* Sprite globals */
 static SimSprite GlobalSprites[MAX_SPRITES];
 static int SpriteCount = 0;
@@ -295,9 +298,15 @@ void DoTrainSprite(SimSprite *sprite) {
                     sprite->new_dir = dir;
                     sprite->frame = TrainPic2[dir];
                 } else {
-                    /* Derail */
-                    ExplodeSprite(sprite);
-                    return;
+                    /* Derail - unless disasters are disabled */
+                    if (!disastersDisabled) {
+                        ExplodeSprite(sprite);
+                        return;
+                    } else {
+                        /* Just remove the train without explosion */
+                        DestroySprite(sprite);
+                        return;
+                    }
                 }
             }
         }
@@ -554,8 +563,10 @@ void DoBusSprite(SimSprite *sprite) {
 /* Explosion sprite behavior */
 void DoExplosion(SimSprite *sprite) {
     if (sprite->frame == 0) {
-        /* Start fire at explosion site */
-        makeFire(sprite->x >> 4, sprite->y >> 4);
+        /* Start fire at explosion site - unless disasters are disabled */
+        if (!disastersDisabled) {
+            makeFire(sprite->x >> 4, sprite->y >> 4);
+        }
         MakeSound(SOUND_EXPLOSION_HIGH, sprite->x, sprite->y);
     }
     
@@ -737,9 +748,15 @@ static void CheckCollisions(SimSprite *sprite) {
             (sprite->type == SPRITE_HELICOPTER && other->type == SPRITE_AIRPLANE)) {
             
             if (CheckSpriteCollision(sprite, other)) {
-                ExplodeSprite(sprite);
-                ExplodeSprite(other);
-                return;
+                /* Collide only if disasters are enabled */
+                if (!disastersDisabled) {
+                    ExplodeSprite(sprite);
+                    ExplodeSprite(other);
+                    return;
+                } else {
+                    /* Just phase through each other if disasters disabled */
+                    return;
+                }
             }
         }
     }
