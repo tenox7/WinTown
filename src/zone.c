@@ -271,11 +271,71 @@ static void DoSPZ(int x, int y) {
         }
         return;
     }
+    
+    /* Handle police station */
+    if (z == POLICESTATION) {
+        int effect;
+        
+        PolicePop++;
+        
+        /* Police effectiveness based on power */
+        if (Map[y][x] & POWERBIT) {
+            effect = PoliceEffect;
+        } else {
+            effect = PoliceEffect >> 1;  /* Half effect without power */
+        }
+        
+        /* Check for road access - police need roads to patrol */
+        if (!FindPRoad()) {
+            effect = effect >> 1;  /* Half effect without road access */
+        }
+        
+        /* Update police coverage map (quarter size) */
+        PoliceMap[x >> 3][y >> 3] += effect;
+        
+        /* Cap the value to prevent overflow */
+        if (PoliceMap[x >> 3][y >> 3] > 250) {
+            PoliceMap[x >> 3][y >> 3] = 250;
+        }
+        
+        return;
+    }
+    
+    /* Handle fire station */
+    if (z == FIRESTATION) {
+        int effect;
+        
+        FirePop++;
+        
+        /* Fire station effectiveness based on power */
+        if (Map[y][x] & POWERBIT) {
+            effect = FireEffect;
+        } else {
+            effect = FireEffect >> 1;  /* Half effect without power */
+        }
+        
+        /* Check for road access - fire trucks need roads */
+        if (!FindPRoad()) {
+            effect = effect >> 1;  /* Half effect without road access */
+        }
+        
+        /* Update fire coverage map (quarter size) */
+        FireStMap[x >> 3][y >> 3] += effect;
+        
+        /* Cap the value to prevent overflow */
+        if (FireStMap[x >> 3][y >> 3] > 250) {
+            FireStMap[x >> 3][y >> 3] = 250;
+        }
+        
+        return;
+    }
 }
 
 /* Industrial pollution handler */
 /* Forward declaration of the SetSmoke function from animation.c */
 extern void SetSmoke(int x, int y);
+/* Forward declaration of FindPRoad from traffic.c */
+extern int FindPRoad(void);
 
 /* Process industrial zone */
 static void DoIndustrial(int x, int y) {

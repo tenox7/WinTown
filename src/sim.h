@@ -439,6 +439,7 @@ void DoPowerScan(void);
 
 /* Traffic-related functions - traffic.c */
 int MakeTraffic(int zoneType);
+int FindPRoad(void);
 void DecTrafficMap(void);
 void CalcTrafficAverage(void);
 void RandomlySeedRand(void); /* Initialize random number generator */

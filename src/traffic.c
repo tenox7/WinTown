@@ -27,7 +27,7 @@ static short PerimX[12] = {-1, 0, 1, 2, 2, 2, 1, 0, -1, -2, -2, -2};
 static short PerimY[12] = {-2, -2, -2, -1, 0, 1, 2, 2, 2, 1, 0, -1};
 
 /* Function prototypes */
-static int FindPRoad(void);
+int FindPRoad(void);
 static int TryDrive(void);
 static int TryGo(int z);
 static int DriveDone(void);
@@ -84,7 +84,7 @@ static void PullPos(void) {
 }
 
 /* Look for a road on the perimeter of a zone */
-static int FindPRoad(void) {
+int FindPRoad(void) {
     int tx, ty, z;
 
     for (z = 0; z < 12; z++) {

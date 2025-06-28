@@ -14,7 +14,7 @@ LIBS = gdi32.lib user32.lib kernel32.lib COMDLG32.lib
 all: ntpolis.exe
 
 ntpolis.exe: $(OBJS)
-	link -out:ntpolis.exe $(OBJS) $(LIBS)
+	link /NOLOGO /OUT:ntpolis.exe $(OBJS) $(LIBS)
 
 debug: clean
 	nmake CFLAGS="$(DEBUGFLAGS)" ntpolis.exe
