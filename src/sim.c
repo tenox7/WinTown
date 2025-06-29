@@ -456,7 +456,7 @@ void Simulate(int mod16) {
 
     case 13:
         /* Process crime spread (at a reduced rate) */
-        if ((Scycle % 4) == 0) {
+        if ((Scycle % 4) == 1) {
             CrimeScan(); /* Do crime map analysis */
 
             /* Log crime level */
@@ -478,7 +478,7 @@ void Simulate(int mod16) {
 
     case 15:
         /* Process fire analysis and disasters (at a reduced rate) */
-        if ((Scycle % 4) == 0) {
+        if ((Scycle % 4) == 3) {
             /* Process fire spreading - skip if disasters are disabled */
             if (!disastersDisabled) {
                 spreadFire();
