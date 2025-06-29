@@ -1162,8 +1162,18 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         density = TrfDensity[y/2][x/2];
                         if (density > 0) {
-                            intensity = min(255, density);
-                            color = RGB(intensity, intensity/2, 0);
+                            /* Use bright color gradient for traffic */
+                            if (density >= 120) {
+                                color = RGB(255, 0, 0);     /* Bright red for heavy traffic */
+                            } else if (density >= 80) {
+                                color = RGB(255, 128, 0);   /* Bright orange */
+                            } else if (density >= 40) {
+                                color = RGB(255, 255, 0);   /* Bright yellow */
+                            } else if (density >= 20) {
+                                color = RGB(128, 255, 0);   /* Yellow-green */
+                            } else {
+                                color = RGB(0, 255, 128);   /* Light green for low traffic */
+                            }
                         }
                     }
                     break;
