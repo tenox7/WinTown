@@ -132,6 +132,7 @@ typedef long QUAD;
  #define VROADPOWER	84  /* Vertical road with horizontal power line */
  #define BRWH		79
  #define LTRFBASE	80
+ #define HTRFBASE	144
  #define BRWV		95
  #define BRWXXX1		111
  #define BRWXXX2		127

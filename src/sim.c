@@ -436,7 +436,7 @@ void Simulate(int mod16) {
 
     case 12:
         /* Process pollution spread (at a reduced rate) */
-        if ((Scycle % 16) == 0) {
+        if ((Scycle % 16) == 12) {
             PTLScan(); /* Do pollution, terrain, and land value */
 
             /* Log pollution and land value */
@@ -470,7 +470,7 @@ void Simulate(int mod16) {
 
     case 14:
         /* Process population density (at a reduced rate) */
-        if ((Scycle % 16) == 0) {
+        if ((Scycle % 16) == 14) {
             PopDenScan();   /* Do population density scan */
             FireAnalysis(); /* Update fire protection effect */
         }

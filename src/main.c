@@ -1173,8 +1173,18 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         level = PollutionMem[y/2][x/2];
                         if (level > 0) {
-                            intensity = min(255, level * 2);
-                            color = RGB(intensity, intensity/2, 0);
+                            /* Use bright color gradient for pollution */
+                            if (level >= 200) {
+                                color = RGB(255, 0, 0);     /* Bright red for high pollution */
+                            } else if (level >= 150) {
+                                color = RGB(255, 128, 0);   /* Bright orange */
+                            } else if (level >= 100) {
+                                color = RGB(255, 255, 0);   /* Bright yellow */
+                            } else if (level >= 50) {
+                                color = RGB(128, 255, 0);   /* Yellow-green */
+                            } else {
+                                color = RGB(0, 255, 128);   /* Light green for low pollution */
+                            }
                         }
                     }
                     break;
@@ -1184,8 +1194,18 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         level = CrimeMem[y/2][x/2];
                         if (level > 0) {
-                            intensity = min(255, level * 2);
-                            color = RGB(intensity, 0, 0);
+                            /* Use bright red gradient for crime */
+                            if (level >= 200) {
+                                color = RGB(255, 0, 0);     /* Bright red for high crime */
+                            } else if (level >= 150) {
+                                color = RGB(255, 64, 0);    /* Red-orange */
+                            } else if (level >= 100) {
+                                color = RGB(255, 128, 0);   /* Orange */
+                            } else if (level >= 50) {
+                                color = RGB(255, 192, 0);   /* Yellow-orange */
+                            } else {
+                                color = RGB(255, 255, 0);   /* Yellow for low crime */
+                            }
                         }
                     }
                     break;
@@ -1195,8 +1215,18 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     if ((y/2) < (WORLD_Y/2) && (x/2) < (WORLD_X/2)) {
                         value = LandValueMem[y/2][x/2];
                         if (value > 0) {
-                            intensity = min(255, value * 2);
-                            color = RGB(0, intensity, 0);
+                            /* Use bright green gradient for land value */
+                            if (value >= 200) {
+                                color = RGB(0, 255, 0);     /* Bright green for high value */
+                            } else if (value >= 150) {
+                                color = RGB(64, 255, 64);   /* Light green */
+                            } else if (value >= 100) {
+                                color = RGB(128, 255, 128); /* Pale green */
+                            } else if (value >= 50) {
+                                color = RGB(192, 255, 192); /* Very pale green */
+                            } else {
+                                color = RGB(255, 255, 192); /* Pale yellow for low value */
+                            }
                         }
                     }
                     break;
