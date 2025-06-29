@@ -207,7 +207,7 @@ static HMENU hSpawnMenu = NULL;
 static HMENU hCheatsMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 static int powerOverlayEnabled = 0; /* Power overlay display toggle */
-int disastersDisabled = 0; /* Cheat flag to disable disasters - global for other modules */
+int disastersDisabled = 1; /* Cheat flag to disable disasters - global for other modules */
 
 /* External reference to scenario variables (defined in scenarios.c) */
 extern short ScenarioID;    /* Current scenario ID (0 = none) */
@@ -4234,6 +4234,8 @@ HMENU createMainMenu(void) {
     /* Cheats Menu */
     hCheatsMenu = CreatePopupMenu();
     AppendMenu(hCheatsMenu, MF_STRING, IDM_CHEATS_DISABLE_DISASTERS, "&Disable Disasters");
+    /* Check it by default since disasters are now disabled on startup */
+    CheckMenuItem(hCheatsMenu, IDM_CHEATS_DISABLE_DISASTERS, MF_CHECKED);
 
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
