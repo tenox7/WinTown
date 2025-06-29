@@ -102,8 +102,8 @@ int NuclearPop = 0;
 
 /* External effects */
 int RoadEffect = 0;
-int PoliceEffect = 0;
-int FireEffect = 0;
+int PoliceEffect = 1000;  /* Back to original values for debugging */
+int FireEffect = 1000;    /* Back to original values for debugging */
 int TrafficAverage = 0;
 int PollutionAverage = 0;
 int CrimeAverage = 0;

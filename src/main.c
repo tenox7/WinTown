@@ -1242,21 +1242,51 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     break;
 
                 case MINIMAP_MODE_FIRE:
-                    if (x < WORLD_X/4 && y < WORLD_Y/4) {
+                    /* FireRate is quarter-size array, so check bounds and access correctly */
+                    if ((x/4) < (WORLD_X/4) && (y/4) < (WORLD_Y/4)) {
                         coverage = FireRate[y/4][x/4];
                         if (coverage > 0) {
-                            intensity = min(255, coverage * 8);
-                            color = RGB(intensity, 0, 0);
+                            /* Scale down short values for display - original starts with 1000 */
+                            int scaled = coverage / 4;  /* Scale down from short range */
+                            if (scaled > 255) scaled = 255;
+                            
+                            /* Use bright red gradient for fire coverage */
+                            if (scaled >= 200) {
+                                color = RGB(255, 0, 0);     /* Bright red for high coverage */
+                            } else if (scaled >= 150) {
+                                color = RGB(255, 64, 64);   /* Red-pink */
+                            } else if (scaled >= 100) {
+                                color = RGB(255, 128, 128); /* Light red */
+                            } else if (scaled >= 50) {
+                                color = RGB(255, 192, 192); /* Pink */
+                            } else {
+                                color = RGB(255, 224, 224); /* Very light pink */
+                            }
                         }
                     }
                     break;
 
                 case MINIMAP_MODE_POLICE:
-                    if (x < WORLD_X/4 && y < WORLD_Y/4) {
+                    /* PoliceMapEffect is quarter-size array, so check bounds and access correctly */
+                    if ((x/4) < (WORLD_X/4) && (y/4) < (WORLD_Y/4)) {
                         coverage = PoliceMapEffect[y/4][x/4];
                         if (coverage > 0) {
-                            intensity = min(255, coverage * 8);
-                            color = RGB(0, 0, intensity);
+                            /* Scale down short values for display - original starts with 1000 */
+                            int scaled = coverage / 4;  /* Scale down from short range */
+                            if (scaled > 255) scaled = 255;
+                            
+                            /* Use bright blue gradient for police coverage */
+                            if (scaled >= 200) {
+                                color = RGB(0, 0, 255);     /* Bright blue for high coverage */
+                            } else if (scaled >= 150) {
+                                color = RGB(64, 64, 255);   /* Blue-violet */
+                            } else if (scaled >= 100) {
+                                color = RGB(128, 128, 255); /* Light blue */
+                            } else if (scaled >= 50) {
+                                color = RGB(192, 192, 255); /* Very light blue */
+                            } else {
+                                color = RGB(224, 224, 255); /* Faint blue */
+                            }
                         }
                     }
                     break;

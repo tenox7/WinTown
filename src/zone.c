@@ -156,11 +156,15 @@ void DoZone(int Xloc, int Yloc, int pos) {
         case NUCLEAR:
         case PORT:
         case AIRPORT:
-        case POLICESTATION:
-        case FIRESTATION:
             SetZPower(Xloc, Yloc);
             break;
         }
+    }
+
+    /* Handle police and fire stations specifically - they're in the hospital range but need special processing */
+    if (pos == POLICESTATION || pos == FIRESTATION) {
+        DoSPZ(Xloc, Yloc);
+        return;
     }
 
     if (pos >= HOSPITALBASE && pos <= FOOTBALLBASE) {
@@ -291,12 +295,18 @@ static void DoSPZ(int x, int y) {
         }
         
         /* Update police coverage map (quarter size) */
-        PoliceMap[x >> 3][y >> 3] += effect;
+        PoliceMap[y >> 2][x >> 2] += effect;
+        
+        /* Debug logging */
+        addDebugLog("POLICE: Added %d to map at (%d,%d) -> quarter (%d,%d), value now %d", 
+                   effect, x, y, x >> 2, y >> 2, PoliceMap[y >> 2][x >> 2]);
         
         /* Cap the value to prevent overflow */
-        if (PoliceMap[x >> 3][y >> 3] > 250) {
-            PoliceMap[x >> 3][y >> 3] = 250;
+        if (PoliceMap[y >> 2][x >> 2] > 250) {
+            PoliceMap[y >> 2][x >> 2] = 250;
         }
+        
+        
         
         return;
     }
@@ -320,12 +330,13 @@ static void DoSPZ(int x, int y) {
         }
         
         /* Update fire coverage map (quarter size) */
-        FireStMap[x >> 3][y >> 3] += effect;
+        FireStMap[y >> 2][x >> 2] += effect;
         
         /* Cap the value to prevent overflow */
-        if (FireStMap[x >> 3][y >> 3] > 250) {
-            FireStMap[x >> 3][y >> 3] = 250;
+        if (FireStMap[y >> 2][x >> 2] > 250) {
+            FireStMap[y >> 2][x >> 2] = 250;
         }
+        
         
         return;
     }

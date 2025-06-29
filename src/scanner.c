@@ -118,28 +118,28 @@ static void SmoothPSMap(void) {
 
             /* Add up surrounding cells */
             if (x > 0) {
-                edge += PoliceMap[x - 1][y];
+                edge += PoliceMap[y][x - 1];
             }
             if (x < (WORLD_X / 4 - 1)) {
-                edge += PoliceMap[x + 1][y];
+                edge += PoliceMap[y][x + 1];
             }
             if (y > 0) {
-                edge += PoliceMap[x][y - 1];
+                edge += PoliceMap[y - 1][x];
             }
             if (y < (WORLD_Y / 4 - 1)) {
-                edge += PoliceMap[x][y + 1];
+                edge += PoliceMap[y + 1][x];
             }
 
-            /* Weighted average */
-            edge = (edge >> 2) + PoliceMap[x][y];
-            STem[x][y] = (Byte)(edge >> 1);
+            /* Original Micropolis smoothing algorithm */
+            edge = (edge >> 2) + PoliceMap[y][x];  /* (neighbors/4) + current */
+            STem[x][y] = (short)(edge >> 1);        /* divide by 2 - back to short for debugging */
         }
     }
 
     /* Copy back to original map */
     for (x = 0; x < WORLD_X / 4; x++) {
         for (y = 0; y < WORLD_Y / 4; y++) {
-            PoliceMap[x][y] = STem[x][y];
+            PoliceMap[y][x] = STem[x][y];
         }
     }
 }
@@ -155,28 +155,28 @@ static void SmoothFSMap(void) {
 
             /* Add up surrounding cells */
             if (x > 0) {
-                edge += FireStMap[x - 1][y];
+                edge += FireStMap[y][x - 1];
             }
             if (x < (WORLD_X / 4 - 1)) {
-                edge += FireStMap[x + 1][y];
+                edge += FireStMap[y][x + 1];
             }
             if (y > 0) {
-                edge += FireStMap[x][y - 1];
+                edge += FireStMap[y - 1][x];
             }
             if (y < (WORLD_Y / 4 - 1)) {
-                edge += FireStMap[x][y + 1];
+                edge += FireStMap[y + 1][x];
             }
 
-            /* Weighted average */
-            edge = (edge >> 2) + FireStMap[x][y];
-            STem[x][y] = (Byte)(edge >> 1);
+            /* Original Micropolis smoothing algorithm */
+            edge = (edge >> 2) + FireStMap[y][x];  /* (neighbors/4) + current */
+            STem[x][y] = (short)(edge >> 1);        /* divide by 2 - back to short for debugging */
         }
     }
 
     /* Copy back to original map */
     for (x = 0; x < WORLD_X / 4; x++) {
         for (y = 0; y < WORLD_Y / 4; y++) {
-            FireStMap[x][y] = STem[x][y];
+            FireStMap[y][x] = STem[x][y];
         }
     }
 }
@@ -313,7 +313,7 @@ static void DistIntMarket(void) {
 void FireAnalysis(void) {
     int x, y;
 
-    /* Smooth the fire station map three times to spread coverage */
+    /* Smooth the fire station map three times - original algorithm */
     SmoothFSMap();
     SmoothFSMap();
     SmoothFSMap();
@@ -321,7 +321,7 @@ void FireAnalysis(void) {
     /* Copy to fire rate map */
     for (x = 0; x < WORLD_X / 4; x++) {
         for (y = 0; y < WORLD_Y / 4; y++) {
-            FireRate[x][y] = FireStMap[x][y];
+            FireRate[y][x] = FireStMap[y][x];
         }
     }
 }
@@ -536,7 +536,7 @@ void CrimeScan(void) {
     QUAD totz;
     int x, y, z;
 
-    /* Smooth police station effect map three times */
+    /* Smooth police station effect map three times - original algorithm */
     SmoothPSMap();
     SmoothPSMap();
     SmoothPSMap();
@@ -562,7 +562,7 @@ void CrimeScan(void) {
                 }
 
                 /* Police stations reduce crime */
-                z -= PoliceMap[x >> 2][y >> 2];
+                z -= PoliceMap[y >> 2][x >> 2];
 
                 /* Ensure crime values are in range 0-250 */
                 if (z > 250) {
@@ -601,7 +601,7 @@ void CrimeScan(void) {
     /* Copy police map to effect map */
     for (x = 0; x < WORLD_X / 4; x++) {
         for (y = 0; y < WORLD_Y / 4; y++) {
-            PoliceMapEffect[x][y] = PoliceMap[x][y];
+            PoliceMapEffect[y][x] = PoliceMap[y][x];
         }
     }
 }
