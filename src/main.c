@@ -400,6 +400,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MSG msg;
     RECT rect;
     int mainWindowX, mainWindowY;
+    FILE *debugFile;
+
+    /* Initialize debug log by overwriting existing file */
+    debugFile = fopen("debug.log", "w");
+    if (debugFile) {
+        fclose(debugFile);
+    }
 
 	GetModuleFileName(NULL, progPathName, MAX_PATH);
 	MyPathRemoveFileSpecA(progPathName);

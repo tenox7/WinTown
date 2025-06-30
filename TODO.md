@@ -8,12 +8,12 @@
 - Budgets, reporting, economy, money system
 - Crime, fire, pollution, etc
 - Charts/graphs
-- Alerts (crime, pollution, traffic)
+- Better Alerts (fire, crime, pollution, traffic)
 - Disasters
-- Impeachment
+- Rating, Impeachment
 - Scenarios as real scenarios, not just map load
-- Bridges
-- Minimap stats not working: Population, pollution, crime, land, fire police
+- Bridges, power over water
+- Minimap stats not working: fire police
 - Zone to rubble
 
 ## Cosmetic
