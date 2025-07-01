@@ -4,6 +4,7 @@
 
 #include "sim.h"
 #include "sprite.h"
+#include "charts.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -381,8 +382,17 @@ void Simulate(int mod16) {
             }
         }
 
+        /* Update charts every case 9 (every 16 cycles) */
+        if (g_chartData) {
+            addDebugLog("Case 9: Updating chart data - Scycle=%d", Scycle);
+            UpdateChartData();
+        } else {
+            addDebugLog("Case 9: Skipping chart update - g_chartData is NULL");
+        }
+        
         /* Every 4 cycles, take census for graphs */
         if ((Scycle % CENSUSRATE) == 0) {
+            addDebugLog("Taking census, Scycle=%d", Scycle);
             TakeCensus();
         }
 

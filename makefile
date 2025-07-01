@@ -1,4 +1,4 @@
-OBJS = src\anim.obj src\budget.obj src\disastr.obj src\eval.obj src\main.obj \
+OBJS = src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj \
 	src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj \
 	src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj
 

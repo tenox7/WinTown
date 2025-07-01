@@ -5,6 +5,7 @@
 #include "sim.h"
 #include "sprite.h"
 #include "tools.h"
+#include "charts.h"
 #include <commdlg.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -41,6 +42,7 @@
 #define IDM_VIEW_DEBUG_LOGS 4103
 #define IDM_VIEW_MINIMAPWINDOW 4104
 #define IDM_VIEW_TILESWINDOW 4105
+#define IDM_VIEW_CHARTSWINDOW 4106
 
 /* Spawn menu IDs */
 #define IDM_SPAWN_HELICOPTER 6001
@@ -58,6 +60,8 @@
 #define MINIMAP_WINDOW_HEIGHT 320  /* WORLD_Y * MINIMAP_SCALE + space for mode label = 100 * 3 + 20 */
 #define MINIMAP_TIMER_ID 3
 #define MINIMAP_TIMER_INTERVAL 100 /* Update minimap every 100ms */
+#define CHART_TIMER_ID 4
+#define CHART_TIMER_INTERVAL 1000 /* Update charts every 1000ms */
 #define MINIMAP_SCALE 3 /* 3x3 pixels per tile */
 
 /* Minimap view modes */
@@ -151,6 +155,7 @@ HWND hwndInfo = NULL; /* Info window handle for displaying city stats */
 /* Log window removed - logging now goes to debug.log file */
 HWND hwndMinimap = NULL; /* Minimap window handle for overview and navigation */
 HWND hwndTiles = NULL; /* Tiles debug window handle for tileset inspection */
+HWND hwndCharts = NULL; /* Charts window handle for data visualization */
 
 /* Minimap window variables */
 static int minimapMode = MINIMAP_MODE_ALL; /* Current minimap display mode */
@@ -162,6 +167,9 @@ static int selectedTileX = -1; /* Selected tile X coordinate (-1 = no selection)
 static int selectedTileY = -1; /* Selected tile Y coordinate (-1 = no selection) */
 static int minimapDragX = 0; /* Drag start position */
 static int minimapDragY = 0; /* Drag start position */
+
+/* Charts window variables */
+static BOOL chartsWindowVisible = FALSE; /* Track charts window visibility */
 
 /* Log window variables removed - logging now goes to debug.log file */
 int showDebugLogs = 1; /* Flag to control whether debug logs are shown (enabled by default) */
@@ -469,6 +477,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
+    /* Register chart window class */
+    wcInfo.lpfnWndProc = ChartWndProc;
+    wcInfo.lpszClassName = CHART_WINDOW_CLASS;
+
+    if (!RegisterClass(&wcInfo)) {
+        MessageBox(NULL, "Chart Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
     hMenu = createMainMenu();
 
     /* Create main window */
@@ -552,8 +569,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         addDebugLog("Tiles window created successfully: hwnd=%p", hwndTiles);
     }
 
+    /* Create charts window (hidden by default) */
+    hwndCharts = CreateWindowEx(WS_EX_TOOLWINDOW, CHART_WINDOW_CLASS, "Micropolis Charts",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
+        mainWindowX + rect.right - rect.left + 10, mainWindowY + INFO_WINDOW_HEIGHT + MINIMAP_WINDOW_HEIGHT + 20, /* Position below minimap */
+        CHART_WINDOW_WIDTH, CHART_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+
+    if (hwndCharts == NULL) {
+        MessageBox(NULL, "Charts Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        addDebugLog("Charts window creation failed");
+        /* Continue anyway, just without the charts window */
+    } else {
+        addDebugLog("Charts window created successfully: hwnd=%p", hwndCharts);
+    }
+
     /* Initialize graphics first */
     initializeGraphics(hwndMain);
+    
+    /* Initialize chart system */
+    InitChartSystem();
     
     /* Then create new map (this will set the tileset to classic) */
     createNewMap(hwndMain);
@@ -567,6 +601,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     cleanupGraphics();
+    
+    /* Clean up chart system */
+    CleanupChartSystem();
 
     /* Clean up info window timer */
     if (hwndInfo) {
@@ -576,6 +613,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     /* Clean up minimap window timer */
     if (hwndMinimap) {
         KillTimer(hwndMinimap, MINIMAP_TIMER_ID);
+    }
+    
+    /* Clean up charts window timer */
+    if (hwndCharts) {
+        KillTimer(hwndCharts, CHART_TIMER_ID);
     }
 
     return msg.wParam;
@@ -1744,6 +1786,31 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
 
+        case IDM_VIEW_CHARTSWINDOW:
+            if (hwndCharts) {
+                HMENU hMenu = GetMenu(hwnd);
+                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+
+                addDebugLog("Current chartsWindowVisible: %d", chartsWindowVisible);
+                if (chartsWindowVisible) {
+                    /* Hide charts window */
+                    addDebugLog("Hiding charts window");
+                    chartsWindowVisible = FALSE;
+                    CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                    ShowWindow(hwndCharts, SW_HIDE);
+                } else {
+                    /* Show charts window */
+                    addDebugLog("Showing charts window");
+                    chartsWindowVisible = TRUE;
+                    CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                    ShowWindow(hwndCharts, SW_SHOWNORMAL);
+                    SetForegroundWindow(hwndCharts);
+                }
+            } else {
+                addDebugLog("hwndCharts is NULL - cannot show charts window");
+            }
+            return 0;
+
         /* Tool menu items */
         case IDM_TOOL_BULLDOZER:
             SelectTool(bulldozerState);
@@ -2321,6 +2388,9 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         /* Clean up toolbar bitmaps */
         CleanupToolbarBitmaps();
+        
+        /* Clean up chart system */
+        CleanupChartSystem();
 
         PostQuitMessage(0);
         return 0;
@@ -4013,6 +4083,9 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILESWINDOW, "&Tiles Debug");
     /* Leave unchecked by default since the tiles window is hidden on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_UNCHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_CHARTSWINDOW, "&Charts Window");
+    /* Leave unchecked by default since the charts window is hidden on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_UNCHECKED);
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
