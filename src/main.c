@@ -821,6 +821,7 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         int tileType;
         COLORREF color;
         int viewX, viewY, viewW, viewH;
+        int scaled;
         
         hdc = BeginPaint(hwnd, &ps);
         GetClientRect(hwnd, &rect);
@@ -1060,7 +1061,7 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                         coverage = PoliceMapEffect[y/4][x/4];
                         if (coverage > 0) {
                             /* Scale down short values for display - original starts with 1000 */
-                            int scaled = coverage / 4;  /* Scale down from short range */
+                            scaled = coverage / 4;  /* Scale down from short range */
                             if (scaled > 255) scaled = 255;
                             
                             /* Use bright blue gradient for police coverage */

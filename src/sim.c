@@ -327,6 +327,15 @@ void Simulate(int mod16) {
         /* FALLTHROUGH to start map scanning */
 
     case 2:
+        /* TEMPORARILY DISABLED: Clear police and fire maps */
+        /* Let's see if police stations are being processed at all */
+        {
+            static int logOnce = 0;
+            if (!logOnce) {
+                addDebugLog("MAP SCAN: Starting segment 1 (clearing disabled for testing)");
+                logOnce = 1;
+            }
+        }
     case 3:
     case 4:
     case 5:
@@ -349,6 +358,28 @@ void Simulate(int mod16) {
         ResPop = TempResPop;
         ComPop = TempComPop;
         IndPop = TempIndPop;
+
+        /* Update police coverage display map immediately after stations are scanned */
+        /* This ensures the minimap shows current coverage without waiting for CrimeScan */
+        {
+            int x, y, totalCoverage = 0, maxCoverage = 0;
+            for (x = 0; x < WORLD_X / 4; x++) {
+                for (y = 0; y < WORLD_Y / 4; y++) {
+                    PoliceMapEffect[y][x] = PoliceMap[y][x];
+                    if (PoliceMap[y][x] > 0) {
+                        totalCoverage += PoliceMap[y][x];
+                        if (PoliceMap[y][x] > maxCoverage) {
+                            maxCoverage = PoliceMap[y][x];
+                        }
+                    }
+                }
+            }
+            if (totalCoverage > 0) {
+                addDebugLog("POLICE MAP: Total=%d Max=%d Stations=%d", totalCoverage, maxCoverage, PolicePop);
+            } else if (PolicePop > 0) {
+                addDebugLog("POLICE MAP: No coverage despite %d stations - PoliceEffect=%d", PolicePop, PoliceEffect);
+            }
+        }
 
         /* Every 4 cycles, take census for graphs */
         if ((Scycle % CENSUSRATE) == 0) {
@@ -724,6 +755,8 @@ void ClearCensus(void) {
     NuclearPop = 0;
     PwrdZCnt = 0;
     UnpwrdZCnt = 0;
+
+    /* Fire and police maps are now cleared in case 1 before map scanning */
 
     /* Reset TEMPORARY census variables, not display variables */
     /* This prevents display flicker during census calculation */
