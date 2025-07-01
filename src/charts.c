@@ -578,8 +578,8 @@ void DrawChartBackground(HDC hdc) {
     /* Get actual client area size */
     GetClientRect(g_chartData->hwnd, &rect);
     
-    /* Clear entire window with white background */
-    hBrush = CreateSolidBrush(RGB(255, 255, 255));
+    /* Clear entire window with light grey background */
+    hBrush = CreateSolidBrush(RGB(240, 240, 240));
     FillRect(hdc, &rect, hBrush);
     DeleteObject(hBrush);
 }
@@ -632,12 +632,13 @@ void DrawChartAxes(HDC hdc) {
     int maxValue;
     int stepX, stepY;
     int graphWidth, graphHeight;
+    HBRUSH hChartBrush;
     
     graphWidth = g_chartData->graphRect.right - g_chartData->graphRect.left;
     graphHeight = g_chartData->graphRect.bottom - g_chartData->graphRect.top;
     
-    /* Create a small font for axis labels */
-    hFont = CreateFont(10, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+    /* Create a readable font for axis labels */
+    hFont = CreateFont(12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, "Arial");
     hOldFont = SelectObject(hdc, hFont);
@@ -645,6 +646,11 @@ void DrawChartAxes(HDC hdc) {
     /* Set transparent background for text */
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, RGB(80, 80, 80));
+    
+    /* Fill chart area with white background */
+    hChartBrush = CreateSolidBrush(RGB(255, 255, 255));
+    FillRect(hdc, &g_chartData->graphRect, hChartBrush);
+    DeleteObject(hChartBrush);
     
     /* Draw chart border */
     hPen = CreatePen(PS_SOLID, 1, RGB(120, 120, 120));
@@ -823,8 +829,8 @@ void DrawChartLegend(HDC hdc) {
     /* Get window size for legend positioning */
     GetClientRect(g_chartData->hwnd, &clientRect);
     
-    /* Create small font for legend */
-    hFont = CreateFont(10, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+    /* Create readable font for legend */
+    hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, "Arial");
     hOldFont = SelectObject(hdc, hFont);
