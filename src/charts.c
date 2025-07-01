@@ -578,8 +578,8 @@ void DrawChartBackground(HDC hdc) {
     /* Get actual client area size */
     GetClientRect(g_chartData->hwnd, &rect);
     
-    /* Clear entire window with light grey background */
-    hBrush = CreateSolidBrush(RGB(240, 240, 240));
+    /* Clear entire window with light grey background using system color */
+    hBrush = CreateSolidBrush(RGB(192, 192, 192));
     FillRect(hdc, &rect, hBrush);
     DeleteObject(hBrush);
 }
