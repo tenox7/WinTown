@@ -546,6 +546,27 @@ LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
             }
             break;
             
+        case WM_SIZE:
+            /* Window was resized - update chart graphics resources */
+            if (g_chartData && g_chartData->hdcMem) {
+                /* Clean up old graphics resources */
+                if (g_chartData->hBitmap) {
+                    DeleteObject(g_chartData->hBitmap);
+                    g_chartData->hBitmap = NULL;
+                }
+                if (g_chartData->hdcMem) {
+                    DeleteDC(g_chartData->hdcMem);
+                    g_chartData->hdcMem = NULL;
+                }
+                
+                /* Recreate graphics resources with new size */
+                InitChartWindowGraphics(hwnd);
+                
+                /* Force redraw */
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            return 0;
+            
         case WM_TIMER:
             if (wParam == CHART_TIMER_ID) {
                 /* Refresh chart display */
