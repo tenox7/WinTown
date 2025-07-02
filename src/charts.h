@@ -11,7 +11,7 @@
 #define CHART_HISTLEN        240    /* History length (matches HISTLEN from sim.h) */
 #define CHART_SHORT_RANGE    120    /* 10 years of monthly data (120 months) */
 #define CHART_LONG_RANGE     120    /* 120 years of yearly data */
-#define CHART_SERIES_COUNT   12     /* Number of different chart series */
+#define CHART_SERIES_COUNT   15     /* Number of different chart series */
 
 /* Chart series types */
 #define CHART_POPULATION     0      /* Total city population */
@@ -26,6 +26,9 @@
 #define CHART_POWER          9      /* Powered zones ratio */
 #define CHART_GROWTH_RATE    10     /* Population growth rate */
 #define CHART_APPROVAL       11     /* City approval rating */
+#define CHART_R_DEMAND       12     /* Residential demand */
+#define CHART_C_DEMAND       13     /* Commercial demand */
+#define CHART_I_DEMAND       14     /* Industrial demand */
 
 /* Chart time ranges */
 #define CHART_RANGE_10_YEARS  0     /* 10 years (120 months) */
@@ -44,6 +47,9 @@
 #define CHART_MASK_POWER          (1 << CHART_POWER)
 #define CHART_MASK_GROWTH_RATE    (1 << CHART_GROWTH_RATE)
 #define CHART_MASK_APPROVAL       (1 << CHART_APPROVAL)
+#define CHART_MASK_R_DEMAND       (1 << CHART_R_DEMAND)
+#define CHART_MASK_C_DEMAND       (1 << CHART_C_DEMAND)
+#define CHART_MASK_I_DEMAND       (1 << CHART_I_DEMAND)
 
 /* Default visible charts */
 #define CHART_DEFAULT_MASK  (CHART_MASK_POPULATION | CHART_MASK_RESIDENTIAL | \
@@ -55,7 +61,7 @@
 #define CHART_COLOR_RESIDENTIAL    RGB(0, 255, 0)      /* Light Green */
 #define CHART_COLOR_COMMERCIAL     RGB(0, 0, 128)      /* Dark Blue */
 #define CHART_COLOR_INDUSTRIAL     RGB(255, 255, 0)    /* Yellow */
-#define CHART_COLOR_FUNDS          RGB(0, 128, 0)      /* Dark Green */
+#define CHART_COLOR_FUNDS          RGB(0, 0, 255)      /* Blue */
 #define CHART_COLOR_CRIME          RGB(255, 0, 0)      /* Red */
 #define CHART_COLOR_POLLUTION      RGB(128, 128, 0)    /* Olive */
 #define CHART_COLOR_LAND_VALUE     RGB(128, 0, 128)    /* Purple */
@@ -63,6 +69,9 @@
 #define CHART_COLOR_POWER          RGB(255, 165, 0)    /* Orange */
 #define CHART_COLOR_GROWTH_RATE    RGB(0, 255, 255)    /* Cyan */
 #define CHART_COLOR_APPROVAL       RGB(255, 192, 203)  /* Pink */
+#define CHART_COLOR_R_DEMAND       RGB(0, 200, 100)    /* Light Green */
+#define CHART_COLOR_C_DEMAND       RGB(100, 100, 255)  /* Light Blue */
+#define CHART_COLOR_I_DEMAND       RGB(255, 200, 0)    /* Light Orange */
 
 /* Chart window dimensions */
 #define CHART_WINDOW_WIDTH   600

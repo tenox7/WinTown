@@ -11,6 +11,11 @@
 /* External debug logging function */
 extern void addDebugLog(const char* format, ...);
 
+/* External RCI demand variables */
+extern short RValve;
+extern short CValve;
+extern short IValve;
+
 /* Global chart data instance */
 ChartData* g_chartData = NULL;
 
@@ -27,7 +32,10 @@ static const char* chartSeriesNames[CHART_SERIES_COUNT] = {
     "Infrastructure",
     "Power",
     "Growth Rate",
-    "Approval"
+    "Approval",
+    "R Demand",
+    "C Demand",
+    "I Demand"
 };
 
 static const COLORREF chartSeriesColors[CHART_SERIES_COUNT] = {
@@ -42,7 +50,10 @@ static const COLORREF chartSeriesColors[CHART_SERIES_COUNT] = {
     CHART_COLOR_INFRASTRUCTURE,
     CHART_COLOR_POWER,
     CHART_COLOR_GROWTH_RATE,
-    CHART_COLOR_APPROVAL
+    CHART_COLOR_APPROVAL,
+    CHART_COLOR_R_DEMAND,
+    CHART_COLOR_C_DEMAND,
+    CHART_COLOR_I_DEMAND
 };
 
 /* Initialize chart system */
@@ -119,6 +130,9 @@ void UpdateChartData(void) {
     short powerValue;
     short growthRateValue;
     short approvalValue;
+    short rDemandValue;
+    short cDemandValue;
+    short iDemandValue;
     
     if (!g_chartData) {
         return;
@@ -130,8 +144,8 @@ void UpdateChartData(void) {
     commercialValue = (short)ComPop;
     industrialValue = (short)IndPop;
     
-    /* Scale funds to 0-255 range */
-    fundsValue = (short)((TotalFunds / 200) + 128);
+    /* Scale funds to show in thousands of dollars (0-255 range = $0-255k) */
+    fundsValue = (short)(TotalFunds / 1000);
     if (fundsValue < 0) fundsValue = 0;
     if (fundsValue > 255) fundsValue = 255;
     
@@ -164,6 +178,14 @@ void UpdateChartData(void) {
         approvalValue = 50;  /* Neutral approval */
     }
     
+    /* Scale RCI demand values from -2000..2000 range to 0..255 for charting */
+    rDemandValue = (short)((RValve + 2000) / 16);  /* -2000..2000 -> 0..250 */
+    cDemandValue = (short)((CValve + 2000) / 16);
+    iDemandValue = (short)((IValve + 2000) / 16);
+    if (rDemandValue > 255) rDemandValue = 255;
+    if (cDemandValue > 255) cDemandValue = 255;
+    if (iDemandValue > 255) iDemandValue = 255;
+    
     /* Add data points to chart series */
     AddChartDataPoint(CHART_POPULATION, populationValue);
     AddChartDataPoint(CHART_RESIDENTIAL, residentialValue);
@@ -177,7 +199,9 @@ void UpdateChartData(void) {
     AddChartDataPoint(CHART_POWER, powerValue);
     AddChartDataPoint(CHART_GROWTH_RATE, growthRateValue);
     AddChartDataPoint(CHART_APPROVAL, approvalValue);
-    
+    AddChartDataPoint(CHART_R_DEMAND, rDemandValue);
+    AddChartDataPoint(CHART_C_DEMAND, cDemandValue);
+    AddChartDataPoint(CHART_I_DEMAND, iDemandValue);
     
     g_chartData->needsRedraw = 1;
 }
@@ -638,7 +662,7 @@ void DrawChartAxes(HDC hdc) {
     graphHeight = g_chartData->graphRect.bottom - g_chartData->graphRect.top;
     
     /* Create a readable font for axis labels */
-    hFont = CreateFont(12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+    hFont = CreateFont(13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, "Arial");
     hOldFont = SelectObject(hdc, hFont);
@@ -830,7 +854,7 @@ void DrawChartLegend(HDC hdc) {
     GetClientRect(g_chartData->hwnd, &clientRect);
     
     /* Create readable font for legend */
-    hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+    hFont = CreateFont(13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, "Arial");
     hOldFont = SelectObject(hdc, hFont);
