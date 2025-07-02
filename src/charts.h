@@ -76,7 +76,7 @@
 /* Chart window dimensions */
 #define CHART_WINDOW_WIDTH   600
 #define CHART_WINDOW_HEIGHT  450
-#define CHART_GRAPH_MARGIN   50  /* Margin for axes and labels */
+#define CHART_GRAPH_MARGIN   20  /* Margin for axes and labels */
 #define CHART_GRAPH_X        CHART_GRAPH_MARGIN
 #define CHART_GRAPH_Y        CHART_GRAPH_MARGIN
 #define CHART_GRAPH_WIDTH    (CHART_WINDOW_WIDTH - 2 * CHART_GRAPH_MARGIN)

@@ -391,7 +391,7 @@ int InitChartWindowGraphics(HWND hwnd) {
     g_chartData->graphRect.left = CHART_GRAPH_MARGIN;
     g_chartData->graphRect.top = CHART_GRAPH_MARGIN;
     g_chartData->graphRect.right = clientRect.right - CHART_GRAPH_MARGIN;
-    g_chartData->graphRect.bottom = clientRect.bottom - 100;  /* Leave 100 pixels for legend */
+    g_chartData->graphRect.bottom = clientRect.bottom - 60;  /* Leave 60 pixels for legend */
     
     /* Create memory DC for off-screen rendering */
     hdc = GetDC(hwnd);
@@ -765,16 +765,11 @@ void DrawChartAxes(HDC hdc) {
         LineTo(hdc, x, g_chartData->graphRect.bottom + 3);
     }
     
-    /* Y-axis title */
-    SetTextColor(hdc, RGB(100, 100, 100));
-    TextOut(hdc, 5, g_chartData->graphRect.top + graphHeight/2 - 20, "Value", 5);
+    /* Y-axis title removed - redundant */
     
-    /* X-axis title */
-    TextOut(hdc, g_chartData->graphRect.left + graphWidth/2 - 10, g_chartData->graphRect.bottom + 20, "Time", 4);
+    /* X-axis title removed - redundant */
     
-    /* Instructions in top left */
-    SetTextColor(hdc, RGB(120, 120, 120));
-    TextOut(hdc, g_chartData->graphRect.left + 5, g_chartData->graphRect.top + 5, "Right-click for options", 21);
+    /* Instructions moved to window title */
     
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
@@ -889,7 +884,7 @@ void DrawChartLegend(HDC hdc) {
     
     /* Start legend below chart area */
     x = 10;
-    y = g_chartData->graphRect.bottom + 40;
+    y = g_chartData->graphRect.bottom + 35;
     
     col = 0;
     for (i = 0; i < CHART_SERIES_COUNT; i++) {

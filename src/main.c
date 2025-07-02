@@ -570,10 +570,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Create charts window (auto-opens below main window) */
-    hwndCharts = CreateWindowEx(WS_EX_TOOLWINDOW, CHART_WINDOW_CLASS, "Micropolis Charts",
+    hwndCharts = CreateWindowEx(WS_EX_TOOLWINDOW, CHART_WINDOW_CLASS, "Micropolis Charts - Right-click for options",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
         mainWindowX, mainWindowY + (rect.bottom - rect.top) + 10, /* Position below main window */
-        rect.right - rect.left, (rect.bottom - rect.top) / 5, NULL, NULL, hInstance, NULL);
+        rect.right - rect.left, (rect.bottom - rect.top) * 2 / 5, NULL, NULL, hInstance, NULL);
 
     if (hwndCharts == NULL) {
         MessageBox(NULL, "Charts Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
