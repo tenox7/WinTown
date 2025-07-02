@@ -409,15 +409,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     RECT rect;
     int mainWindowX, mainWindowY;
     FILE *debugFile;
-
-    /* Initialize debug log by overwriting existing file */
-    debugFile = fopen("debug.log", "w");
-    if (debugFile) {
-        fclose(debugFile);
-    }
+    char debugLogPath[MAX_PATH];
 
 	GetModuleFileName(NULL, progPathName, MAX_PATH);
 	MyPathRemoveFileSpecA(progPathName);
+
+    /* Initialize debug log by overwriting existing file */
+    wsprintf(debugLogPath, "%s\\debug.log", progPathName);
+    debugFile = fopen(debugLogPath, "w");
+    if (debugFile) {
+        fclose(debugFile);
+    }
 
     /* Register main window class */
     //wc.cbSize = sizeof(WNDCLASS);
@@ -651,10 +653,14 @@ void addGameLog(const char *format, ...) {
     strcat(fullMessage, "\n");
 
     /* Write to debug.log file */
-    logFile = fopen("debug.log", "a");
-    if (logFile) {
-        fputs(fullMessage, logFile);
-        fclose(logFile);
+    {
+        char debugLogPath[MAX_PATH];
+        wsprintf(debugLogPath, "%s\\debug.log", progPathName);
+        logFile = fopen(debugLogPath, "a");
+        if (logFile) {
+            fputs(fullMessage, logFile);
+            fclose(logFile);
+        }
     }
 }
 
@@ -3978,8 +3984,10 @@ void drawCity(HDC hdc) {
 void openCityDialog(HWND hwnd) {
     OPENFILENAME ofn;
     char szFileName[MAX_PATH];
+    char citiesPath[MAX_PATH];
 
     szFileName[0] = '\0';
+    wsprintf(citiesPath, "%s\\cities", progPathName);
 
     ZeroMemory(&ofn, sizeof(ofn));
 
@@ -3988,7 +3996,8 @@ void openCityDialog(HWND hwnd) {
     ofn.lpstrFilter = "City Files (*.cty)\0*.cty\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = szFileName;
     ofn.nMaxFile = MAX_PATH;
-    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.lpstrInitialDir = citiesPath;
+    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
     ofn.lpstrDefExt = "cty";
 
     if (GetOpenFileName(&ofn)) {
