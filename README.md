@@ -10,7 +10,7 @@ A port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka
 
 There are major features missing, see [TODO](TODO.md) for details. 
 
-PRs welcome!
+The game is under active development. PRs welcome!
 
 Special thanks to Neozeed and Roytam for major fixes!
 
