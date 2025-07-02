@@ -169,7 +169,7 @@ static int minimapDragX = 0; /* Drag start position */
 static int minimapDragY = 0; /* Drag start position */
 
 /* Charts window variables */
-static BOOL chartsWindowVisible = FALSE; /* Track charts window visibility */
+static BOOL chartsWindowVisible = TRUE; /* Track charts window visibility */
 
 /* Log window variables removed - logging now goes to debug.log file */
 int showDebugLogs = 1; /* Flag to control whether debug logs are shown (enabled by default) */
@@ -569,11 +569,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         addDebugLog("Tiles window created successfully: hwnd=%p", hwndTiles);
     }
 
-    /* Create charts window (hidden by default) */
+    /* Create charts window (auto-opens below main window) */
     hwndCharts = CreateWindowEx(WS_EX_TOOLWINDOW, CHART_WINDOW_CLASS, "Micropolis Charts",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
-        mainWindowX + rect.right - rect.left + 10, mainWindowY + INFO_WINDOW_HEIGHT + MINIMAP_WINDOW_HEIGHT + 20, /* Position below minimap */
-        CHART_WINDOW_WIDTH, CHART_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+        mainWindowX, mainWindowY + (rect.bottom - rect.top) + 10, /* Position below main window */
+        rect.right - rect.left, (rect.bottom - rect.top) / 5, NULL, NULL, hInstance, NULL);
 
     if (hwndCharts == NULL) {
         MessageBox(NULL, "Charts Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -581,6 +581,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         /* Continue anyway, just without the charts window */
     } else {
         addDebugLog("Charts window created successfully: hwnd=%p", hwndCharts);
+        /* Show charts window by default */
+        ShowWindow(hwndCharts, SW_SHOWNORMAL);
     }
 
     /* Initialize graphics first */
