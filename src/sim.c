@@ -651,8 +651,7 @@ void DoTimeStuff(void) {
             }
         }
 
-        /* Add some funds periodically to keep things interesting */
-        TotalFunds += 1000;
+        /* Removed: artificial fund injection not in original game */
     }
 
     /* Manage disasters */

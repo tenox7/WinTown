@@ -50,37 +50,11 @@ void InitBudget(void) {
 
 /* Tax collection function - called yearly */
 void CollectTax(void) {
-    int taxable;
-    float r;
-    QUAD income;
-
+    static float RLevels[3] = { 0.7f, 0.9f, 1.2f };
+    static float FLevels[3] = { 1.4f, 1.2f, 0.8f };
+    
     /* No income initially */
     TaxFund = 0;
-
-    /* Calculate taxable amount */
-    taxable = (ResPop + ComPop + IndPop) / 3;
-    if (taxable > 0) {
-        /* Apply difficulty level factor to taxes */
-        if (GameLevel == 0) {
-            r = 1.4f; /* Easy level - more tax income */
-        } else if (GameLevel == 1) {
-            r = 1.2f; /* Medium level */
-        } else {
-            r = 0.8f; /* Hard level - less tax income */
-        }
-
-        /* Calculate tax income based on tax rate and population */
-        income = (QUAD)(taxable * TaxRate * r);
-        TaxFund = income;
-
-        /* Log tax collection */
-        addGameLog("Annual tax collection: $%d", (int)TaxFund);
-        addDebugLog("Tax details: Rate %d%%, Taxable pop %d, Difficulty modifier %.1f", TaxRate,
-                    taxable, r);
-
-        /* Add funds to treasury */
-        Spend(-TaxFund);
-    }
 
     /* Calculate funding requirements */
     RoadFund = RoadTotal * 4;     /* $4 per road tile */
@@ -93,8 +67,34 @@ void CollectTax(void) {
     addDebugLog("Fire: $%d (%d stations)", (int)FireFund, FirePop);
     addDebugLog("Police: $%d (%d stations)", (int)PoliceFund, PolicePop);
 
-    /* Update budget to allocate available funds */
-    DoBudget();
+    /* Only process budget if there are people to tax */
+    if (TotalPop > 0) {
+        /* Calculate tax income using original formula */
+        TaxFund = (QUAD)(((TotalPop * LVAverage) / 120) * TaxRate * FLevels[GameLevel]);
+
+        /* Log tax collection */
+        addGameLog("Annual tax collection: $%d", (int)TaxFund);
+        addDebugLog("Tax details: Rate %d%%, Total pop %d, LV avg %d, Difficulty modifier %.1f", 
+                    TaxRate, TotalPop, LVAverage, FLevels[GameLevel]);
+
+        /* Add funds to treasury */
+        Spend(-TaxFund);
+
+        /* Update budget to allocate available funds */
+        DoBudget();
+    } else {
+        /* No population - set default service effects without budget processing */
+        RoadEffect = 32;
+        PoliceEffect = 1000;
+        FireEffect = 1000;
+        
+        /* Reset spending to zero */
+        RoadSpend = 0;
+        PoliceSpend = 0;
+        FireSpend = 0;
+        
+        addDebugLog("No population - skipping budget processing, using default effects");
+    }
 }
 
 /* Spend money (negative means income) */
