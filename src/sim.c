@@ -294,11 +294,14 @@ void SimFrame(void) {
 void Simulate(int mod16) {
     /* Main simulation logic */
 
-    Scycle = (Scycle + 1) & 1023;
-
     /* Perform different actions based on the cycle position (mod 16) */
     switch (mod16) {
     case 0:
+        /* Increment simulation cycle counter as in original */
+        if (++Scycle > 1023) {
+            Scycle = 0;
+        }
+        
         /* Increment time, check for disasters, process valve changes */
         DoTimeStuff();
 
@@ -396,8 +399,10 @@ void Simulate(int mod16) {
             TakeCensus();
         }
 
-        /* Every 48 cycles, do tax collection and evaluation */
-        if ((Scycle % TAXFREQ) == 0) {
+        /* Every 48 time units, do tax collection and evaluation (as in original) */
+        addDebugLog("CHECKING TAX: CityTime=%d, TAXFREQ=%d, mod=%d", CityTime, TAXFREQ, (CityTime % TAXFREQ));
+        if ((CityTime % TAXFREQ) == 0) {
+            addDebugLog("Tax collection triggered: CityTime=%d, TAXFREQ=%d", CityTime, TAXFREQ);
             CollectTax();        /* Collect taxes based on population */
             CountSpecialTiles(); /* Count special buildings */
             CityEvaluation();    /* Evaluate city conditions */
@@ -974,8 +979,8 @@ int TestBounds(int x, int y) {
 /* Timer ID for simulation */
 #define SIM_TIMER_ID 1
 
-/* Timer interval in milliseconds */
-#define SIM_TIMER_INTERVAL 50
+/* Timer interval in milliseconds - faster to match original game timing */
+#define SIM_TIMER_INTERVAL 16
 
 /* External function declaration for the UI update */
 extern void UpdateSimulationMenu(HWND hwnd, int speed);

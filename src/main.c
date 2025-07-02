@@ -1590,7 +1590,7 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 /* These constants should match those in simulation.c */
 #define SIM_TIMER_ID 1
-#define SIM_TIMER_INTERVAL 50
+#define SIM_TIMER_INTERVAL 16
 
 /* Update menu when simulation speed changes */
 void UpdateSimulationMenu(HWND hwnd, int speed) {

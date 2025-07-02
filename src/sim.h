@@ -274,7 +274,7 @@ typedef long QUAD;
 /* Game simulation rate constants */
 #define SPEEDCYCLE      1024  /* The number of cycles before the speed counter loops from 0-1023 */
 #define CENSUSRATE      4     /* Census update rate (once per 4 passes) */
-#define TAXFREQ         48    /* Tax assessment frequency (once per 48 passes) */
+#define TAXFREQ         12    /* Tax assessment frequency (once per 12 passes) - adjusted for monthly collection */
 #define VALVEFREQ       16    /* Valve adjustment frequency (once every 16 passes) */
 
 /* Tool states */
