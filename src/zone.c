@@ -693,21 +693,26 @@ static void DoResOut(int pop, int value, int x, int y) {
     }
 
     if (pop > 16) {
-        /* Turn to small house */
-        short newTile = RESBASE + base - 1;
-        if (newTile < RESBASE || newTile >= COMBASE) {
-            addDebugLog("ERROR: Invalid decline tile %d at %d,%d", newTile, x, y);
-            return;
+        /* Turn to small house - but preserve center tiles */
+        if (base > 4) {
+            /* Only decay non-center tiles */
+            short newTile = RESBASE + base - 1;
+            if (newTile < RESBASE || newTile >= COMBASE) {
+                addDebugLog("ERROR: Invalid decline tile %d at %d,%d", newTile, x, y);
+                return;
+            }
+            setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decline");
         }
-        setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decline");
-    } else if ((base > 0) && (ZoneRandom(4) == 0)) {
-        /* Gradually decay */
+        /* Center tiles (base == 4) do not change tile number when losing population */
+    } else if ((base > 4) && (ZoneRandom(4) == 0)) {
+        /* Gradually decay - but preserve center tiles */
         short newTile = RESBASE + base - 1;
         if (newTile < RESBASE || newTile >= COMBASE) {
             addDebugLog("ERROR: Invalid decay tile %d at %d,%d", newTile, x, y);
             return;
         }
         setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decay");
+        /* Center tiles (base == 4) do not decay their tile number */
     }
 
     /* Check for complete ruin */
@@ -793,6 +798,9 @@ static void BuildHouse(int x, int y, int value) {
 static void ResPlop(int x, int y, int den, int value) {
     int targetTile;
     
+    /* Debug logging to track parameters */
+    addDebugLog("ResPlop: x=%d y=%d den=%d value=%d", x, y, den, value);
+    
     /* Validate density parameter */
     if (den < 0 || den > 4) {
         addDebugLog("ERROR: Invalid residential density %d at %d,%d", den, x, y);
@@ -805,8 +813,13 @@ static void ResPlop(int x, int y, int den, int value) {
         return;
     }
     
-    /* den parameter is density offset for residential */
-    targetTile = RESBASE + (den * 9) + value;
+    /* Try using RESBASE instead of RZB to see if that works better */
+    /* Experimental: base = (((value * 4) + den) * 9) + RESBASE + 4; */
+    targetTile = (((value * 4) + den) * 9) + RESBASE + 4;
+    
+    /* Debug logging for calculation */
+    addDebugLog("ResPlop calc: (((value=%d * 4) + den=%d) * 9) + RESBASE=%d + 4 = %d", 
+               value, den, RESBASE, targetTile);
     
     /* Final validation */
     if (targetTile < RESBASE || targetTile >= COMBASE) {
@@ -820,14 +833,20 @@ static void ResPlop(int x, int y, int den, int value) {
 
 /* Place a commercial zone */
 static void ComPlop(int x, int y, int den) {
-    /* den parameter is density value for commercial */
-    ZonePlop(x, y, COMBASE + (den * 9));
+    int targetTile;
+    /* Original Micropolis formula for commercial - assuming value=0 for now */
+    /* Original: base = (((Value * 5) + Den) * 9) + CZB - 4; where CZB=436 */
+    targetTile = (((0 * 5) + den) * 9) + 436 - 4;
+    ZonePlop(x, y, targetTile);
 }
 
 /* Place an industrial zone */
 static void IndPlop(int x, int y, int den) {
-    /* den parameter is density value for industrial */
-    ZonePlop(x, y, INDBASE + (den * 9));
+    int targetTile;
+    /* Original Micropolis formula for industrial - assuming value=0 for now */
+    /* Original: base = (((Value * 4) + Den) * 9) + IZB - 4; where IZB=625 */
+    targetTile = (((0 * 4) + den) * 9) + 625 - 4;
+    ZonePlop(x, y, targetTile);
 }
 
 /* Evaluate a lot for building a house */
