@@ -386,8 +386,14 @@ void CalcTrafficAverage(void) {
                             if (tile >= ROADBASE && tile <= LASTROAD) {
                                 /* Heavy traffic */
                                 if (TrfDensity[y][x] > 40) {
-                                    /* Set animation bit and add HTRFBASE offset */
-                                    setMapTile(mapX, mapY, tile - ROADBASE + HTRFBASE, ANIMBIT, TILE_SET_PRESERVE, "CalcTrafficAverage-heavy");
+                                    /* Only convert to heavy traffic if not already heavy traffic */
+                                    if (tile < HTRFBASE) {
+                                        /* Set animation bit and add HTRFBASE offset */
+                                        setMapTile(mapX, mapY, tile - ROADBASE + HTRFBASE, ANIMBIT, TILE_SET_PRESERVE, "CalcTrafficAverage-heavy");
+                                    } else {
+                                        /* Already heavy traffic, just set animation bit */
+                                        setMapTile(mapX, mapY, 0, ANIMBIT, TILE_SET_FLAGS, "CalcTrafficAverage-heavy-existing");
+                                    }
                                 }
                                 /* Light traffic - randomly animate some tiles */
                                 else if (TrfDensity[y][x] > 10 && ((Fcycle & 3) == 0)) {

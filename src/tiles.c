@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 /* Debug and statistics globals */
-int tileDebugEnabled = 0;
+int tileDebugEnabled = 1;
 long tileChangeCount = 0;
 long tileErrorCount = 0;
 
