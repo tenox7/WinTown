@@ -22,6 +22,7 @@ int validateTileValue(int tile);
 /* Debug logging control */
 extern int tileDebugEnabled;
 int enableTileDebug(int enable);
+void resetTileLogging();
 
 /* Tile change statistics */
 extern long tileChangeCount;

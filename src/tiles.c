@@ -8,7 +8,7 @@
 #include <string.h>
 
 /* Debug and statistics globals */
-int tileDebugEnabled = 1;
+int tileDebugEnabled = 0;
 long tileChangeCount = 0;
 long tileErrorCount = 0;
 
@@ -18,13 +18,24 @@ static FILE* tileLogFile = (FILE*)0;
 /* Initialize tile logging */
 static int initTileLogging() {
     if (!tileLogFile && tileDebugEnabled) {
-        tileLogFile = fopen("tiles.log", "a");
+        tileLogFile = fopen("tiles.log", "w");
         if (tileLogFile) {
             fprintf(tileLogFile, "=== Tile logging started ===\n");
             fflush(tileLogFile);
         }
     }
     return (tileLogFile != (FILE*)0);
+}
+
+/* Reset tile logging - closes and reopens the log file */
+void resetTileLogging() {
+    if (tileLogFile) {
+        fclose(tileLogFile);
+        tileLogFile = (FILE*)0;
+    }
+    tileChangeCount = 0;
+    tileErrorCount = 0;
+    initTileLogging();
 }
 
 /* Convert flags to readable string */

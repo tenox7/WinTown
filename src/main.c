@@ -4149,11 +4149,11 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_CHARTSWINDOW, "&Charts Window");
     /* Leave unchecked by default since the charts window is hidden on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_UNCHECKED);
+    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILE_DEBUG, "Tile &Debug");
     /* Leave unchecked by default since tile debug is disabled on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_UNCHECKED);
-    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_DEBUG_LOGS, "Show &Debug Logs");
     /* Check it by default since debug logs are now enabled on startup */
