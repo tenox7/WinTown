@@ -15,12 +15,19 @@
 - Bridges, power over water
 - Minimap stats not working: fire police
 - Zone to rubble
+- Options Menu
+- Priority and Speed
+- Evaluation window
+- Non debug log window
+- Better RCI and mini chart indicators
+- Better notifications / alerts
+
 
 ## Cosmetic
 - Some tilesets cause 100% CPU peg - may be num color related?
 - Wrong tiles, especially middle tile
+- No power needs to flash
 - Helicopter / plane etc wrong colors / colormap
-- Panning button fix
 - Buttons / sizing / layout / etc
 - Some overlays are not working, like crime, fire etc
 - Power DEBUG over tiles, roads and train tracks
