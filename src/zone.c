@@ -625,11 +625,10 @@ static void DoResIn(int pop, int value) {
             IncROG(1);
             return;
         }
-        if (PopDensity[SMapY >>1][SMapX >>1] > 64) {
-            ResPlop(SMapX, SMapY, 0, zoneValue);
-            IncROG(8);
-            return;
-        }
+        /* FREEZ tiles should remain as 244 and not be replaced by ResPlop */
+        /* High density just means the zone is fully developed */
+        addDebugLog("FREEZ tile at %d,%d remains unchanged (pop=%d, density=%d)", 
+                   SMapX, SMapY, pop, PopDensity[SMapY >>1][SMapX >>1]);
         return;
     }
     if (pop < 40) {
@@ -813,13 +812,22 @@ static void ResPlop(int x, int y, int den, int value) {
         return;
     }
     
-    /* Try using RESBASE instead of RZB to see if that works better */
-    /* Experimental: base = (((value * 4) + den) * 9) + RESBASE + 4; */
-    targetTile = (((value * 4) + den) * 9) + RESBASE + 4;
+    /* Use original Micropolis formula from s_zone.c */
+    /* Original: base = (((value * 4) + den) * 9) + RZB + 4; */
+    /* But RZB=265 in original Micropolis, while RESBASE=240 */
+    /* The formula expects to generate tiles in specific ranges */
+    targetTile = RESBASE + (den * 9) + 4;
+    
+    /* Add small variation based on land value (0-3) */
+    if (value > 3) value = 3;
+    if (den > 0) {
+        /* Only add value variation for developed zones */
+        targetTile += (value >> 1);  /* Add 0-1 based on land value */
+    }
     
     /* Debug logging for calculation */
-    addDebugLog("ResPlop calc: (((value=%d * 4) + den=%d) * 9) + RESBASE=%d + 4 = %d", 
-               value, den, RESBASE, targetTile);
+    addDebugLog("ResPlop calc: RESBASE + (den * 9) + 4 + variation = %d + (%d * 9) + 4 + %d = %d", 
+               RESBASE, den, (den > 0) ? (value >> 1) : 0, targetTile);
     
     /* Final validation */
     if (targetTile < RESBASE || targetTile >= COMBASE) {

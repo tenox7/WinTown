@@ -44,6 +44,7 @@
 #define IDM_VIEW_MINIMAPWINDOW 4104
 #define IDM_VIEW_TILESWINDOW 4105
 #define IDM_VIEW_CHARTSWINDOW 4106
+#define IDM_VIEW_TILE_DEBUG 4107
 
 /* Spawn menu IDs */
 #define IDM_SPAWN_HELICOPTER 6001
@@ -166,6 +167,7 @@ static BOOL minimapDragging = FALSE; /* Is user dragging on minimap */
 static BOOL tilesWindowVisible = FALSE; /* Track tiles window visibility */
 static int selectedTileX = -1; /* Selected tile X coordinate (-1 = no selection) */
 static int selectedTileY = -1; /* Selected tile Y coordinate (-1 = no selection) */
+static BOOL tileDebugEnabled = FALSE; /* Track tile debug mode for mouse cursor info */
 static int minimapDragX = 0; /* Drag start position */
 static int minimapDragY = 0; /* Drag start position */
 
@@ -559,7 +561,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Create tiles debug window (hidden by default) */
-    hwndTiles = CreateWindowEx(WS_EX_TOOLWINDOW, TILES_WINDOW_CLASS, "Micropolis Tiles Debug",
+    hwndTiles = CreateWindowEx(WS_EX_TOOLWINDOW, TILES_WINDOW_CLASS, "Micropolis Tile Viewer",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
         100, 100, /* Simple fixed position for testing */
         TILES_WINDOW_WIDTH, TILES_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
@@ -1526,19 +1528,19 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             /* Update window title with tile coordinates and selection info */
             if (tileX >= 0 && tileX < TILES_IN_ROW && tileY >= 0 && tileY < 30) {
                 if (selectedTileX >= 0 && selectedTileY >= 0) {
-                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Hover: %d (X:%d, Y:%d) | Selected: %d (X:%d, Y:%d)", 
+                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Hover: %d (X:%d, Y:%d) | Selected: %d (X:%d, Y:%d)", 
                              tileIndex, tileX, tileY, 
                              selectedTileY * TILES_IN_ROW + selectedTileX, selectedTileX, selectedTileY);
                 } else {
-                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Hover: %d (X:%d, Y:%d) | Click to select", 
+                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Hover: %d (X:%d, Y:%d) | Click to select", 
                              tileIndex, tileX, tileY);
                 }
             } else {
                 if (selectedTileX >= 0 && selectedTileY >= 0) {
-                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Selected: %d (X:%d, Y:%d)", 
+                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Selected: %d (X:%d, Y:%d)", 
                              selectedTileY * TILES_IN_ROW + selectedTileX, selectedTileX, selectedTileY);
                 } else {
-                    wsprintf(titleBuffer, "Micropolis Tiles Debug - Click to select a tile");
+                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Click to select a tile");
                 }
             }
             SetWindowText(hwnd, titleBuffer);
@@ -1817,6 +1819,28 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
             } else {
                 addDebugLog("hwndCharts is NULL - cannot show charts window");
+            }
+            return 0;
+
+        case IDM_VIEW_TILE_DEBUG:
+            {
+                HMENU hMenu = GetMenu(hwnd);
+                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+
+                addDebugLog("Tile debug menu clicked, current state: %d", tileDebugEnabled);
+                if (tileDebugEnabled) {
+                    /* Disable tile debug */
+                    addDebugLog("Disabling tile debug");
+                    tileDebugEnabled = FALSE;
+                    CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_UNCHECKED);
+                    /* Reset window title to remove tile info */
+                    SetWindowText(hwnd, "Micropolis NT");
+                } else {
+                    /* Enable tile debug */
+                    addDebugLog("Enabling tile debug");
+                    tileDebugEnabled = TRUE;
+                    CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_CHECKED);
+                }
             }
             return 0;
 
@@ -2226,6 +2250,33 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (xPos < toolbarWidth) {
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return 0;
+        }
+
+        /* Tile debug functionality - show tile info under cursor */
+        if (tileDebugEnabled) {
+            ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
+            if (mapX >= 0 && mapX < WORLD_X && mapY >= 0 && mapY < WORLD_Y) {
+                short tileValue = Map[mapY][mapX];
+                short baseTile = tileValue & LOMASK;
+                short flags = tileValue & ~LOMASK;
+                char flagStr[128];
+                char titleBuffer[256];
+                
+                /* Convert flags to readable string */
+                flagStr[0] = '\0';
+                if (flags & POWERBIT) strcat(flagStr, "PWR ");
+                if (flags & CONDBIT) strcat(flagStr, "COND ");
+                if (flags & BURNBIT) strcat(flagStr, "BURN ");
+                if (flags & BULLBIT) strcat(flagStr, "BULL ");
+                if (flags & ANIMBIT) strcat(flagStr, "ANIM ");
+                if (flags & ZONEBIT) strcat(flagStr, "ZONE ");
+                if (flagStr[0] == '\0') strcpy(flagStr, "NONE");
+                
+                /* Update window title with tile information */
+                wsprintf(titleBuffer, "Micropolis NT - Tile Debug: [%d,%d] = %d (0x%04X) base=%d flags=[%s]", 
+                         mapX, mapY, tileValue, tileValue, baseTile, flagStr);
+                SetWindowText(hwnd, titleBuffer);
+            }
         }
 
         if (isMouseDown) {
@@ -4092,12 +4143,15 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_MINIMAPWINDOW, "&Minimap Window");
     /* Check it by default since the minimap window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_CHECKED);
-    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILESWINDOW, "&Tiles Debug");
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILESWINDOW, "Tile &Viewer");
     /* Leave unchecked by default since the tiles window is hidden on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_UNCHECKED);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_CHARTSWINDOW, "&Charts Window");
     /* Leave unchecked by default since the charts window is hidden on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_UNCHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILE_DEBUG, "Tile &Debug");
+    /* Leave unchecked by default since tile debug is disabled on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_UNCHECKED);
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
