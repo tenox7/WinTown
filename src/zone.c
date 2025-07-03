@@ -610,9 +610,17 @@ static int GetCRVal(int x, int y) {
 static void DoResIn(int pop, int value) {
     short z;
     int zoneValue;
+    short currentTile;
     
     z = PollutionMem[SMapY >>1][SMapX >>1];
     if (z > 128) return;
+    
+    /* Check current tile - don't modify hospitals, churches, etc */
+    currentTile = Map[SMapY][SMapX] & LOMASK;
+    if (currentTile == HOSPITAL || currentTile == CHURCH) {
+        addDebugLog("DoResIn: Skipping non-residential tile %d at %d,%d", currentTile, SMapX, SMapY);
+        return;
+    }
     
     /* Convert the evaluation value to a zone value (0-3) */
     zoneValue = GetCRVal(SMapX, SMapY);
@@ -625,10 +633,13 @@ static void DoResIn(int pop, int value) {
             IncROG(1);
             return;
         }
-        /* FREEZ tiles should remain as 244 and not be replaced by ResPlop */
-        /* High density just means the zone is fully developed */
-        addDebugLog("FREEZ tile at %d,%d remains unchanged (pop=%d, density=%d)", 
-                   SMapX, SMapY, pop, PopDensity[SMapY >>1][SMapX >>1]);
+        /* FREEZ tiles with high population should upgrade */
+        if (PopDensity[SMapY >>1][SMapX >>1] > 64) {
+            /* High density - upgrade from FREEZ to proper residential */
+            ResPlop(SMapX, SMapY, 0, zoneValue);
+            IncROG(8);
+            return;
+        }
         return;
     }
     if (pop < 40) {
@@ -812,22 +823,21 @@ static void ResPlop(int x, int y, int den, int value) {
         return;
     }
     
-    /* Use original Micropolis formula from s_zone.c */
-    /* Original: base = (((value * 4) + den) * 9) + RZB + 4; */
-    /* But RZB=265 in original Micropolis, while RESBASE=240 */
-    /* The formula expects to generate tiles in specific ranges */
-    targetTile = RESBASE + (den * 9) + 4;
-    
-    /* Add small variation based on land value (0-3) */
+    /* Use original Micropolis formula */
+    /* base = (((Value * 4) + Den) * 9) + RZB - 4 */
+    /* Note: RZB is 265, and we subtract 4 to get the base for ZonePlop */
+    if (value < 0) value = 0;
     if (value > 3) value = 3;
-    if (den > 0) {
-        /* Only add value variation for developed zones */
-        targetTile += (value >> 1);  /* Add 0-1 based on land value */
-    }
+    
+    if (den < 0) den = 0;
+    if (den > 3) den = 3;  /* Cap density at 3 */
+    
+    /* Apply the original formula */
+    targetTile = (((value * 4) + den) * 9) + RZB - 4;
     
     /* Debug logging for calculation */
-    addDebugLog("ResPlop calc: RESBASE + (den * 9) + 4 + variation = %d + (%d * 9) + 4 + %d = %d", 
-               RESBASE, den, (den > 0) ? (value >> 1) : 0, targetTile);
+    addDebugLog("ResPlop calc: (((value=%d * 4) + den=%d) * 9) + RZB=%d - 4 = %d", 
+                value, den, RZB, targetTile);
     
     /* Final validation */
     if (targetTile < RESBASE || targetTile >= COMBASE) {
@@ -846,13 +856,13 @@ static void ComPlop(int x, int y, int den) {
     /* Debug logging to track parameters */
     addDebugLog("ComPlop: x=%d y=%d den=%d", x, y, den);
     
-    /* Try fixing like residential - use COMBASE + 4 for center */
-    /* For den=0, should produce COMCLR=427 */
-    targetTile = (((0 * 5) + den) * 9) + COMBASE + 4;
+    /* Use original Micropolis formula */
+    /* base = (((Value * 5) + Den) * 9) + CZB - 4 */
+    targetTile = (((0 * 5) + den) * 9) + CZB - 4;
     
     /* Debug logging for calculation */
-    addDebugLog("ComPlop calc: (((0 * 5) + den=%d) * 9) + COMBASE=%d + 4 = %d", 
-               den, COMBASE, targetTile);
+    addDebugLog("ComPlop calc: (((0 * 5) + den=%d) * 9) + CZB=%d - 4 = %d", 
+               den, CZB, targetTile);
     
     ZonePlop(x, y, targetTile);
 }
@@ -864,13 +874,13 @@ static void IndPlop(int x, int y, int den) {
     /* Debug logging to track parameters */
     addDebugLog("IndPlop: x=%d y=%d den=%d", x, y, den);
     
-    /* Try fixing like residential - use INDBASE + 4 for center */
-    /* For den=0, should produce INDCLR=616 */
-    targetTile = (((0 * 4) + den) * 9) + INDBASE + 4;
+    /* Use original Micropolis formula */
+    /* base = (((Value * 4) + Den) * 9) + IZB - 4 */
+    targetTile = (((0 * 4) + den) * 9) + IZB - 4;
     
     /* Debug logging for calculation */
-    addDebugLog("IndPlop calc: (((0 * 4) + den=%d) * 9) + INDBASE=%d + 4 = %d", 
-               den, INDBASE, targetTile);
+    addDebugLog("IndPlop calc: (((0 * 4) + den=%d) * 9) + IZB=%d - 4 = %d", 
+               den, IZB, targetTile);
     
     ZonePlop(x, y, targetTile);
 }
