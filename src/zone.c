@@ -129,6 +129,11 @@ void DoZone(int Xloc, int Yloc, int pos) {
     /* Do special processing based on zone type */
     if (pos >= RESBASE) {
         if (pos < COMBASE) {
+            /* Check for hospitals and churches first - they're in residential range but not residential! */
+            if (pos == HOSPITAL || pos == CHURCH) {
+                DoHospChur(Xloc, Yloc);
+                return;
+            }
             /* Residential zone */
             SetZPower(Xloc, Yloc);
             DoResidential(Xloc, Yloc);
@@ -641,12 +646,7 @@ static void DoResIn(int pop, int value) {
     if (pop < 40) {
         int density = (pop / 8) - 1;
         
-        /* Validate density to prevent negative values */
-        if (density < 0) {
-            /* This is normal when pop is less than 8 */
-            density = 0;
-        }
-        
+        /* Allow negative densities like original - this is normal for low population */
         ResPlop(SMapX, SMapY, density, value);
         IncROG(8);
     }
@@ -682,59 +682,66 @@ static void IncROG(int amount) {
 
 /* Handle residential zone decline */
 static void DoResOut(int pop, int value, int x, int y) {
-    short base;
     short originalTile;
 
     originalTile = Map[y][x] & LOMASK;
-    base = originalTile - RESBASE;
 
-    /* Validate base calculation */
-    if (base < 0 || base > (COMBASE - RESBASE)) {
-        addDebugLog("ERROR: Invalid res base %d from tile %d at %d,%d", base, originalTile, x, y);
+    /* Only process center tiles (those with ZONEBIT) */
+    if (!(Map[y][x] & ZONEBIT)) {
         return;
     }
 
-    if (base == 0) {
+    /* Validate this is a valid residential center tile */
+    if ((originalTile - RZB) % 9 != 0) {
+        addDebugLog("ERROR: DoResOut called on invalid residential center %d at %d,%d", originalTile, x, y);
         return;
     }
 
+    /* For residential zone decay, we need to find the next lower valid center tile */
+    /* Current calculation: ((value * 4) + den) * 9 + RZB = originalTile */
+    /* We want to reduce either value or density to get a lower tile */
+    
     if (pop > 16) {
-        /* Turn to small house - but preserve center tiles */
-        if (base > 4) {
-            /* Only decay non-center tiles */
-            short newTile = RESBASE + base - 1;
-            if (newTile < RESBASE || newTile >= COMBASE) {
-                addDebugLog("ERROR: Invalid decline tile %d at %d,%d", newTile, x, y);
-                return;
+        /* High population - reduce by one density level */
+        int currentFormula = originalTile - RZB;
+        int currentCombined = currentFormula / 9;
+        
+        if (currentCombined > 0) {
+            int newCombined = currentCombined - 1;
+            int newTile = (newCombined * 9) + RZB;
+            
+            /* Validate the new tile is in residential range and is a valid center */
+            if (newTile >= RESBASE && newTile < COMBASE && (newTile - RZB) % 9 == 0) {
+                setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decline");
+                addDebugLog("DoResOut decline: %d->%d at %d,%d", originalTile, newTile, x, y);
             }
-            setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decline");
         }
-        /* Center tiles (base == 4) do not change tile number when losing population */
-    } else if ((base > 4) && (ZoneRandom(4) == 0)) {
-        /* Gradually decay - but preserve center tiles */
-        short newTile = RESBASE + base - 1;
-        if (newTile < RESBASE || newTile >= COMBASE) {
-            addDebugLog("ERROR: Invalid decay tile %d at %d,%d", newTile, x, y);
-            return;
+    } else if (ZoneRandom(4) == 0) {
+        /* Low population - gradual decay */
+        int currentFormula = originalTile - RZB;
+        int currentCombined = currentFormula / 9;
+        
+        if (currentCombined > 0) {
+            int newCombined = currentCombined - 1;
+            int newTile = (newCombined * 9) + RZB;
+            
+            /* Validate the new tile is in residential range and is a valid center */
+            if (newTile >= RESBASE && newTile < COMBASE && (newTile - RZB) % 9 == 0) {
+                setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decay");
+                addDebugLog("DoResOut decay: %d->%d at %d,%d", originalTile, newTile, x, y);
+            }
         }
-        setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decay");
-        /* Center tiles (base == 4) do not decay their tile number */
     }
 
-    /* Check for complete ruin */
-    if ((base < 4) && (value < 30) && (!pop) && (ZoneRandom(4) == 0)) {
+    /* Check for complete ruin - only for very low tiles close to FREEZ */
+    if ((originalTile <= (FREEZ + 18)) && (value < 30) && (!pop) && (ZoneRandom(4) == 0)) {
         if (ZoneRandom(2) == 0) {
             /* Make into rubble */
             short z1;
-            short z2;
 
             z1 = (ZoneRandom(3) + 43) | BULLBIT;
-
-            z2 = Map[y][x] & LOMASK;
-            if ((z2 < COMBASE) || (z2 > LASTIND)) {
-                setMapTile(x, y, z1, 0, TILE_SET_REPLACE, "DoResOut-rubble");
-                addDebugLog("Zone ruined to rubble at %d,%d (month=%d)", x, y, CityMonth);
-            }
+            setMapTile(x, y, z1, 0, TILE_SET_REPLACE, "DoResOut-rubble");
+            addDebugLog("Zone ruined to rubble at %d,%d (month=%d)", x, y, CityMonth);
         }
     }
 }
@@ -807,8 +814,8 @@ static void ResPlop(int x, int y, int den, int value) {
     /* Debug logging to track parameters */
     addDebugLog("ResPlop: x=%d y=%d den=%d value=%d", x, y, den, value);
     
-    /* Validate density parameter */
-    if (den < 0 || den > 4) {
+    /* Validate density parameter - allow negative like original */
+    if (den < -4 || den > 4) {
         addDebugLog("ERROR: Invalid residential density %d at %d,%d", den, x, y);
         return;
     }
@@ -825,11 +832,12 @@ static void ResPlop(int x, int y, int den, int value) {
     if (value < 0) value = 0;
     if (value > 3) value = 3;
     
-    if (den < 0) den = 0;
-    if (den > 3) den = 3;  /* Cap density at 3 */
+    /* Don't cap density - allow negative values like original */
     
-    /* Apply the original formula */
-    targetTile = (((value * 4) + den) * 9) + RZB - 4;
+    /* Apply the original formula - but ensure we stay close to RZB for normal zones */
+    /* Original: (((value * 4) + den) * 9) + RZB - 4 */
+    /* But this creates tiles too far from RZB. Use RZB as the base instead. */
+    targetTile = (((value * 4) + den) * 9) + RZB;
     
     /* Debug logging for calculation */
     addDebugLog("ResPlop calc: (((value=%d * 4) + den=%d) * 9) + RZB=%d - 4 = %d", 
@@ -839,6 +847,15 @@ static void ResPlop(int x, int y, int den, int value) {
     if (targetTile < RESBASE || targetTile >= COMBASE) {
         addDebugLog("ERROR: ResPlop tile %d out of range at %d,%d (den=%d val=%d)", 
                    targetTile, x, y, den, value);
+        return;
+    }
+    
+    /* Validate that the calculated tile is a valid residential center */
+    /* Valid residential center tiles have (tile - RZB) divisible by 9 */
+    if ((targetTile - RZB) % 9 != 0) {
+        addDebugLog("ERROR: ResPlop tile %d is not a valid residential center at %d,%d (den=%d val=%d)", 
+                   targetTile, x, y, den, value);
+        addDebugLog("ERROR: (tile-RZB)=%d is not divisible by 9", targetTile - RZB);
         return;
     }
     
