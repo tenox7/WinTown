@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "tiles.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -157,10 +158,10 @@ void doEarthquake(void) {
         if ((tileValue >= RESBASE) && (tileValue <= LOCAL_LASTZONE) && !(tile & ZONEBIT)) {
             if (z & 0x3) {
                 /* Create rubble (every 4th iteration) */
-                Map[y][x] = (RUBBLE + BULLBIT) + (SimRandom(4));
+                setMapTile(x, y, RUBBLE + SimRandom(4), BULLBIT, TILE_SET_REPLACE, "doEarthquake-rubble");
             } else {
                 /* Create fire */
-                Map[y][x] = (FIRE + ANIMBIT) + (SimRandom(8));
+                setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "doEarthquake-fire");
             }
         }
     }
@@ -180,7 +181,7 @@ void makeExplosion(int x, int y) {
     }
 
     /* Create fire at explosion center */
-    Map[y][x] = (FIRE + ANIMBIT) + (SimRandom(8));
+    setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeExplosion-center");
 
     /* Create fire in surrounding tiles (N, E, S, W) */
     for (dir = 0; dir < 4; dir++) {
@@ -191,7 +192,7 @@ void makeExplosion(int x, int y) {
         if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
             /* Only set fire if not a zone center */
             if (!(Map[ty][tx] & ZONEBIT)) {
-                Map[ty][tx] = (FIRE + ANIMBIT) + (SimRandom(8));
+                setMapTile(tx, ty, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeExplosion-spread");
             }
         }
     }
@@ -219,7 +220,7 @@ void makeFire(int x, int y) {
     }
 
     /* Create fire tile with animation and random frame */
-    Map[y][x] = (FIRE + ANIMBIT) + (SimRandom(8));
+    setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeFire-ignite");
 
     /* Notify user */
     wsprintf(buf, "Fire reported at %d,%d!", x, y);
@@ -271,7 +272,7 @@ void spreadFire(void) {
                     /* Only spread to burnable tiles */
                     if (Map[ty][tx] & BURNBIT) {
                         /* Create a fire with animation */
-                        Map[ty][tx] = (FIRE + ANIMBIT) + (SimRandom(8));
+                        setMapTile(tx, ty, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "spreadFire-spread");
                     }
                 }
             }
@@ -279,7 +280,7 @@ void spreadFire(void) {
             /* Small chance for fire to burn out */
             if (SimRandom(10) == 0) { /* 10% chance to burn out */
                 /* Convert to rubble */
-                Map[y][x] = RUBBLE + BULLBIT + (SimRandom(4));
+                setMapTile(x, y, RUBBLE + SimRandom(4), BULLBIT, TILE_SET_REPLACE, "spreadFire-burnout");
             }
         }
     }
@@ -311,7 +312,7 @@ void makeMonster(void) {
             /* Only place monster on non-dirt tiles */
             if (tile != 0) {
                 /* Create fire at monster's starting position */
-                Map[y][x] = (FIRE + ANIMBIT) + (SimRandom(8));
+                setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeMonster-start");
                 found = 1;
 
                 /* Monster moves randomly destroying things */
@@ -346,7 +347,7 @@ void makeMonster(void) {
                     if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
                         x = tx;
                         y = ty;
-                        Map[y][x] = (FIRE + ANIMBIT) + (SimRandom(8));
+                        setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeMonster-destroy");
                     }
                 }
             }
@@ -402,7 +403,7 @@ void makeFlood(void) {
                             ((Map[yy][xx] & BULLBIT) && (Map[yy][xx] & BURNBIT))) {
 
                             /* Create initial flood tile */
-                            Map[yy][xx] = FLOOD;
+                            setMapTile(xx, yy, FLOOD, 0, TILE_SET_REPLACE, "makeFlood-initial");
                             waterFound = 1;
 
                             /* Notify user */
@@ -420,7 +421,7 @@ void makeFlood(void) {
                                     if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
                                         if (Map[ty][tx] == DIRT ||
                                             ((Map[ty][tx] & BULLBIT) && (Map[ty][tx] & BURNBIT))) {
-                                            Map[ty][tx] = FLOOD;
+                                            setMapTile(tx, ty, FLOOD, 0, TILE_SET_REPLACE, "makeFlood-adjacent");
                                         }
                                     }
                                 }
@@ -432,7 +433,7 @@ void makeFlood(void) {
                                 if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
                                     if (Map[ty][tx] == DIRT ||
                                         ((Map[ty][tx] & BULLBIT) && (Map[ty][tx] & BURNBIT))) {
-                                        Map[ty][tx] = FLOOD;
+                                        setMapTile(tx, ty, FLOOD, 0, TILE_SET_REPLACE, "makeFlood-random");
                                     }
                                 }
                             }
@@ -485,13 +486,13 @@ void makeMeltdown(void) {
                     /* Ensure positions are within bounds */
                     if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
                         /* Add radiation tiles */
-                        Map[ty][tx] = RADTILE;
+                        setMapTile(tx, ty, RADTILE, 0, TILE_SET_REPLACE, "makeMeltdown-radiation");
                     }
                 }
 
                 /* Create fire at power plant location */
                 if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
-                    Map[y][x] = (FIRE + ANIMBIT) + (SimRandom(8));
+                    setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeMeltdown-fire");
                 }
 
                 found = 1;

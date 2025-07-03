@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "tiles.h"
 #include "sprite.h"
 #include "charts.h"
 #include <stdio.h>
@@ -193,7 +194,7 @@ void DoSimInit(void) {
         for (x = 0; x < WORLD_X; x++) {
             PowerMap[y][x] = 0; /* Use 0 instead of -1 */
             /* Also clear the power bit in the map */
-            Map[y][x] &= ~POWERBIT;
+            setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "DoSimInit-clear");
         }
     }
 

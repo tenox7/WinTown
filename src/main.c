@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "tiles.h"
 #include "sprite.h"
 #include "tools.h"
 #include "charts.h"
@@ -2072,7 +2073,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         for (x = 0; x < WORLD_X; x++) {
                             tile = Map[y][x] & LOMASK;
                             if (tile >= TILE_FIRE && tile <= TILE_LASTFIRE) {
-                                Map[y][x] = TILE_RUBBLE | BULLBIT;
+                                setMapTile(x, y, TILE_RUBBLE, BULLBIT, TILE_SET_REPLACE, "cheat-extinguish");
                                 firesExtinguished++;
                             }
                         }
@@ -3027,7 +3028,7 @@ int loadFile(char *filename) {
 
         for (x = 0; x < WORLD_X; x++) {
             for (y = 0; y < WORLD_Y; y++) {
-                Map[y][x] = tmpMap[x][y];
+                setMapTile(x, y, tmpMap[x][y], 0, TILE_SET_REPLACE, "loadFile-transpose");
             }
         }
     }
@@ -4335,7 +4336,7 @@ void createNewMap(HWND hwnd) {
     /* Fill map with dirt */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            Map[y][x] = TILE_DIRT;
+            setMapTile(x, y, TILE_DIRT, 0, TILE_SET_REPLACE, "createNewMap-init");
         }
     }
     

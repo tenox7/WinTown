@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "tiles.h"
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
@@ -698,7 +699,7 @@ static void DoResOut(int pop, int value, int x, int y) {
             addDebugLog("ERROR: Invalid decline tile %d at %d,%d", newTile, x, y);
             return;
         }
-        Map[y][x] = (Map[y][x] & ALLBITS) | newTile;
+        setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decline");
     } else if ((base > 0) && (ZoneRandom(4) == 0)) {
         /* Gradually decay */
         short newTile = RESBASE + base - 1;
@@ -706,7 +707,7 @@ static void DoResOut(int pop, int value, int x, int y) {
             addDebugLog("ERROR: Invalid decay tile %d at %d,%d", newTile, x, y);
             return;
         }
-        Map[y][x] = (Map[y][x] & ALLBITS) | newTile;
+        setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decay");
     }
 
     /* Check for complete ruin */
@@ -720,7 +721,7 @@ static void DoResOut(int pop, int value, int x, int y) {
 
             z2 = Map[y][x] & LOMASK;
             if ((z2 < COMBASE) || (z2 > LASTIND)) {
-                Map[y][x] = z1;
+                setMapTile(x, y, z1, 0, TILE_SET_REPLACE, "DoResOut-rubble");
                 addDebugLog("Zone ruined to rubble at %d,%d (month=%d)", x, y, CityMonth);
             }
         }
@@ -739,7 +740,7 @@ static void DoComOut(int pop, int x, int y) {
 
     if ((base > 0) && (ZoneRandom(8) == 0)) {
         /* Gradually decay */
-        Map[y][x] = (Map[y][x] & ALLBITS) | (COMBASE + base - 1);
+        setMapTile(x, y, COMBASE + base - 1, 0, TILE_SET_PRESERVE, "DoComOut-decline");
     }
 }
 
@@ -755,7 +756,7 @@ static void DoIndOut(int pop, int x, int y) {
 
     if ((base > 0) && (ZoneRandom(8) == 0)) {
         /* Gradually decay */
-        Map[y][x] = (Map[y][x] & ALLBITS) | (INDBASE + base - 1);
+        setMapTile(x, y, INDBASE + base - 1, 0, TILE_SET_PRESERVE, "DoIndOut-decline");
     }
 }
 
@@ -884,7 +885,7 @@ static int ZonePlop(int xpos, int ypos, int base) {
     }
 
     /* Update zone center with the zone bit and power */
-    Map[ypos][xpos] = (Map[ypos][xpos] & MASKBITS) | BNCNBIT | base | CONDBIT | BURNBIT | BULLBIT;
+    setMapTile(xpos, ypos, base, BNCNBIT | CONDBIT | BURNBIT | BULLBIT, TILE_SET_PRESERVE, "ZonePlop-center");
 
     /* Set the 3x3 zone around center */
     for (dy = -1; dy <= 1; dy++) {
@@ -909,8 +910,7 @@ static int ZonePlop(int xpos, int ypos, int base) {
                                 continue;
                             }
                             
-                            Map[y][x] = (Map[y][x] & MASKBITS) | newTile |
-                                        CONDBIT | BURNBIT | BULLBIT;
+                            setMapTile(x, y, newTile, CONDBIT | BURNBIT | BULLBIT, TILE_SET_PRESERVE, "ZonePlop-surround");
                         }
                     }
                 }
@@ -994,14 +994,14 @@ static void SetZPower(int x, int y) {
 
     if (z == NUCLEAR || z == POWERPLANT) {
         /* Power plants are always powered */
-        Map[y][x] |= POWERBIT;
+        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-powerplant");
         PwrdZCnt++;
         return;
     }
 
     /* Check if already powered according to PowerMap */
     if (PowerMap[y][x] == 1) {
-        Map[y][x] |= POWERBIT;
+        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-powermap");
         powered = 1;
     }
     /* If not already powered, check surrounding tiles */
@@ -1032,10 +1032,10 @@ static void SetZPower(int x, int y) {
 
         /* Update the power bit based on our check */
         if (powered) {
-            Map[y][x] |= POWERBIT;
+            setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-powered");
             PowerMap[y][x] = 1;
         } else {
-            Map[y][x] &= ~POWERBIT;
+            setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "SetZPower-unpowered");
             PowerMap[y][x] = 0;
         }
     }

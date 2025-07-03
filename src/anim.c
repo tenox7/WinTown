@@ -4,6 +4,7 @@
 
 #include "animtab.h"
 #include "sim.h"
+#include "tiles.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,7 +69,7 @@ void AnimateTiles(void) {
                 tilevalue |= tileflags;
 
                 /* Update the map with the new tile */
-                Map[y][x] = tilevalue;
+                setMapTile(x, y, tilevalue, 0, TILE_SET_REPLACE, "AnimateTiles-frame");
             }
         }
     }
@@ -126,16 +127,16 @@ void SetSmoke(int x, int y) {
                     /* Set the appropriate smoke tile with animation */
                     switch (i) {
                     case 0:
-                        Map[yy][xx] = (short)(COALSMOKE1 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        setMapTile(xx, yy, COALSMOKE1, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "SetSmoke-coal1");
                         break;
                     case 1:
-                        Map[yy][xx] = (short)(COALSMOKE2 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        setMapTile(xx, yy, COALSMOKE2, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "SetSmoke-coal2");
                         break;
                     case 2:
-                        Map[yy][xx] = (short)(COALSMOKE3 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        setMapTile(xx, yy, COALSMOKE3, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "SetSmoke-coal3");
                         break;
                     case 3:
-                        Map[yy][xx] = (short)(COALSMOKE4 | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+                        setMapTile(xx, yy, COALSMOKE4, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "SetSmoke-coal4");
                         break;
                     }
                 }
@@ -167,7 +168,7 @@ void SetSmoke(int x, int y) {
             /* Only animate if it's the right base tile */
             if ((Map[yy][xx] & LOMASK) == AniTabC[z]) {
                 /* Set the animated smoke tile */
-                Map[yy][xx] = (SMOKEBASE + AniTabA[z]) | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                setMapTile(xx, yy, SMOKEBASE + AniTabA[z], ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "SetSmoke-industrial");
             }
         }
     }
@@ -225,7 +226,7 @@ static void DoIndustrialSmoke(int x, int y) {
                 }
 
                 /* Set the smoke animation */
-                Map[yy][xx] = smokeTile | ANIMBIT | CONDBIT | POWERBIT | BURNBIT;
+                setMapTile(xx, yy, smokeTile, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "DoIndustrialSmoke");
             }
         }
     }
@@ -254,11 +255,11 @@ static void DoStadiumAnimation(int x, int y) {
         /* Make sure the position is valid */
         if (centerX >= 0 && centerX < WORLD_X && centerY >= 0 && centerY < WORLD_Y) {
             /* Set up the football game animation */
-            Map[centerY][centerX] = FOOTBALLGAME1 | ANIMBIT | CONDBIT | BURNBIT;
+            setMapTile(centerX, centerY, FOOTBALLGAME1, ANIMBIT | CONDBIT | BURNBIT, TILE_SET_REPLACE, "DoStadiumAnimation-game1");
             
             /* Set up the second part of the football game animation */
             if (centerY+1 >= 0 && centerY+1 < WORLD_Y) {
-                Map[centerY+1][centerX] = FOOTBALLGAME2 | ANIMBIT | CONDBIT | BURNBIT;
+                setMapTile(centerX, centerY+1, FOOTBALLGAME2, ANIMBIT | CONDBIT | BURNBIT, TILE_SET_REPLACE, "DoStadiumAnimation-game2");
             }
         }
     }
@@ -274,14 +275,14 @@ static void DoStadiumAnimation(int x, int y) {
             
             /* If we find football game tiles, revert them */
             if (tileValue >= FOOTBALLGAME1 && tileValue <= FOOTBALLGAME1 + 16) {
-                Map[centerY][centerX] &= ~ANIMBIT;
+                setMapTile(centerX, centerY, 0, ANIMBIT, TILE_CLEAR_FLAGS, "DoStadiumAnimation-revert1");
             }
             
             if (centerY+1 >= 0 && centerY+1 < WORLD_Y) {
                 tileValue = Map[centerY+1][centerX] & LOMASK;
                 
                 if (tileValue >= FOOTBALLGAME2 && tileValue <= FOOTBALLGAME2 + 16) {
-                    Map[centerY+1][centerX] &= ~ANIMBIT;
+                    setMapTile(centerX, centerY+1, 0, ANIMBIT, TILE_CLEAR_FLAGS, "DoStadiumAnimation-revert2");
                 }
             }
         }
@@ -297,7 +298,7 @@ void UpdateFire(int x, int y) {
 
     /* Set fire tiles to animate */
     if ((Map[y][x] & LOMASK) >= FIREBASE && (Map[y][x] & LOMASK) <= (FIREBASE + 7)) {
-        Map[y][x] |= ANIMBIT;
+        setMapTile(x, y, 0, ANIMBIT, TILE_SET_FLAGS, "UpdateFire-animate");
     }
 }
 
@@ -318,7 +319,7 @@ void UpdateNuclearPower(int x, int y) {
 
         if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
             /* Set the nuclear swirl animation bit with appropriate flags */
-            Map[yy][xx] = (short)(NUCLEAR_SWIRL | ANIMBIT | CONDBIT | POWERBIT | BURNBIT);
+            setMapTile(xx, yy, NUCLEAR_SWIRL, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "UpdateNuclearPower-swirl");
         }
     }
 }
@@ -340,7 +341,7 @@ void UpdateAirportRadar(int x, int y) {
 
         if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
             /* Set the radar animation bit with appropriate flags */
-            Map[yy][xx] = RADAR0 | ANIMBIT | CONDBIT | BURNBIT;
+            setMapTile(xx, yy, RADAR0, ANIMBIT | CONDBIT | BURNBIT, TILE_SET_REPLACE, "UpdateAirportRadar-rotate");
         }
     }
 }

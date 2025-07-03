@@ -4,6 +4,7 @@
 
 #include "tools.h"
 #include "sim.h"
+#include "tiles.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -578,15 +579,13 @@ int checkBigZone(short id, int *deltaHPtr, int *deltaVPtr) {
 void put3x3Rubble(int x, int y) {
     int xx, yy;
     short zz;
-    short mask;
 
     /* First pass - clear all zone bits to avoid confusion during bulldozing */
     for (yy = y - 1; yy <= y + 1; yy++) {
         for (xx = x - 1; xx <= x + 1; xx++) {
             if (TestBounds(xx, yy)) {
                 /* Clear the zone bit but preserve other flags */
-                mask = Map[yy][xx] & ~ZONEBIT;
-                Map[yy][xx] = mask;
+                setMapTile(xx, yy, 0, ZONEBIT, TILE_CLEAR_FLAGS, "put3x3Rubble-clear");
             }
         }
     }
@@ -597,7 +596,7 @@ void put3x3Rubble(int x, int y) {
             if (TestBounds(xx, yy)) {
                 zz = Map[yy][xx] & LOMASK;
                 if ((zz != RADTILE) && (zz != 0)) {
-                    Map[yy][xx] = SOMETINYEXP | ANIMBIT | BULLBIT;
+                    setMapTile(xx, yy, SOMETINYEXP, ANIMBIT | BULLBIT, TILE_SET_REPLACE, "put3x3Rubble-explode");
                 }
             }
         }
@@ -615,8 +614,7 @@ void put4x4Rubble(int x, int y) {
         for (xx = x - 1; xx <= x + 2; xx++) {
             if (TestBounds(xx, yy)) {
                 /* Clear the zone bit but preserve other flags */
-                mask = Map[yy][xx] & ~ZONEBIT;
-                Map[yy][xx] = mask;
+                setMapTile(xx, yy, 0, ZONEBIT, TILE_CLEAR_FLAGS, "put4x4Rubble-clear");
             }
         }
     }
@@ -627,7 +625,7 @@ void put4x4Rubble(int x, int y) {
             if (TestBounds(xx, yy)) {
                 zz = Map[yy][xx] & LOMASK;
                 if ((zz != RADTILE) && (zz != 0)) {
-                    Map[yy][xx] = SOMETINYEXP | ANIMBIT | BULLBIT;
+                    setMapTile(xx, yy, SOMETINYEXP, ANIMBIT | BULLBIT, TILE_SET_REPLACE, "put4x4Rubble-explode");
                 }
             }
         }
@@ -645,8 +643,7 @@ void put6x6Rubble(int x, int y) {
         for (xx = x - 2; xx <= x + 3; xx++) {
             if (TestBounds(xx, yy)) {
                 /* Clear the zone bit but preserve other flags */
-                mask = Map[yy][xx] & ~ZONEBIT;
-                Map[yy][xx] = mask;
+                setMapTile(xx, yy, 0, ZONEBIT, TILE_CLEAR_FLAGS, "put6x6Rubble-clear");
             }
         }
     }
@@ -657,7 +654,7 @@ void put6x6Rubble(int x, int y) {
             if (TestBounds(xx, yy)) {
                 zz = Map[yy][xx] & LOMASK;
                 if ((zz != RADTILE) && (zz != 0)) {
-                    Map[yy][xx] = SOMETINYEXP | ANIMBIT | BULLBIT;
+                    setMapTile(xx, yy, SOMETINYEXP, ANIMBIT | BULLBIT, TILE_SET_REPLACE, "put6x6Rubble-explode");
                 }
             }
         }
@@ -1163,7 +1160,7 @@ void FixSingle(int x, int y) {
 
         /* Update the road tile with proper connections */
         tile = RoadTable[adjTile];
-        Map[y][x] = (Map[y][x] & MASKBITS) | tile | BULLBIT | BURNBIT;
+        setMapTile(x, y, tile, BULLBIT | BURNBIT, TILE_SET_PRESERVE, "FixSingle-road");
         return;
     }
 
@@ -1215,7 +1212,7 @@ void FixSingle(int x, int y) {
 
         /* Update the rail tile with proper connections */
         tile = RailTable[adjTile];
-        Map[y][x] = (Map[y][x] & MASKBITS) | tile | BULLBIT | BURNBIT;
+        setMapTile(x, y, tile, BULLBIT | BURNBIT, TILE_SET_PRESERVE, "FixSingle-rail");
         return;
     }
 
@@ -1267,7 +1264,7 @@ void FixSingle(int x, int y) {
 
         /* Update the wire tile with proper connections */
         tile = WireTable[adjTile];
-        Map[y][x] = (Map[y][x] & MASKBITS) | tile | BULLBIT | BURNBIT | CONDBIT;
+        setMapTile(x, y, tile, BULLBIT | BURNBIT | CONDBIT, TILE_SET_PRESERVE, "FixSingle-wire");
         return;
     }
     
@@ -2218,14 +2215,14 @@ int DoBulldozer(int mapX, int mapY) {
                tile == BRWH || tile == BRWV) {
         /* Water-related structures cost $5 */
         Spend(5);
-        Map[mapY][mapX] = RIVER; /* Convert back to water */
+        setMapTile(mapX, mapY, RIVER, 0, TILE_SET_REPLACE, "DoBulldozer-water");
     } else if (tile == RADTILE) {
         /* Can't bulldoze radiation */
         return TOOLRESULT_FAILED;
     } else {
         /* All other tiles cost $1 */
         Spend(1);
-        Map[mapY][mapX] = DIRT;
+        setMapTile(mapX, mapY, DIRT, 0, TILE_SET_REPLACE, "DoBulldozer-dirt");
     }
 
     /* Fix neighboring tiles after bulldozing */
@@ -2378,7 +2375,7 @@ int DoPark(int mapX, int mapY) {
     randval = SimRandom(4);
 
     /* Set the tile to a random park tile */
-    Map[mapY][mapX] = (randval + TILE_WOODS) | BURNBIT | BULLBIT;
+    setMapTile(mapX, mapY, randval + TILE_WOODS, BURNBIT | BULLBIT, TILE_SET_REPLACE, "DoPark-forest");
 
     return TOOLRESULT_OK;
 }
@@ -2408,7 +2405,7 @@ int PlaceZone(int mapX, int mapY, int baseValue, int totalCost) {
             for (dx = -1; dx <= 1; dx++) {
                 short tile = Map[mapY + dy][mapX + dx] & LOMASK;
                 if (tile != DIRT && (tile == RUBBLE || (tile >= TINYEXP && tile <= LASTTINYEXP))) {
-                    Map[mapY + dy][mapX + dx] = DIRT;
+                    setMapTile(mapX + dx, mapY + dy, DIRT, 0, TILE_SET_REPLACE, "clearArea-dirt");
                 }
             }
         }
@@ -2423,10 +2420,10 @@ int PlaceZone(int mapX, int mapY, int baseValue, int totalCost) {
         for (dx = -1; dx <= 1; dx++) {
             if (dx == 0 && dy == 0) {
                 /* Center tile gets ZONEBIT, CONDBIT, and BULLBIT */
-                Map[mapY][mapX] = baseValue + 4 | ZONEBIT | BULLBIT | CONDBIT;
+                setMapTile(mapX, mapY, baseValue + 4, ZONEBIT | BULLBIT | CONDBIT, TILE_SET_REPLACE, "PlaceZone-center");
             } else {
                 /* All other tiles in the zone get CONDBIT too for proper power distribution */
-                Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT | CONDBIT;
+                setMapTile(mapX + dx, mapY + dy, baseValue + index, BULLBIT | CONDBIT, TILE_SET_REPLACE, "PlaceZone-tile");
             }
             index++;
         }
@@ -2497,7 +2494,7 @@ int Place4x4Building(int mapX, int mapY, int baseValue, int centerTile, int tota
             for (dx = -1; dx <= 2; dx++) {
                 short tile = Map[mapY + dy][mapX + dx] & LOMASK;
                 if (tile != DIRT && (tile == RUBBLE || (tile >= TINYEXP && tile <= LASTTINYEXP))) {
-                    Map[mapY + dy][mapX + dx] = DIRT;
+                    setMapTile(mapX + dx, mapY + dy, DIRT, 0, TILE_SET_REPLACE, "clearArea-dirt");
                 }
             }
         }
@@ -2513,13 +2510,13 @@ int Place4x4Building(int mapX, int mapY, int baseValue, int centerTile, int tota
         for (dx = -1; dx <= 2; dx++) {
             if (dx == 0 && dy == 0) {
                 /* Center tile gets ZONEBIT */
-                Map[mapY][mapX] = centerTile | ZONEBIT | BULLBIT;
+                setMapTile(mapX, mapY, centerTile, ZONEBIT | BULLBIT, TILE_SET_REPLACE, "PlaceBuilding-center");
             } else {
                 /* Skip the center index (5) */
                 if (index == 5) {
                     index++;
                 }
-                Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT;
+                setMapTile(mapX + dx, mapY + dy, baseValue + index, BULLBIT, TILE_SET_REPLACE, "PlaceBuilding-tile");
             }
             index++;
         }
@@ -2584,7 +2581,7 @@ int Place6x6Building(int mapX, int mapY, int baseValue, int centerTile, int tota
             for (dx = -2; dx <= 3; dx++) {
                 short tile = Map[mapY + dy][mapX + dx] & LOMASK;
                 if (tile != DIRT && (tile == RUBBLE || (tile >= TINYEXP && tile <= LASTTINYEXP))) {
-                    Map[mapY + dy][mapX + dx] = DIRT;
+                    setMapTile(mapX + dx, mapY + dy, DIRT, 0, TILE_SET_REPLACE, "clearArea-dirt");
                 }
             }
         }
@@ -2600,13 +2597,13 @@ int Place6x6Building(int mapX, int mapY, int baseValue, int centerTile, int tota
         for (dx = -2; dx <= 3; dx++) {
             if (dx == 0 && dy == 0) {
                 /* Center tile gets ZONEBIT */
-                Map[mapY][mapX] = centerTile | ZONEBIT | BULLBIT;
+                setMapTile(mapX, mapY, centerTile, ZONEBIT | BULLBIT, TILE_SET_REPLACE, "PlaceBuilding-center");
             } else {
                 /* Skip the center index (14) */
                 if (index == 14) {
                     index++;
                 }
-                Map[mapY + dy][mapX + dx] = baseValue + index | BULLBIT;
+                setMapTile(mapX + dx, mapY + dy, baseValue + index, BULLBIT, TILE_SET_REPLACE, "PlaceBuilding-tile");
             }
             index++;
         }

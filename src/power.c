@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "tiles.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -199,7 +200,7 @@ void DoPowerScan(void) {
     /* Clear the power map first */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            Map[y][x] &= ~POWERBIT; /* Turn off the power bit */
+            setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "DoPowerScan-clear"); /* Turn off the power bit */
             PowerMap[y][x] = 0;     /* Set PowerMap to unpowered */
         }
     }
@@ -258,7 +259,7 @@ void DoPowerScan(void) {
             MoveMapSim(ADir);
 
             /* Power the current position */
-            Map[SMapY][SMapX] |= POWERBIT;
+            setMapTile(SMapX, SMapY, 0, POWERBIT, TILE_SET_FLAGS, "DoPowerScan-power");
             PowerMap[SMapY][SMapX] = 1;
 
             /* Look in all four directions for conducting tiles */

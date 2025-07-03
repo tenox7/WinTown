@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "tiles.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -337,10 +338,10 @@ void DecTrafficMap(void) {
                                     /* If this is a heavy traffic tile, convert back to normal road
                                      */
                                     if (tile >= HTRFBASE) {
-                                        Map[mapY][mapX] = (tile - HTRFBASE + ROADBASE) & ~ANIMBIT;
+                                        setMapTile(mapX, mapY, tile - HTRFBASE + ROADBASE, 0, TILE_SET_PRESERVE, "DecTrafficMap-downgrade");
                                     } else {
                                         /* Otherwise just clear animation bit */
-                                        Map[mapY][mapX] &= ~ANIMBIT;
+                                        setMapTile(mapX, mapY, 0, ANIMBIT, TILE_CLEAR_FLAGS, "DecTrafficMap-clear");
                                     }
                                 }
                             }
@@ -386,17 +387,17 @@ void CalcTrafficAverage(void) {
                                 /* Heavy traffic */
                                 if (TrfDensity[y][x] > 40) {
                                     /* Set animation bit and add HTRFBASE offset */
-                                    Map[mapY][mapX] = (tile - ROADBASE + HTRFBASE) | ANIMBIT;
+                                    setMapTile(mapX, mapY, tile - ROADBASE + HTRFBASE, ANIMBIT, TILE_SET_PRESERVE, "CalcTrafficAverage-heavy");
                                 }
                                 /* Light traffic - randomly animate some tiles */
                                 else if (TrfDensity[y][x] > 10 && ((Fcycle & 3) == 0)) {
                                     /* Set animation bit but keep at ROADBASE */
-                                    Map[mapY][mapX] |= ANIMBIT;
+                                    setMapTile(mapX, mapY, 0, ANIMBIT, TILE_SET_FLAGS, "CalcTrafficAverage-light");
                                 }
                                 /* No traffic or very light - clear animation */
                                 else {
                                     /* Clear animation bit */
-                                    Map[mapY][mapX] &= ~ANIMBIT;
+                                    setMapTile(mapX, mapY, 0, ANIMBIT, TILE_CLEAR_FLAGS, "CalcTrafficAverage-clear");
                                 }
                             }
                         }

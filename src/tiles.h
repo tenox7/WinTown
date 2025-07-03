@@ -1,0 +1,32 @@
+/* tiles.h - Centralized tile management for MicropolisNT
+ * Provides unified interface for all map tile changes
+ */
+
+#ifndef _TILES_H
+#define _TILES_H
+
+/* Tile change operations */
+#define TILE_SET_REPLACE    0  /* Replace tile completely */
+#define TILE_SET_PRESERVE   1  /* Set tile preserving existing flags */
+#define TILE_SET_FLAGS      2  /* Set only flags, preserve tile */
+#define TILE_CLEAR_FLAGS    3  /* Clear specific flags */
+#define TILE_TOGGLE_FLAGS   4  /* Toggle specific flags */
+
+/* Function prototypes */
+int setMapTile(int x, int y, int tile, int flags, int operation, char* caller);
+int getMapTile(int x, int y);
+int getMapFlags(int x, int y);
+int validateTileCoords(int x, int y);
+int validateTileValue(int tile);
+
+/* Debug logging control */
+extern int tileDebugEnabled;
+int enableTileDebug(int enable);
+
+/* Tile change statistics */
+extern long tileChangeCount;
+extern long tileErrorCount;
+int resetTileStats();
+int printTileStats();
+
+#endif /* _TILES_H */
