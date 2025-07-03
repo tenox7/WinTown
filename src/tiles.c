@@ -95,8 +95,8 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
             break;
             
         case TILE_SET_FLAGS:
-            /* Set only flags, preserve tile */
-            newTile = (oldTile & LOMASK) | flags;
+            /* Set only flags, preserve tile and existing flags */
+            newTile = oldTile | flags;
             break;
             
         case TILE_CLEAR_FLAGS:
