@@ -5,6 +5,7 @@
 #include "sim.h"
 #include "tiles.h"
 #include <stdio.h>
+#include <string.h>
 
 /* Debug and statistics globals */
 int tileDebugEnabled = 1;
@@ -26,14 +27,48 @@ static int initTileLogging() {
     return (tileLogFile != (FILE*)0);
 }
 
+/* Convert flags to readable string */
+static void flagsToString(int flags, char* buffer, int bufSize) {
+    buffer[0] = '\0';
+    
+    if (flags & POWERBIT) strcat(buffer, "POWER ");
+    if (flags & CONDBIT) strcat(buffer, "COND ");
+    if (flags & BURNBIT) strcat(buffer, "BURN ");
+    if (flags & BULLBIT) strcat(buffer, "BULL ");
+    if (flags & ANIMBIT) strcat(buffer, "ANIM ");
+    if (flags & ZONEBIT) strcat(buffer, "ZONE ");
+    
+    if (buffer[0] == '\0') {
+        strcpy(buffer, "NONE");
+    } else {
+        /* Remove trailing space */
+        int len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == ' ') {
+            buffer[len-1] = '\0';
+        }
+    }
+}
+
 /* Log tile change */
 static int logTileChange(int x, int y, int oldTile, int newTile, char* caller) {
+    int oldBase, newBase;
+    int oldFlags, newFlags;
+    char oldFlagStr[64], newFlagStr[64];
+    
     if (!tileDebugEnabled || !initTileLogging()) {
         return 0;
     }
     
-    fprintf(tileLogFile, "TILE[%d,%d]: %04X->%04X by %s\n", 
-            x, y, oldTile, newTile, caller ? caller : "unknown");
+    oldBase = oldTile & LOMASK;
+    newBase = newTile & LOMASK;
+    oldFlags = oldTile & ~LOMASK;
+    newFlags = newTile & ~LOMASK;
+    
+    flagsToString(oldFlags, oldFlagStr, sizeof(oldFlagStr));
+    flagsToString(newFlags, newFlagStr, sizeof(newFlagStr));
+    
+    fprintf(tileLogFile, "TILE[%d,%d]: 0x%04X->0x%04X base %d->%d flags [%s]->[%s] by %s\n", 
+            x, y, oldTile, newTile, oldBase, newBase, oldFlagStr, newFlagStr, caller ? caller : "unknown");
     fflush(tileLogFile);
     return 1;
 }
@@ -118,8 +153,8 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
     /* Validate new tile value */
     if (!validateTileValue(newTile)) {
         if (tileDebugEnabled) {
-            fprintf(tileLogFile, "ERROR: Invalid tile value %04X at [%d,%d] by %s\n",
-                    newTile, x, y, caller ? caller : "unknown");
+            fprintf(tileLogFile, "ERROR: Invalid tile base %d (full value %d) at [%d,%d] by %s\n",
+                    newTile & LOMASK, newTile, x, y, caller ? caller : "unknown");
             fflush(tileLogFile);
         }
         tileErrorCount++;
