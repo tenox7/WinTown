@@ -834,18 +834,36 @@ static void ResPlop(int x, int y, int den, int value) {
 /* Place a commercial zone */
 static void ComPlop(int x, int y, int den) {
     int targetTile;
-    /* Original Micropolis formula for commercial - assuming value=0 for now */
-    /* Original: base = (((Value * 5) + Den) * 9) + CZB - 4; where CZB=436 */
-    targetTile = (((0 * 5) + den) * 9) + 436 - 4;
+    
+    /* Debug logging to track parameters */
+    addDebugLog("ComPlop: x=%d y=%d den=%d", x, y, den);
+    
+    /* Try fixing like residential - use COMBASE + 4 for center */
+    /* For den=0, should produce COMCLR=427 */
+    targetTile = (((0 * 5) + den) * 9) + COMBASE + 4;
+    
+    /* Debug logging for calculation */
+    addDebugLog("ComPlop calc: (((0 * 5) + den=%d) * 9) + COMBASE=%d + 4 = %d", 
+               den, COMBASE, targetTile);
+    
     ZonePlop(x, y, targetTile);
 }
 
 /* Place an industrial zone */
 static void IndPlop(int x, int y, int den) {
     int targetTile;
-    /* Original Micropolis formula for industrial - assuming value=0 for now */
-    /* Original: base = (((Value * 4) + Den) * 9) + IZB - 4; where IZB=625 */
-    targetTile = (((0 * 4) + den) * 9) + 625 - 4;
+    
+    /* Debug logging to track parameters */
+    addDebugLog("IndPlop: x=%d y=%d den=%d", x, y, den);
+    
+    /* Try fixing like residential - use INDBASE + 4 for center */
+    /* For den=0, should produce INDCLR=616 */
+    targetTile = (((0 * 4) + den) * 9) + INDBASE + 4;
+    
+    /* Debug logging for calculation */
+    addDebugLog("IndPlop calc: (((0 * 4) + den=%d) * 9) + INDBASE=%d + 4 = %d", 
+               den, INDBASE, targetTile);
+    
     ZonePlop(x, y, targetTile);
 }
 
