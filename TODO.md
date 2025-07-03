@@ -10,7 +10,7 @@
 - Zone demand
 - Better Alerts (fire, crime, pollution, traffic)
 - Disasters
-- Rating, Impeachment
+- Rating/approval, Impeachment
 - Scenarios as real scenarios, not just map load
 - Bridges, power over water
 - Minimap stats not working: fire police

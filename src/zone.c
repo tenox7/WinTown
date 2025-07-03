@@ -63,8 +63,8 @@ int calcResPop(int zone) {
     }
     
     /* Use original RZPop algorithm from s_zone.c */
-    /* Note: zones range from RESBASE to RESBASE+many, not from RZB */
-    CzDen = (((zone - RESBASE) / 9) % 4);
+    /* Note: calculation must use RZB (265) as base, not RESBASE (240) */
+    CzDen = (((zone - RZB) / 9) % 4);
     return ((CzDen * 8) + 16);
 }
 
@@ -575,7 +575,9 @@ static void DoResidential(int x, int y) {
         value = EvalRes(1);  /* Pass 1 for traffic good */
 
         if (value > 0) {
-            DoResIn(tpop, value);
+            /* Use land value for zone placement, not evaluation score */
+            int landValue = GetCRVal(x, y);
+            DoResIn(tpop, landValue);
         } else if (value < 0) {
             DoResOut(tpop, value, x, y);
             
@@ -609,7 +611,6 @@ static int GetCRVal(int x, int y) {
 /* Handle residential zone growth - matches original Micropolis */
 static void DoResIn(int pop, int value) {
     short z;
-    int zoneValue;
     short currentTile;
     
     z = PollutionMem[SMapY >>1][SMapX >>1];
@@ -622,21 +623,16 @@ static void DoResIn(int pop, int value) {
         return;
     }
     
-    /* Convert the evaluation value to a zone value (0-3) */
-    zoneValue = GetCRVal(SMapX, SMapY);
-    if (zoneValue < 0) zoneValue = 0;
-    if (zoneValue > 3) zoneValue = 3;
-    
-    if (Map[SMapY][SMapX] == FREEZ) {
+    if ((Map[SMapY][SMapX] & LOMASK) == FREEZ) {
         if (pop < 8) {
-            BuildHouse(SMapX, SMapY, zoneValue);
+            BuildHouse(SMapX, SMapY, value);
             IncROG(1);
             return;
         }
         /* FREEZ tiles with high population should upgrade */
         if (PopDensity[SMapY >>1][SMapX >>1] > 64) {
             /* High density - upgrade from FREEZ to proper residential */
-            ResPlop(SMapX, SMapY, 0, zoneValue);
+            ResPlop(SMapX, SMapY, 0, value);
             IncROG(8);
             return;
         }
@@ -651,7 +647,7 @@ static void DoResIn(int pop, int value) {
             density = 0;
         }
         
-        ResPlop(SMapX, SMapY, density, zoneValue);
+        ResPlop(SMapX, SMapY, density, value);
         IncROG(8);
     }
 }
