@@ -57,6 +57,15 @@
 /* Cheats menu IDs */
 #define IDM_CHEATS_DISABLE_DISASTERS 7001
 
+/* Disaster menu IDs */
+#define IDM_DISASTER_BASE 9000
+#define IDM_DISASTER_FIRE 9001
+#define IDM_DISASTER_FLOOD 9002
+#define IDM_DISASTER_TORNADO 9003
+#define IDM_DISASTER_EARTHQUAKE 9004
+#define IDM_DISASTER_MONSTER 9005
+#define IDM_DISASTER_MELTDOWN 9006
+
 /* Settings menu IDs */
 #define IDM_SETTINGS_DIALOG 8101
 #define IDM_SETTINGS_LEVEL_EASY 8102
@@ -217,6 +226,7 @@ static HMENU hTilesetMenu = NULL;
 static HMENU hScenarioMenu = NULL;
 static HMENU hToolMenu = NULL;
 static HMENU hSpawnMenu = NULL;
+static HMENU hDisasterMenu = NULL;
 static HMENU hSettingsMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 static int powerOverlayEnabled = 0; /* Power overlay display toggle */
@@ -2071,6 +2081,72 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 } else {
                     addGameLog("Could not spawn bus - too many sprites");
                 }
+            }
+            return 0;
+            
+        /* Disaster menu items */
+        case IDM_DISASTER_FIRE:
+            if (disastersEnabled) {
+                makeFire(SimRandom(WORLD_X), SimRandom(WORLD_Y));
+                addGameLog("Fire disaster manually triggered");
+            } else {
+                addGameLog("Disasters are disabled - cannot trigger fire");
+            }
+            return 0;
+            
+        case IDM_DISASTER_FLOOD:
+            if (disastersEnabled) {
+                makeFlood();
+                addGameLog("Flood disaster manually triggered");
+            } else {
+                addGameLog("Disasters are disabled - cannot trigger flood");
+            }
+            return 0;
+            
+        case IDM_DISASTER_TORNADO:
+            if (disastersEnabled) {
+                /* Tornado not implemented yet, create multiple fires in tornado pattern */
+                int x, y, i;
+                int centerX = SimRandom(WORLD_X - 20) + 10;
+                int centerY = SimRandom(WORLD_Y - 20) + 10;
+                
+                for (i = 0; i < 10; i++) {
+                    x = centerX + SimRandom(10) - 5;
+                    y = centerY + SimRandom(10) - 5;
+                    if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
+                        makeFire(x, y);
+                    }
+                }
+                addGameLog("Tornado disaster manually triggered");
+            } else {
+                addGameLog("Disasters are disabled - cannot trigger tornado");
+            }
+            return 0;
+            
+        case IDM_DISASTER_EARTHQUAKE:
+            if (disastersEnabled) {
+                doEarthquake();
+                addGameLog("Earthquake disaster manually triggered");
+            } else {
+                addGameLog("Disasters are disabled - cannot trigger earthquake");
+            }
+            return 0;
+            
+        case IDM_DISASTER_MONSTER:
+            if (disastersEnabled) {
+                makeMonster();
+                addGameLog("Monster disaster manually triggered");
+            } else {
+                addGameLog("Disasters are disabled - cannot trigger monster");
+            }
+            return 0;
+            
+        case IDM_DISASTER_MELTDOWN:
+            if (disastersEnabled) {
+                makeMeltdown();
+                addGameLog("Nuclear meltdown disaster manually triggered");
+            } else {
+                addGameLog("Disasters are disabled - cannot trigger meltdown");
             }
             return 0;
             
@@ -4209,6 +4285,15 @@ HMENU createMainMenu(void) {
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_SHIP, "&Ship");
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_BUS, "&Bus");
     
+    /* Disaster Menu */
+    hDisasterMenu = CreatePopupMenu();
+    AppendMenu(hDisasterMenu, MF_STRING, IDM_DISASTER_FIRE, "&Fire");
+    AppendMenu(hDisasterMenu, MF_STRING, IDM_DISASTER_FLOOD, "Fl&ood");
+    AppendMenu(hDisasterMenu, MF_STRING, IDM_DISASTER_TORNADO, "&Tornado");
+    AppendMenu(hDisasterMenu, MF_STRING, IDM_DISASTER_EARTHQUAKE, "&Earthquake");
+    AppendMenu(hDisasterMenu, MF_STRING, IDM_DISASTER_MONSTER, "&Monster");
+    AppendMenu(hDisasterMenu, MF_STRING, IDM_DISASTER_MELTDOWN, "Nuclear &Meltdown");
+    
     /* Settings Menu */
     hSettingsMenu = CreatePopupMenu();
     
@@ -4241,6 +4326,7 @@ HMENU createMainMenu(void) {
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSpawnMenu, "S&pawn");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hDisasterMenu, "&Disasters");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSettingsMenu, "Se&ttings");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hViewMenu, "&View");
 
