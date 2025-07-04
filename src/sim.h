@@ -336,6 +336,7 @@ extern short MiscHis[MISCHISTLEN/2]; /* Miscellaneous history */
 extern int SimSpeed;     /* 0=pause, 1=slow, 2=med, 3=fast */
 extern int SimSpeedMeta; /* Counter for adjusting sim speed, 0-3 */
 extern int SimPaused;    /* 1 if paused, 0 otherwise */
+extern int SimTimerDelay; /* Timer delay in milliseconds based on speed */
 extern int CityTime;     /* City time from 0 to ~32 depending on scenario */
 extern int CityYear;     /* City year from 1900 onwards */
 extern int CityMonth;    /* City month from Jan to Dec */
@@ -409,6 +410,7 @@ extern int ValveFlag;    /* Set to 1 when valves change */
 extern short DisasterEvent; /* Current disaster type (0=none) - defined in scenarios.c */
 extern short DisasterWait;  /* Countdown to next disaster - defined in scenarios.c */
 extern int DisasterLevel;   /* Disaster level */
+extern int DisastersEnabled; /* Enable/disable disasters (0=disabled, 1=enabled) */
 
 /* Core simulation functions */
 void DoSimInit(void);
@@ -423,6 +425,12 @@ int GetPValue(int x, int y);
 int TestBounds(int x, int y);
 void SetSimulationSpeed(HWND hwnd, int speed);
 void CleanupSimTimer(HWND hwnd);
+void SetGameSpeed(int speed);
+void SetGameLevel(int level);
+void PauseSimulation(void);
+void ResumeSimulation(void);
+void TogglePause(void);
+void ShowSettingsDialog(HWND hwnd);
 
 /* Functions implemented in zone.c */
 void DoZone(int Xloc, int Yloc, int pos);
@@ -476,6 +484,7 @@ extern QUAD PoliceSpend;       /* Actual police spending */
 extern QUAD FireSpend;         /* Actual fire spending */
 extern QUAD TaxFund;           /* Tax income for current year */
 extern int AutoBudget;         /* Auto-budget enabled flag */
+extern int AutoBulldoze;       /* Auto-bulldoze enabled flag */
 
 void InitBudget(void);         /* Initialize budget system */
 void CollectTax(void);         /* Calculate and collect taxes */

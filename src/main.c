@@ -56,6 +56,15 @@
 /* Cheats menu IDs */
 #define IDM_CHEATS_DISABLE_DISASTERS 7001
 
+/* Settings menu IDs */
+#define IDM_SETTINGS_DIALOG 8101
+#define IDM_SETTINGS_LEVEL_EASY 8102
+#define IDM_SETTINGS_LEVEL_MEDIUM 8103
+#define IDM_SETTINGS_LEVEL_HARD 8104
+#define IDM_SETTINGS_AUTO_BUDGET 8105
+#define IDM_SETTINGS_AUTO_BULLDOZE 8106
+
+
 /* View menu IDs - Budget Window */
 #define IDM_VIEW_BUDGET 8001
 
@@ -204,14 +213,20 @@ char cityFileName[MAX_PATH]; /* Current city filename - used by other modules */
 static HMENU hMenu = NULL;
 static HMENU hFileMenu = NULL;
 static HMENU hTilesetMenu = NULL;
-static HMENU hSimMenu = NULL;
 static HMENU hScenarioMenu = NULL;
 static HMENU hToolMenu = NULL;
 static HMENU hSpawnMenu = NULL;
-static HMENU hCheatsMenu = NULL;
+static HMENU hSettingsMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 static int powerOverlayEnabled = 0; /* Power overlay display toggle */
 int disastersDisabled = 1; /* Cheat flag to disable disasters - global for other modules */
+
+/* Game settings - Global variables for speed, difficulty, and auto-settings */
+int gameSpeed = SPEED_MEDIUM;     /* Current game speed (0=pause, 1=slow, 2=medium, 3=fast) */
+int gameLevel = LEVEL_EASY;       /* Current difficulty level (0=easy, 1=medium, 2=hard) */
+int autoBulldoze = 1;             /* Auto-bulldoze enabled flag */
+int disastersEnabled = 1;         /* Disasters enabled flag (will replace disastersDisabled) */
+int simTimerDelay = 200;          /* Timer delay in milliseconds */
 
 /* External reference to scenario variables (defined in scenarios.c) */
 extern short ScenarioID;    /* Current scenario ID (0 = none) */
@@ -1602,7 +1617,7 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 /* Update menu when simulation speed changes */
 void UpdateSimulationMenu(HWND hwnd, int speed) {
     /* Update menu checkmarks */
-    CHECK_MENU_RADIO_ITEM(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
+    CHECK_MENU_RADIO_ITEM(hSettingsMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
 }
 
 LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -1637,23 +1652,19 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case IDM_SIM_PAUSE:
-            SetSimulationSpeed(hwnd, SPEED_PAUSED);
-            addGameLog("Simulation paused");
+            SetGameSpeed(SPEED_PAUSED);
             return 0;
 
         case IDM_SIM_SLOW:
-            SetSimulationSpeed(hwnd, SPEED_SLOW);
-            addGameLog("Simulation speed: Slow");
+            SetGameSpeed(SPEED_SLOW);
             return 0;
 
         case IDM_SIM_MEDIUM:
-            SetSimulationSpeed(hwnd, SPEED_MEDIUM);
-            addGameLog("Simulation speed: Medium");
+            SetGameSpeed(SPEED_MEDIUM);
             return 0;
 
         case IDM_SIM_FAST:
-            SetSimulationSpeed(hwnd, SPEED_FAST);
-            addGameLog("Simulation speed: Fast");
+            SetGameSpeed(SPEED_FAST);
             return 0;
 
         /* Scenario menu items */
@@ -2059,19 +2070,20 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
             
-        /* Cheats menu items */
+        /* Handle disaster enable/disable from Settings menu */
         case IDM_CHEATS_DISABLE_DISASTERS:
             {
-                disastersDisabled = !disastersDisabled;
-                CheckMenuItem(hCheatsMenu, IDM_CHEATS_DISABLE_DISASTERS, 
-                            disastersDisabled ? MF_CHECKED : MF_UNCHECKED);
+                disastersEnabled = !disastersEnabled;
+                disastersDisabled = !disastersEnabled;
+                CheckMenuItem(hSettingsMenu, IDM_CHEATS_DISABLE_DISASTERS, 
+                            disastersEnabled ? MF_CHECKED : MF_UNCHECKED);
                 
-                if (disastersDisabled) {
+                if (!disastersEnabled) {
                     int x, y;
                     short tile;
                     int firesExtinguished = 0;
                     
-                    addGameLog("CHEAT: Disasters disabled");
+                    addGameLog("Disasters disabled");
                     /* Clear any active disasters */
                     DisasterEvent = 0;
                     DisasterWait = 0;
@@ -2081,18 +2093,18 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         for (x = 0; x < WORLD_X; x++) {
                             tile = Map[y][x] & LOMASK;
                             if (tile >= TILE_FIRE && tile <= TILE_LASTFIRE) {
-                                setMapTile(x, y, TILE_RUBBLE, BULLBIT, TILE_SET_REPLACE, "cheat-extinguish");
+                                setMapTile(x, y, TILE_RUBBLE, BULLBIT, TILE_SET_REPLACE, "extinguish-fire");
                                 firesExtinguished++;
                             }
                         }
                     }
                     
                     if (firesExtinguished > 0) {
-                        addGameLog("CHEAT: Extinguished %d fires", firesExtinguished);
+                        addGameLog("Extinguished %d fires", firesExtinguished);
                         InvalidateRect(hwnd, NULL, FALSE);
                     }
                 } else {
-                    addGameLog("CHEAT: Disasters enabled");
+                    addGameLog("Disasters enabled");
                 }
             }
             return 0;
@@ -2100,6 +2112,31 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* View menu - Budget Window */
         case IDM_VIEW_BUDGET:
             ShowBudgetWindow(hwnd);
+            return 0;
+
+        /* Settings menu items */
+        case IDM_SETTINGS_LEVEL_EASY:
+            SetGameLevel(LEVEL_EASY);
+            return 0;
+            
+        case IDM_SETTINGS_LEVEL_MEDIUM:
+            SetGameLevel(LEVEL_MEDIUM);
+            return 0;
+            
+        case IDM_SETTINGS_LEVEL_HARD:
+            SetGameLevel(LEVEL_HARD);
+            return 0;
+            
+        case IDM_SETTINGS_AUTO_BUDGET:
+            AutoBudget = !AutoBudget;
+            CheckMenuItem(hSettingsMenu, IDM_SETTINGS_AUTO_BUDGET, AutoBudget ? MF_CHECKED : MF_UNCHECKED);
+            addGameLog("Auto-budget %s", AutoBudget ? "enabled" : "disabled");
+            return 0;
+            
+        case IDM_SETTINGS_AUTO_BULLDOZE:
+            autoBulldoze = !autoBulldoze;
+            CheckMenuItem(hSettingsMenu, IDM_SETTINGS_AUTO_BULLDOZE, autoBulldoze ? MF_CHECKED : MF_UNCHECKED);
+            addGameLog("Auto-bulldoze %s", autoBulldoze ? "enabled" : "disabled");
             return 0;
 
         default:
@@ -2422,6 +2459,28 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
             }
             break;
+
+        /* Speed control keyboard shortcuts */
+        case VK_SPACE:
+            TogglePause();
+            break;
+
+        case '1':
+            SetGameSpeed(SPEED_SLOW);
+            break;
+
+        case '2':
+            SetGameSpeed(SPEED_MEDIUM);
+            break;
+
+        case '3':
+            SetGameSpeed(SPEED_FAST);
+            break;
+
+        case '0':
+            SetGameSpeed(SPEED_PAUSED);
+            break;
+
         }
         return 0;
     }
@@ -4061,14 +4120,7 @@ HMENU createMainMenu(void) {
     hTilesetMenu = CreatePopupMenu();
     populateTilesetMenu(hTilesetMenu);
 
-    hSimMenu = CreatePopupMenu();
-    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_PAUSE, "&Pause");
-    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_SLOW, "&Slow");
-    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_MEDIUM, "&Medium");
-    AppendMenu(hSimMenu, MF_STRING, IDM_SIM_FAST, "&Fast");
-
-    /* Default simulation speed is medium */
-    CHECK_MENU_RADIO_ITEM(hSimMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_MEDIUM, MF_BYCOMMAND);
+    /* Speed menu moved to Settings menu */
 
     /* Create scenario menu */
     hScenarioMenu = CreatePopupMenu();
@@ -4153,18 +4205,39 @@ HMENU createMainMenu(void) {
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_SHIP, "&Ship");
     AppendMenu(hSpawnMenu, MF_STRING, IDM_SPAWN_BUS, "&Bus");
     
-    /* Cheats Menu */
-    hCheatsMenu = CreatePopupMenu();
-    AppendMenu(hCheatsMenu, MF_STRING, IDM_CHEATS_DISABLE_DISASTERS, "&Disable Disasters");
-    /* Check it by default since disasters are now disabled on startup */
-    CheckMenuItem(hCheatsMenu, IDM_CHEATS_DISABLE_DISASTERS, MF_CHECKED);
+    /* Settings Menu */
+    hSettingsMenu = CreatePopupMenu();
+    
+    /* Speed controls */
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SIM_PAUSE, "Speed: &Pause\t0");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SIM_SLOW, "Speed: &Slow\t1");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SIM_MEDIUM, "Speed: &Medium\t2");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SIM_FAST, "Speed: &Fast\t3");
+    AppendMenu(hSettingsMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Difficulty Level submenu */
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_EASY, "Difficulty: &Easy ($20,000)");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_MEDIUM, "Difficulty: &Medium ($10,000)");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_HARD, "Difficulty: &Hard ($5,000)");
+    AppendMenu(hSettingsMenu, MF_SEPARATOR, 0, NULL);
+    
+    /* Auto Settings */
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_AUTO_BUDGET, "Auto &Budget");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_AUTO_BULLDOZE, "Auto B&ulldoze");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_CHEATS_DISABLE_DISASTERS, "Enable &Disasters");
+    
+    /* Set default checkmarks */
+    CheckMenuItem(hSettingsMenu, IDM_SIM_MEDIUM, MF_CHECKED); /* Default speed */
+    CheckMenuItem(hSettingsMenu, IDM_SETTINGS_LEVEL_EASY, MF_CHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SETTINGS_AUTO_BUDGET, AutoBudget ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SETTINGS_AUTO_BULLDOZE, autoBulldoze ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_CHEATS_DISABLE_DISASTERS, disastersEnabled ? MF_CHECKED : MF_UNCHECKED);
 
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hTilesetMenu, "&Tileset");
-    AppendMenu(hMainMenu, MF_POPUP, (UINT)hSimMenu, "&Speed");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hSpawnMenu, "S&pawn");
-    AppendMenu(hMainMenu, MF_POPUP, (UINT)hCheatsMenu, "&Cheats");
+    AppendMenu(hMainMenu, MF_POPUP, (UINT)hSettingsMenu, "Se&ttings");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hViewMenu, "&View");
 
     return hMainMenu;
@@ -4667,3 +4740,76 @@ void ShowBudgetWindow(HWND parent) {
 int ShowBudgetWindowAndWait(HWND parent) {
     return DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, BudgetDlgProc);
 }
+
+/* Enhanced speed control functions */
+void SetGameSpeed(int speed) {
+    /* Speed delays in milliseconds based on original Micropolis timings */
+    static int speedDelays[] = { 0, 500, 200, 100 }; /* pause, slow, medium, fast */
+    
+    if (speed < 0) speed = 0;
+    if (speed > 3) speed = 3;
+    
+    gameSpeed = speed;
+    simTimerDelay = speedDelays[speed];
+    
+    /* Update simulation speed */
+    SetSimulationSpeed(hwndMain, speed);
+    
+    /* Update menu checkmarks */
+    CheckMenuItem(hSettingsMenu, IDM_SIM_PAUSE, speed == SPEED_PAUSED ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SIM_SLOW, speed == SPEED_SLOW ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SIM_MEDIUM, speed == SPEED_MEDIUM ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SIM_FAST, speed == SPEED_FAST ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void SetGameLevel(int level) {
+    if (level < 0) level = 0;
+    if (level > 2) level = 2;
+    
+    gameLevel = level;
+    GameLevel = level; /* Update simulation variable */
+    
+    /* Set starting funds based on difficulty */
+    switch (level) {
+        case LEVEL_EASY:
+            TotalFunds = 20000;
+            addGameLog("Difficulty set to Easy ($20,000 starting funds)");
+            break;
+        case LEVEL_MEDIUM:
+            TotalFunds = 10000;
+            addGameLog("Difficulty set to Medium ($10,000 starting funds)");
+            break;
+        case LEVEL_HARD:
+            TotalFunds = 5000;
+            addGameLog("Difficulty set to Hard ($5,000 starting funds)");
+            break;
+    }
+    
+    /* Update menu checkmarks */
+    CheckMenuItem(hSettingsMenu, IDM_SETTINGS_LEVEL_EASY, level == LEVEL_EASY ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SETTINGS_LEVEL_MEDIUM, level == LEVEL_MEDIUM ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_SETTINGS_LEVEL_HARD, level == LEVEL_HARD ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void PauseSimulation() {
+    if (gameSpeed != SPEED_PAUSED) {
+        SetGameSpeed(SPEED_PAUSED);
+        addGameLog("Simulation paused");
+    }
+}
+
+void ResumeSimulation() {
+    if (gameSpeed == SPEED_PAUSED) {
+        SetGameSpeed(SPEED_MEDIUM);
+        addGameLog("Simulation resumed");
+    }
+}
+
+void TogglePause() {
+    if (gameSpeed == SPEED_PAUSED) {
+        ResumeSimulation();
+    } else {
+        PauseSimulation();
+    }
+}
+

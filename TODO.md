@@ -4,7 +4,7 @@
 ## Major Features Missing
 - Save game
 - New game / map generator
-- Difficulty level
+- Difficulty level, Priority
 - Crime, fire, pollution, etc
 - Zone demand
 - Better notifications (fire, crime, pollution, traffic)
