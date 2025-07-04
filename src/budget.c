@@ -57,7 +57,7 @@ void CollectTax(void) {
     TaxFund = 0;
 
     /* Calculate funding requirements */
-    RoadFund = RoadTotal * 4;     /* $4 per road tile */
+    RoadFund = RoadTotal * 1;     /* $1 per road tile - matches original */
     FireFund = FirePop * 100;     /* $100 per fire station */
     PoliceFund = PolicePop * 100; /* $100 per police station */
 
@@ -130,6 +130,7 @@ void DoBudget(void) {
     QUAD fireInt;
     QUAD policeInt;
     QUAD roadInt;
+    int fromMenu = 0;  /* Called from budget cycle, not menu */
 
     /* Calculate desired allocation based on percentages */
     fireInt = (QUAD)(((float)FireFund) * FirePercent);
@@ -138,6 +139,34 @@ void DoBudget(void) {
 
     total = fireInt + policeInt + roadInt;
     yumDuckets = TaxFund + TotalFunds;
+
+    /* Check if budget window should be shown */
+    if (!AutoBudget || (yumDuckets < total && !fromMenu)) {
+        extern HWND hwndMain;
+        int result;
+        
+        /* If insufficient funds during auto-budget, disable auto-budget */
+        if (AutoBudget && yumDuckets < total) {
+            AutoBudget = 0;
+            addGameLog("BUDGET CRISIS: Insufficient funds - Auto-budget disabled");
+        }
+        
+        /* Show budget window and wait for user input */
+        result = ShowBudgetWindowAndWait(hwndMain);
+        
+        /* If user cancelled, re-enable auto-budget as fallback */
+        if (result == IDCANCEL) {
+            AutoBudget = 1;
+            addGameLog("Budget cancelled - Auto-budget re-enabled");
+        }
+        
+        /* Recalculate with new values after user input */
+        fireInt = (QUAD)(((float)FireFund) * FirePercent);
+        policeInt = (QUAD)(((float)PoliceFund) * PolicePercent);
+        roadInt = (QUAD)(((float)RoadFund) * RoadPercent);
+        total = fireInt + policeInt + roadInt;
+        yumDuckets = TaxFund + TotalFunds;
+    }
 
     /* If we have enough money for full funding */
     if (yumDuckets >= total) {

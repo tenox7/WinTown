@@ -56,6 +56,9 @@
 /* Cheats menu IDs */
 #define IDM_CHEATS_DISABLE_DISASTERS 7001
 
+/* View menu IDs - Budget Window */
+#define IDM_VIEW_BUDGET 8001
+
 /* Minimap window definitions */
 #define MINIMAP_WINDOW_CLASS "MicropolisMinimapWindow"
 #define MINIMAP_WINDOW_WIDTH 360  /* WORLD_X * MINIMAP_SCALE = 120 * 3 */
@@ -416,6 +419,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	GetModuleFileName(NULL, progPathName, MAX_PATH);
 	MyPathRemoveFileSpecA(progPathName);
+
 
     /* Initialize debug log by overwriting existing file */
     wsprintf(debugLogPath, "%s\\debug.log", progPathName);
@@ -1707,26 +1711,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         /* Log window menu case removed */
 
-        case IDM_VIEW_DEBUG_LOGS: {
-            HMENU hMenu = GetMenu(hwnd);
-            HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
-            UINT state = GetMenuState(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND);
-
-            /* Toggle debug logging */
-            showDebugLogs = (state & MF_CHECKED) ? 0 : 1;
-
-            if (showDebugLogs) {
-                /* Enable debug logging */
-                CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_CHECKED);
-                addGameLog("Debug logging enabled");
-                addDebugLog("Debug logging initialized");
-            } else {
-                /* Disable debug logging */
-                CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_BYCOMMAND | MF_UNCHECKED);
-                addGameLog("Debug logging disabled");
-            }
-        }
-            return 0;
 
         case IDM_VIEW_POWER_OVERLAY: {
             HMENU hMenu = GetMenu(hwnd);
@@ -2111,6 +2095,11 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     addGameLog("CHEAT: Disasters enabled");
                 }
             }
+            return 0;
+
+        /* View menu - Budget Window */
+        case IDM_VIEW_BUDGET:
+            ShowBudgetWindow(hwnd);
             return 0;
 
         default:
@@ -4143,6 +4132,7 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_MINIMAPWINDOW, "&Minimap Window");
     /* Check it by default since the minimap window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_CHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_BUDGET, "&Budget Window");
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILESWINDOW, "Tile &Viewer");
     /* Leave unchecked by default since the tiles window is hidden on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_UNCHECKED);
@@ -4154,10 +4144,6 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILE_DEBUG, "Tile &Debug");
     /* Leave unchecked by default since tile debug is disabled on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_UNCHECKED);
-    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_DEBUG_LOGS, "Show &Debug Logs");
-    /* Check it by default since debug logs are now enabled on startup */
-    CheckMenuItem(hViewMenu, IDM_VIEW_DEBUG_LOGS, MF_CHECKED);
 
     /* Spawn Menu */
     hSpawnMenu = CreatePopupMenu();
@@ -4427,4 +4413,257 @@ void createNewMap(HWND hwnd) {
     
     /* Refresh tileset menu to show any new tilesets */
     refreshTilesetMenu();
+}
+
+/* Budget window dialog resource IDs */
+#define IDD_BUDGET 1001
+#define IDC_TAX_RATE_SLIDER 1002
+#define IDC_TAX_RATE_LABEL 1003
+#define IDC_ROAD_SLIDER 1004
+#define IDC_ROAD_LABEL 1005
+#define IDC_FIRE_SLIDER 1006
+#define IDC_FIRE_LABEL 1007
+#define IDC_POLICE_SLIDER 1008
+#define IDC_POLICE_LABEL 1009
+#define IDC_TAXES_COLLECTED 1010
+#define IDC_CASH_FLOW 1011
+#define IDC_PREVIOUS_FUNDS 1012
+#define IDC_CURRENT_FUNDS 1013
+#define IDC_AUTO_BUDGET 1014
+#define IDC_RESET_BUDGET 1015
+#define IDOK_BUDGET 1016
+#define IDCANCEL_BUDGET 1017
+#define IDC_ROAD_PERCENT 1018
+#define IDC_FIRE_PERCENT 1019
+#define IDC_POLICE_PERCENT 1020
+
+/* Budget window state variables */
+static int tempTaxRate = 7;
+static float tempRoadPercent = 1.0f;
+static float tempFirePercent = 1.0f;
+static float tempPolicePercent = 1.0f;
+static int tempAutoBudget = 1;
+
+/* Budget dialog procedure */
+BOOL CALLBACK BudgetDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+    static int tempTaxRate;
+    static float tempRoadPercent, tempFirePercent, tempPolicePercent;
+    static int tempAutoBudget;
+    static int savedRoadTotal, savedFirePop, savedPolicePop; /* Preserve counts during dialog session */
+    HWND hSlider;
+    int sliderPos;
+    char buffer[64];
+    QUAD roadRequirement, fireRequirement, policeRequirement;
+    QUAD roadSpending, fireSpending, policeSpending;
+    QUAD totalExpenses, cashFlow;
+    
+    switch (message) {
+    case WM_INITDIALOG:
+        /* Force a census to update infrastructure counts */
+        ForceFullCensus();
+        
+        /* Save the counts for this dialog session */
+        savedRoadTotal = RoadTotal;
+        savedFirePop = FirePop;
+        savedPolicePop = PolicePop;
+        
+        /* Initialize sliders and values */
+        tempTaxRate = TaxRate;
+        tempRoadPercent = RoadPercent;
+        tempFirePercent = FirePercent;
+        tempPolicePercent = PolicePercent;
+        tempAutoBudget = AutoBudget;
+        
+        /* Tax Rate Slider (0-20%) */
+        hSlider = GetDlgItem(hDlg, IDC_TAX_RATE_SLIDER);
+        SetScrollRange(hSlider, SB_CTL, 0, 20, FALSE);
+        SetScrollPos(hSlider, SB_CTL, tempTaxRate, TRUE);
+        wsprintf(buffer, "Tax Rate: %d%%", tempTaxRate);
+        SetDlgItemText(hDlg, IDC_TAX_RATE_LABEL, buffer);
+        
+        /* Road Funding Slider (0-100%) */
+        hSlider = GetDlgItem(hDlg, IDC_ROAD_SLIDER);
+        SetScrollRange(hSlider, SB_CTL, 0, 100, FALSE);
+        SetScrollPos(hSlider, SB_CTL, (int)(tempRoadPercent * 100), TRUE);
+        wsprintf(buffer, "Road Funding: %d%%", (int)(tempRoadPercent * 100));
+        SetDlgItemText(hDlg, IDC_ROAD_LABEL, buffer);
+        
+        /* Fire Funding Slider (0-100%) */
+        hSlider = GetDlgItem(hDlg, IDC_FIRE_SLIDER);
+        SetScrollRange(hSlider, SB_CTL, 0, 100, FALSE);
+        SetScrollPos(hSlider, SB_CTL, (int)(tempFirePercent * 100), TRUE);
+        wsprintf(buffer, "Fire Funding: %d%%", (int)(tempFirePercent * 100));
+        SetDlgItemText(hDlg, IDC_FIRE_LABEL, buffer);
+        
+        /* Police Funding Slider (0-100%) */
+        hSlider = GetDlgItem(hDlg, IDC_POLICE_SLIDER);
+        SetScrollRange(hSlider, SB_CTL, 0, 100, FALSE);
+        SetScrollPos(hSlider, SB_CTL, (int)(tempPolicePercent * 100), TRUE);
+        wsprintf(buffer, "Police Funding: %d%%", (int)(tempPolicePercent * 100));
+        SetDlgItemText(hDlg, IDC_POLICE_LABEL, buffer);
+        
+        /* Auto-Budget checkbox */
+        CheckDlgButton(hDlg, IDC_AUTO_BUDGET, tempAutoBudget ? BST_CHECKED : BST_UNCHECKED);
+        
+        /* Update financial display */
+        SendMessage(hDlg, WM_USER + 1, 0, 0);
+        return TRUE;
+        
+    case WM_USER + 1:
+        /* Calculate current funding requirements using saved counts */
+        roadRequirement = savedRoadTotal * 1;     /* $1 per road tile */
+        fireRequirement = savedFirePop * 100;     /* $100 per fire station */
+        policeRequirement = savedPolicePop * 100; /* $100 per police station */
+        
+        roadSpending = (QUAD)(roadRequirement * tempRoadPercent);
+        fireSpending = (QUAD)(fireRequirement * tempFirePercent);
+        policeSpending = (QUAD)(policeRequirement * tempPolicePercent);
+        
+        totalExpenses = roadSpending + fireSpending + policeSpending;
+        cashFlow = TaxFund - totalExpenses;
+        
+        /* Update financial display labels */
+        wsprintf(buffer, "Taxes Collected: $%d", (int)TaxFund);
+        SetDlgItemText(hDlg, IDC_TAXES_COLLECTED, buffer);
+        
+        wsprintf(buffer, "Cash Flow: %s$%d", cashFlow >= 0 ? "+" : "", (int)cashFlow);
+        SetDlgItemText(hDlg, IDC_CASH_FLOW, buffer);
+        
+        wsprintf(buffer, "Previous Funds: $%d", (int)TotalFunds);
+        SetDlgItemText(hDlg, IDC_PREVIOUS_FUNDS, buffer);
+        
+        wsprintf(buffer, "Current Funds: $%d", (int)(TotalFunds + cashFlow));
+        SetDlgItemText(hDlg, IDC_CURRENT_FUNDS, buffer);
+        
+        /* Update percentage display */
+        wsprintf(buffer, "$%d", (int)roadSpending);
+        SetDlgItemText(hDlg, IDC_ROAD_PERCENT, buffer);
+        
+        wsprintf(buffer, "$%d", (int)fireSpending);
+        SetDlgItemText(hDlg, IDC_FIRE_PERCENT, buffer);
+        
+        wsprintf(buffer, "$%d", (int)policeSpending);
+        SetDlgItemText(hDlg, IDC_POLICE_PERCENT, buffer);
+        return TRUE;
+        
+    case WM_HSCROLL:
+        /* Handle scrollbar changes */
+        hSlider = (HWND)lParam;
+        sliderPos = GetScrollPos(hSlider, SB_CTL);
+        
+        /* Handle thumb drag */
+        if (LOWORD(wParam) == SB_THUMBTRACK || LOWORD(wParam) == SB_THUMBPOSITION) {
+            sliderPos = HIWORD(wParam);
+        } else if (LOWORD(wParam) == SB_LINELEFT) {
+            sliderPos = max(0, sliderPos - 1);
+        } else if (LOWORD(wParam) == SB_LINERIGHT) {
+            int minPos, maxPos;
+            GetScrollRange(hSlider, SB_CTL, &minPos, &maxPos);
+            sliderPos = min(maxPos, sliderPos + 1);
+        } else if (LOWORD(wParam) == SB_PAGELEFT) {
+            sliderPos = max(0, sliderPos - 10);
+        } else if (LOWORD(wParam) == SB_PAGERIGHT) {
+            int minPos, maxPos;
+            GetScrollRange(hSlider, SB_CTL, &minPos, &maxPos);
+            sliderPos = min(maxPos, sliderPos + 10);
+        }
+        
+        SetScrollPos(hSlider, SB_CTL, sliderPos, TRUE);
+        
+        if (hSlider == GetDlgItem(hDlg, IDC_TAX_RATE_SLIDER)) {
+            tempTaxRate = sliderPos;
+            wsprintf(buffer, "Tax Rate: %d%%", tempTaxRate);
+            SetDlgItemText(hDlg, IDC_TAX_RATE_LABEL, buffer);
+        } else if (hSlider == GetDlgItem(hDlg, IDC_ROAD_SLIDER)) {
+            tempRoadPercent = sliderPos / 100.0f;
+            wsprintf(buffer, "Road Funding: %d%%", sliderPos);
+            SetDlgItemText(hDlg, IDC_ROAD_LABEL, buffer);
+        } else if (hSlider == GetDlgItem(hDlg, IDC_FIRE_SLIDER)) {
+            tempFirePercent = sliderPos / 100.0f;
+            wsprintf(buffer, "Fire Funding: %d%%", sliderPos);
+            SetDlgItemText(hDlg, IDC_FIRE_LABEL, buffer);
+        } else if (hSlider == GetDlgItem(hDlg, IDC_POLICE_SLIDER)) {
+            tempPolicePercent = sliderPos / 100.0f;
+            wsprintf(buffer, "Police Funding: %d%%", sliderPos);
+            SetDlgItemText(hDlg, IDC_POLICE_LABEL, buffer);
+        }
+        
+        /* Update financial display */
+        SendMessage(hDlg, WM_USER + 1, 0, 0);
+        return TRUE;
+        
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_AUTO_BUDGET:
+            tempAutoBudget = IsDlgButtonChecked(hDlg, IDC_AUTO_BUDGET) == BST_CHECKED ? 1 : 0;
+            return TRUE;
+            
+        case IDC_RESET_BUDGET:
+            /* Reset to current values */
+            tempTaxRate = TaxRate;
+            tempRoadPercent = RoadPercent;
+            tempFirePercent = FirePercent;
+            tempPolicePercent = PolicePercent;
+            tempAutoBudget = AutoBudget;
+            
+            /* Update controls */
+            SetScrollPos(GetDlgItem(hDlg, IDC_TAX_RATE_SLIDER), SB_CTL, tempTaxRate, TRUE);
+            SetScrollPos(GetDlgItem(hDlg, IDC_ROAD_SLIDER), SB_CTL, (int)(tempRoadPercent * 100), TRUE);
+            SetScrollPos(GetDlgItem(hDlg, IDC_FIRE_SLIDER), SB_CTL, (int)(tempFirePercent * 100), TRUE);
+            SetScrollPos(GetDlgItem(hDlg, IDC_POLICE_SLIDER), SB_CTL, (int)(tempPolicePercent * 100), TRUE);
+            CheckDlgButton(hDlg, IDC_AUTO_BUDGET, tempAutoBudget ? BST_CHECKED : BST_UNCHECKED);
+            
+            /* Update labels and display */
+            wsprintf(buffer, "Tax Rate: %d%%", tempTaxRate);
+            SetDlgItemText(hDlg, IDC_TAX_RATE_LABEL, buffer);
+            wsprintf(buffer, "Road Funding: %d%%", (int)(tempRoadPercent * 100));
+            SetDlgItemText(hDlg, IDC_ROAD_LABEL, buffer);
+            wsprintf(buffer, "Fire Funding: %d%%", (int)(tempFirePercent * 100));
+            SetDlgItemText(hDlg, IDC_FIRE_LABEL, buffer);
+            wsprintf(buffer, "Police Funding: %d%%", (int)(tempPolicePercent * 100));
+            SetDlgItemText(hDlg, IDC_POLICE_LABEL, buffer);
+            
+            SendMessage(hDlg, WM_USER + 1, 0, 0);
+            return TRUE;
+            
+        case IDOK_BUDGET:
+            /* Apply changes */
+            TaxRate = tempTaxRate;
+            RoadPercent = tempRoadPercent;
+            FirePercent = tempFirePercent;
+            PolicePercent = tempPolicePercent;
+            AutoBudget = tempAutoBudget;
+            
+            /* Recalculate budget */
+            DoBudget();
+            
+            addGameLog("Budget updated: Tax %d%%, Road %d%%, Fire %d%%, Police %d%%",
+                      TaxRate, (int)(RoadPercent * 100), (int)(FirePercent * 100), (int)(PolicePercent * 100));
+            
+            EndDialog(hDlg, IDOK);
+            return TRUE;
+            
+        case IDCANCEL_BUDGET:
+            EndDialog(hDlg, IDCANCEL);
+            return TRUE;
+        }
+        break;
+        
+    case WM_CLOSE:
+        /* Handle X button - same as Cancel */
+        EndDialog(hDlg, IDCANCEL);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* Show budget window function */
+void ShowBudgetWindow(HWND parent) {
+    /* Create budget dialog using Windows API */
+    DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, BudgetDlgProc);
+}
+
+/* Show budget window during budget cycle and wait for user input */
+int ShowBudgetWindowAndWait(HWND parent) {
+    return DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, BudgetDlgProc);
 }

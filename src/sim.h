@@ -274,7 +274,7 @@ typedef long QUAD;
 /* Game simulation rate constants */
 #define SPEEDCYCLE      1024  /* The number of cycles before the speed counter loops from 0-1023 */
 #define CENSUSRATE      4     /* Census update rate (once per 4 passes) */
-#define TAXFREQ         12    /* Tax assessment frequency (once per 12 passes) - adjusted for monthly collection */
+#define TAXFREQ         48    /* Tax assessment frequency (once per 48 passes) - yearly collection */
 #define VALVEFREQ       16    /* Valve adjustment frequency (once every 16 passes) */
 
 /* Tool states */
@@ -505,6 +505,10 @@ void makeMeltdown(void);                 /* Create a nuclear meltdown */
 
 /* File I/O functions (main.c) */
 int loadFile(char *filename);    /* Load city file data */
+
+/* Budget window functions (main.c) */
+void ShowBudgetWindow(HWND parent);  /* Display budget management window */
+int ShowBudgetWindowAndWait(HWND parent);  /* Show budget window during budget cycle */
 
 /* Animation functions (animation.c) */
 void AnimateTiles(void);            /* Process animations for the entire map */

@@ -1,0 +1,64 @@
+#include <windows.h>
+
+#define IDC_STATIC -1
+#define IDD_BUDGET 1001
+#define IDC_TAX_RATE_SLIDER 1002
+#define IDC_TAX_RATE_LABEL 1003
+#define IDC_ROAD_SLIDER 1004
+#define IDC_ROAD_LABEL 1005
+#define IDC_FIRE_SLIDER 1006
+#define IDC_FIRE_LABEL 1007
+#define IDC_POLICE_SLIDER 1008
+#define IDC_POLICE_LABEL 1009
+#define IDC_TAXES_COLLECTED 1010
+#define IDC_CASH_FLOW 1011
+#define IDC_PREVIOUS_FUNDS 1012
+#define IDC_CURRENT_FUNDS 1013
+#define IDC_AUTO_BUDGET 1014
+#define IDC_RESET_BUDGET 1015
+#define IDOK_BUDGET 1016
+#define IDCANCEL_BUDGET 1017
+#define IDC_ROAD_PERCENT 1018
+#define IDC_FIRE_PERCENT 1019
+#define IDC_POLICE_PERCENT 1020
+
+/* Budget Dialog Resource */
+IDD_BUDGET DIALOG 0, 0, 320, 250
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "City Budget"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Micropolis City Budget", IDC_STATIC, 10, 10, 300, 12
+    
+    GROUPBOX        "Tax Rate", IDC_STATIC, 10, 30, 300, 40
+    LTEXT           "Tax Rate: 7%", IDC_TAX_RATE_LABEL, 20, 45, 80, 10
+    SCROLLBAR       IDC_TAX_RATE_SLIDER, 110, 42, 180, 12, SBS_HORZ | WS_TABSTOP
+    LTEXT           "0%", IDC_STATIC, 110, 55, 15, 8
+    LTEXT           "20%", IDC_STATIC, 275, 55, 15, 8
+    
+    GROUPBOX        "Department Funding", IDC_STATIC, 10, 80, 300, 100
+    
+    LTEXT           "Road Funding: 100%", IDC_ROAD_LABEL, 20, 95, 90, 10
+    SCROLLBAR       IDC_ROAD_SLIDER, 120, 95, 120, 12, SBS_HORZ | WS_TABSTOP
+    LTEXT           "$0", IDC_ROAD_PERCENT, 250, 95, 40, 10
+    
+    LTEXT           "Fire Funding: 100%", IDC_FIRE_LABEL, 20, 115, 90, 10
+    SCROLLBAR       IDC_FIRE_SLIDER, 120, 115, 120, 12, SBS_HORZ | WS_TABSTOP
+    LTEXT           "$0", IDC_FIRE_PERCENT, 250, 115, 40, 10
+    
+    LTEXT           "Police Funding: 100%", IDC_POLICE_LABEL, 20, 135, 90, 10
+    SCROLLBAR       IDC_POLICE_SLIDER, 120, 135, 120, 12, SBS_HORZ | WS_TABSTOP
+    LTEXT           "$0", IDC_POLICE_PERCENT, 250, 135, 40, 10
+    
+    CHECKBOX        "Auto Budget", IDC_AUTO_BUDGET, 20, 155, 80, 15
+    
+    GROUPBOX        "Financial Summary", IDC_STATIC, 10, 190, 300, 40
+    LTEXT           "Taxes Collected: $0", IDC_TAXES_COLLECTED, 20, 205, 100, 10
+    LTEXT           "Cash Flow: +$0", IDC_CASH_FLOW, 130, 205, 80, 10
+    LTEXT           "Previous Funds: $0", IDC_PREVIOUS_FUNDS, 20, 215, 100, 10
+    LTEXT           "Current Funds: $0", IDC_CURRENT_FUNDS, 130, 215, 80, 10
+    
+    PUSHBUTTON      "Reset", IDC_RESET_BUDGET, 220, 205, 40, 15
+    DEFPUSHBUTTON   "OK", IDOK_BUDGET, 265, 205, 40, 15
+    PUSHBUTTON      "Cancel", IDCANCEL_BUDGET, 265, 225, 40, 15
+END
