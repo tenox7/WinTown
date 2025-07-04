@@ -54,11 +54,17 @@ src\zone.obj: src\zone.c
 src\gdifix.obj: src\gdifix.c
 	$(CC) $(CFLAGS) /c src\gdifix.c /Fosrc\gdifix.obj
 
+src\notifications.obj: src\notifications.c
+	$(CC) $(CFLAGS) /c src\notifications.c /Fosrc\notifications.obj
+
 budget.res: budget.rc
 	$(RC) budget.rc
 
-ntpolis.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj budget.res
-	link /NOLOGO /OUT:ntpolis.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj budget.res $(LIBS)
+notifications.res: notifications.rc
+	$(RC) notifications.rc
+
+ntpolis.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj budget.res notifications.res
+	link /NOLOGO /OUT:ntpolis.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj budget.res notifications.res $(LIBS)
 
 clean:
 	del /q src\*.obj

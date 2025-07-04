@@ -4,6 +4,7 @@
 
 #include "sim.h"
 #include "tiles.h"
+#include "notifications.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -27,93 +28,6 @@ static const short yDelta[4] = {-1, 0, 1, 0};
 /* Use the constant from simulation.h */
 #define LOCAL_LASTZONE LASTZONE /* Last zone tile for disaster purposes */
 
-/* Disaster popup tracking */
-static int disasterPopupActive = 0;  /* Is a disaster popup currently showing? */
-static int lastDisasterType = -1;    /* Type of last disaster shown */
-static int lastDisasterTime = 0;     /* Time of last disaster popup */
-static int disasterCount = 0;        /* Count of same disaster type */
-
-/* Disaster types */
-#define DISASTER_EARTHQUAKE 0
-#define DISASTER_FIRE       1
-#define DISASTER_FLOOD      2
-#define DISASTER_TORNADO    3
-#define DISASTER_MELTDOWN   4
-
-/* Custom window procedure for centering message boxes */
-static LRESULT CALLBACK DisasterDlgProc(int nCode, WPARAM wParam, LPARAM lParam) {
-    RECT rcParent, rcDlg;
-    int x, y, w, h;
-    HWND hDlg;
-    
-    if (nCode == HCBT_ACTIVATE) {
-        /* Get the dialog handle */
-        hDlg = (HWND)wParam;
-        
-        /* Get parent window rect */
-        GetWindowRect(hwndMain, &rcParent);
-        
-        /* Get dialog rect */
-        GetWindowRect(hDlg, &rcDlg);
-        
-        /* Calculate centered position */
-        w = rcDlg.right - rcDlg.left;
-        h = rcDlg.bottom - rcDlg.top;
-        x = rcParent.left + ((rcParent.right - rcParent.left) - w) / 2;
-        y = rcParent.top + ((rcParent.bottom - rcParent.top) - h) / 2;
-        
-        /* Move the dialog to center */
-        SetWindowPos(hDlg, HWND_TOP, x, y, 0, 0, SWP_NOSIZE);
-        
-        /* Return FALSE to allow normal processing */
-        return FALSE;
-    }
-    
-    /* Call next hook if not our message */
-    return CallNextHookEx(NULL, nCode, wParam, lParam);
-}
-
-/* Show disaster message with popup prevention */
-static void showDisasterMessage(const char *message, int disasterType) {
-    extern int CityTime;
-    HHOOK hHook;
-    
-    /* Don't show if a popup is already active */
-    if (disasterPopupActive) {
-        return;
-    }
-    
-    /* Don't show if same disaster type was shown recently (within 100 time units) */
-    if (disasterType == lastDisasterType && (CityTime - lastDisasterTime) < 100) {
-        disasterCount++;
-        /* Only show every 5th occurrence of same disaster */
-        if (disasterCount % 5 != 0) {
-            return;
-        }
-    } else {
-        /* Reset count for new disaster type */
-        disasterCount = 1;
-    }
-    
-    /* Update tracking variables */
-    disasterPopupActive = 1;
-    lastDisasterType = disasterType;
-    lastDisasterTime = CityTime;
-    
-    /* Install a Windows hook to center the message box */
-    hHook = SetWindowsHookEx(WH_CBT, DisasterDlgProc, NULL, GetCurrentThreadId());
-    
-    /* Show the message box - it will be centered by the hook */
-    MessageBox(hwndMain, message, "Disaster", MB_ICONEXCLAMATION | MB_OK);
-    
-    /* Remove the hook */
-    if (hHook) {
-        UnhookWindowsHookEx(hHook);
-    }
-    
-    /* Clear the active flag */
-    disasterPopupActive = 0;
-}
 
 /* Trigger an earthquake disaster */
 void doEarthquake(void) {
@@ -121,7 +35,6 @@ void doEarthquake(void) {
     int time;
     short tile, tileValue;
     int epicenterX, epicenterY;
-    char buf[256];
 
     /* Set epicenter to center of the map */
     epicenterX = WORLD_X / 2;
@@ -133,14 +46,13 @@ void doEarthquake(void) {
         time = 1000; /* Cap to prevent excessive processing */
     }
 
-    /* Notify user */
-    wsprintf(buf, "Earthquake reported at %d,%d!", epicenterX, epicenterY);
+    /* Show enhanced notification dialog */
+    ShowNotificationAt(NOTIF_EARTHQUAKE, epicenterX, epicenterY);
 
     /* Log the earthquake */
     addGameLog("DISASTER: EARTHQUAKE!!!");
     addGameLog("Epicenter at coordinates %d,%d", epicenterX, epicenterY);
     addDebugLog("Earthquake: Magnitude %d, Duration %d", (time / 100), time);
-    showDisasterMessage(buf, DISASTER_EARTHQUAKE);
 
     for (z = 0; z < time; z++) {
         /* Get random coordinates but ensure they are within bounds */
@@ -173,7 +85,6 @@ void doEarthquake(void) {
 /* Create an explosion */
 void makeExplosion(int x, int y) {
     int dir, tx, ty;
-    char buf[256];
 
     /* Validate coordinates first */
     if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
@@ -197,14 +108,12 @@ void makeExplosion(int x, int y) {
         }
     }
 
-    /* Notify user */
-    wsprintf(buf, "Explosion reported at %d,%d!", x, y);
+    /* Show enhanced notification dialog */
+    ShowNotificationAt(NOTIF_FIRE_REPORTED, x, y);
 
     /* Log explosion */
     addGameLog("DISASTER: Explosion at %d,%d!", x, y);
     addDebugLog("Explosion created at coordinates %d,%d", x, y);
-
-    showDisasterMessage(buf, DISASTER_FIRE);
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
@@ -212,7 +121,6 @@ void makeExplosion(int x, int y) {
 
 /* Start a fire at the given location */
 void makeFire(int x, int y) {
-    char buf[256];
 
     /* Validate coordinates first */
     if (x < 0 || x >= WORLD_X || y < 0 || y >= WORLD_Y) {
@@ -222,14 +130,12 @@ void makeFire(int x, int y) {
     /* Create fire tile with animation and random frame */
     setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeFire-ignite");
 
-    /* Notify user */
-    wsprintf(buf, "Fire reported at %d,%d!", x, y);
+    /* Show enhanced notification dialog */
+    ShowNotificationAt(NOTIF_FIRE_REPORTED, x, y);
 
     /* Log fire */
     addGameLog("DISASTER: Fire reported at %d,%d!", x, y);
     addDebugLog("Fire created at coordinates %d,%d", x, y);
-
-    showDisasterMessage(buf, DISASTER_FIRE);
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
@@ -355,12 +261,8 @@ void makeMonster(void) {
         attempts++;
     }
 
-    /* Notify user */
-    {
-        char buf[256];
-        wsprintf(buf, "Monster attack reported in the city!");
-        showDisasterMessage(buf, DISASTER_FIRE);
-    }
+    /* Show enhanced notification dialog */
+    ShowNotification(NOTIF_MONSTER_SIGHTED);
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);
@@ -372,7 +274,6 @@ void makeFlood(void) {
     int waterFound = 0;
     int attempts = 0;
     int t, i, j;
-    char buf[256];
     short tileValue;
 
     /* Log the flood disaster */
@@ -406,9 +307,8 @@ void makeFlood(void) {
                             setMapTile(xx, yy, FLOOD, 0, TILE_SET_REPLACE, "makeFlood-initial");
                             waterFound = 1;
 
-                            /* Notify user */
-                            wsprintf(buf, "Flooding reported at %d,%d!", xx, yy);
-                            showDisasterMessage(buf, DISASTER_FLOOD);
+                            /* Show enhanced notification dialog */
+                            ShowNotificationAt(NOTIF_FLOODING, xx, yy);
 
                             /* Start spreading the flood - limit to 100 iterations */
                             for (i = 0; i < 100; i++) {
@@ -455,7 +355,6 @@ void makeFlood(void) {
 void makeMeltdown(void) {
     int x, y, tx, ty, i;
     int found = 0;
-    char buf[256];
 
     /* Find nuclear power plant */
     for (x = 0; x < WORLD_X; x++) {
@@ -463,8 +362,8 @@ void makeMeltdown(void) {
             if ((Map[y][x] & LOMASK) == NUCLEAR) {
                 /* Found nuclear plant - trigger meltdown */
 
-                /* Notify user */
-                wsprintf(buf, "Nuclear meltdown reported at %d,%d!", x, y);
+                /* Show enhanced notification dialog */
+                ShowNotificationAt(NOTIF_NUCLEAR_MELTDOWN, x, y);
 
                 /* Log the meltdown */
                 addGameLog("DISASTER: NUCLEAR MELTDOWN!!!");
@@ -474,8 +373,6 @@ void makeMeltdown(void) {
                 addDebugLog(
                     "Nuclear meltdown at coordinates %d,%d, spreading radiation in 20x20 area", x,
                     y);
-
-                showDisasterMessage(buf, DISASTER_MELTDOWN);
 
                 /* Create radiation in a 20x20 area around the plant */
                 for (i = 0; i < 40; i++) {

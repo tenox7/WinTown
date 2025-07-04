@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "notifications.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -136,6 +137,26 @@ static void DoPopNum(void) {
 
     /* Calculate population change */
     deltaCityPop = CityPop - OldCityPop;
+
+    /* Check for population milestones being crossed (only when growing) */
+    if (deltaCityPop > 0) {
+        /* Check each milestone */
+        if (OldCityPop <= 2000 && CityPop > 2000) {
+            ShowNotification(NOTIF_VILLAGE_2K);
+        }
+        if (OldCityPop <= 10000 && CityPop > 10000) {
+            ShowNotification(NOTIF_TOWN_10K);
+        }
+        if (OldCityPop <= 50000 && CityPop > 50000) {
+            ShowNotification(NOTIF_CITY_50K);
+        }
+        if (OldCityPop <= 100000 && CityPop > 100000) {
+            ShowNotification(NOTIF_CAPITAL_100K);
+        }
+        if (OldCityPop <= 500000 && CityPop > 500000) {
+            ShowNotification(NOTIF_METROPOLIS_500K);
+        }
+    }
 
     /* Determine city class based on population - also done in TakeCensus
        but repeated here for consistency */
@@ -461,6 +482,93 @@ void CityEvaluation(void) {
         GetTopProblems(problems);
         addGameLog("City status report:");
         addGameLog("Population: %d - %s", (int)CityPop, GetCityClassName());
+
+        /* Check for critical problems and trigger notifications */
+        if (ProblemTable[PROB_CRIME] > 100) {
+            ShowNotification(NOTIF_HIGH_CRIME);
+        }
+        if (ProblemTable[PROB_POLLUTION] > 100) {
+            ShowNotification(NOTIF_HIGH_POLLUTION);
+        }
+        if (ProblemTable[PROB_TRAFFIC] > 100) {
+            ShowNotification(NOTIF_TRAFFIC_JAMS);
+        }
+        if (TaxRate > 12) {
+            ShowNotification(NOTIF_TAX_TOO_HIGH);
+        }
+
+        /* Check for infrastructure needs based on original Micropolis logic */
+        /* Need more residential zones */
+        if (TotalPop > 0 && ((TotalPop >> 2) >= ResPop)) {
+            ShowNotification(NOTIF_RESIDENTIAL_NEEDED);
+        }
+        
+        /* Need more commercial zones */
+        if (TotalPop > 0 && ((TotalPop >> 3) >= ComPop)) {
+            ShowNotification(NOTIF_COMMERCIAL_NEEDED);
+        }
+        
+        /* Need more industrial zones */
+        if (TotalPop > 0 && ((TotalPop >> 3) >= IndPop)) {
+            ShowNotification(NOTIF_INDUSTRIAL_NEEDED);
+        }
+        
+        /* Need more roads */
+        if (TotalPop > 10 && ((TotalPop << 1) > RoadTotal)) {
+            ShowNotification(NOTIF_MORE_ROADS_NEEDED);
+        }
+        
+        /* Need rail system */
+        if (TotalPop > 50 && (TotalPop > RailTotal)) {
+            ShowNotification(NOTIF_RAIL_SYSTEM_NEEDED);
+        }
+        
+        /* Need power plants */
+        if (TotalPop > 10 && (CoalPop + NuclearPop == 0)) {
+            ShowNotification(NOTIF_POWER_PLANT_NEEDED);
+        }
+        
+        /* Need stadium for entertainment */
+        if (ResPop > 500 && StadiumPop == 0) {
+            ShowNotification(NOTIF_STADIUM_NEEDED);
+        }
+        
+        /* Need seaport for industry */
+        if (IndPop > 70 && PortPop == 0) {
+            ShowNotification(NOTIF_SEAPORT_NEEDED);
+        }
+        
+        /* Need airport for commerce */
+        if (ComPop > 100 && APortPop == 0) {
+            ShowNotification(NOTIF_AIRPORT_NEEDED);
+        }
+        
+        /* Need fire departments */
+        if (TotalPop > 60 && FirePop == 0) {
+            ShowNotification(NOTIF_FIRE_DEPT_NEEDED);
+        }
+        
+        /* Need police departments */
+        if (TotalPop > 60 && PolicePop == 0) {
+            ShowNotification(NOTIF_POLICE_NEEDED);
+        }
+        
+        /* Check service funding issues */
+        if (FireEffect < 70 && TotalPop > 20) {
+            ShowNotification(NOTIF_FIRE_DEPT_UNDERFUNDED);
+        }
+        
+        if (PoliceEffect < 70 && TotalPop > 20) {
+            ShowNotification(NOTIF_POLICE_UNDERFUNDED);
+        }
+        
+        /* Check power issues */
+        if (PwrdZCnt > 0 && UnpwrdZCnt > 0) {
+            float powerRatio = (float)PwrdZCnt / (float)(PwrdZCnt + UnpwrdZCnt);
+            if (powerRatio < 0.7f) {
+                ShowNotification(NOTIF_BLACKOUTS);
+            }
+        }
 
         /* Log top problems if they exist */
         if (problems[0] != PROB_NONE) {

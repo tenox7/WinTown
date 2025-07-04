@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "notifications.h"
 
 /* External log functions */
 extern void addGameLog(const char *format, ...);
@@ -103,6 +104,9 @@ void Spend(QUAD amount) {
 
     /* Ensure funds never go below zero */
     if (TotalFunds < 0) {
+        /* Show enhanced notification dialog */
+        ShowNotification(NOTIF_CITY_BROKE);
+        
         /* Log funds depleted */
         addGameLog("FINANCIAL CRISIS: City treasury is empty!");
         addDebugLog("Funds depleted: Attempted to spend $%d with only $%d available", (int)amount,
@@ -145,6 +149,8 @@ void DoBudget(void) {
         /* If insufficient funds during auto-budget, disable auto-budget */
         if (AutoBudget && yumDuckets < total) {
             AutoBudget = 0;
+            /* Show enhanced notification dialog */
+            ShowNotification(NOTIF_BUDGET_DEFICIT);
             addGameLog("BUDGET CRISIS: Insufficient funds - Auto-budget disabled");
         }
         

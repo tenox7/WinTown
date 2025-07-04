@@ -4,6 +4,7 @@
 ## Major Features Missing
 - Save game
 - New game / map generator
+- Trigger scenarios
 - Better notifications (fire, crime, pollution, traffic)
 - Scenarios as real scenarios, not just map load
 - Bridges, power over water

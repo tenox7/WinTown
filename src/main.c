@@ -7,6 +7,7 @@
 #include "sprite.h"
 #include "tools.h"
 #include "charts.h"
+#include "notifications.h"
 #include <commdlg.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -611,6 +612,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     /* Initialize graphics first */
     initializeGraphics(hwndMain);
+    
+    /* Initialize notification system */
+    InitNotificationSystem();
     
     /* Initialize chart system */
     InitChartSystem();
