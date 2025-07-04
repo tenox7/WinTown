@@ -4216,9 +4216,9 @@ HMENU createMainMenu(void) {
     AppendMenu(hSettingsMenu, MF_SEPARATOR, 0, NULL);
     
     /* Difficulty Level submenu */
-    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_EASY, "Difficulty: &Easy ($20,000)");
-    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_MEDIUM, "Difficulty: &Medium ($10,000)");
-    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_HARD, "Difficulty: &Hard ($5,000)");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_EASY, "Difficulty: &Easy");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_MEDIUM, "Difficulty: &Medium");
+    AppendMenu(hSettingsMenu, MF_STRING, IDM_SETTINGS_LEVEL_HARD, "Difficulty: &Hard");
     AppendMenu(hSettingsMenu, MF_SEPARATOR, 0, NULL);
     
     /* Auto Settings */
@@ -4769,21 +4769,20 @@ void SetGameLevel(int level) {
     gameLevel = level;
     GameLevel = level; /* Update simulation variable */
     
-    /* Set starting funds based on difficulty */
+    /* Log difficulty change - don't change funds for existing cities */
     switch (level) {
         case LEVEL_EASY:
-            TotalFunds = 20000;
-            addGameLog("Difficulty set to Easy ($20,000 starting funds)");
+            addGameLog("Difficulty set to Easy");
             break;
         case LEVEL_MEDIUM:
-            TotalFunds = 10000;
-            addGameLog("Difficulty set to Medium ($10,000 starting funds)");
+            addGameLog("Difficulty set to Medium");
             break;
         case LEVEL_HARD:
-            TotalFunds = 5000;
-            addGameLog("Difficulty set to Hard ($5,000 starting funds)");
+            addGameLog("Difficulty set to Hard");
             break;
     }
+    
+    addGameLog("Note: Starting funds only apply to new cities");
     
     /* Update menu checkmarks */
     CheckMenuItem(hSettingsMenu, IDM_SETTINGS_LEVEL_EASY, level == LEVEL_EASY ? MF_CHECKED : MF_UNCHECKED);

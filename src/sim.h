@@ -412,6 +412,13 @@ extern short DisasterWait;  /* Countdown to next disaster - defined in scenarios
 extern int DisasterLevel;   /* Disaster level */
 extern int DisastersEnabled; /* Enable/disable disasters (0=disabled, 1=enabled) */
 
+/* Difficulty level multiplier tables - based on original Micropolis */
+extern float DifficultyTaxEfficiency[3];     /* Tax revenue multipliers [Easy, Medium, Hard] */
+extern float DifficultyMaintenanceCost[3];   /* Road/rail maintenance cost multipliers */
+extern float DifficultyIndustrialGrowth[3];  /* Industrial growth rate multipliers */
+extern short DifficultyDisasterChance[3];    /* Disaster frequency (lower = more frequent) */
+extern short DifficultyMeltdownRisk[3];      /* Nuclear meltdown risk (lower = more dangerous) */
+
 /* Core simulation functions */
 void DoSimInit(void);
 void SimFrame(void);
@@ -430,7 +437,6 @@ void SetGameLevel(int level);
 void PauseSimulation(void);
 void ResumeSimulation(void);
 void TogglePause(void);
-void ShowSettingsDialog(HWND hwnd);
 
 /* Functions implemented in zone.c */
 void DoZone(int Xloc, int Yloc, int pos);

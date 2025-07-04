@@ -50,32 +50,29 @@ void InitBudget(void) {
 
 /* Tax collection function - called yearly */
 void CollectTax(void) {
-    static float RLevels[3] = { 0.7f, 0.9f, 1.2f };
-    static float FLevels[3] = { 1.4f, 1.2f, 0.8f };
-    
     /* No income initially */
     TaxFund = 0;
 
-    /* Calculate funding requirements */
-    RoadFund = RoadTotal * 1;     /* $1 per road tile - matches original */
+    /* Calculate funding requirements with difficulty multipliers */
+    RoadFund = (QUAD)((RoadTotal + RailTotal) * 1 * DifficultyMaintenanceCost[GameLevel]);     /* Apply maintenance cost multiplier */
     FireFund = FirePop * 100;     /* $100 per fire station */
     PoliceFund = PolicePop * 100; /* $100 per police station */
 
     /* Log funding requirements */
     addDebugLog("Annual budget requirements:");
-    addDebugLog("Roads: $%d (%d tiles)", (int)RoadFund, RoadTotal);
+    addDebugLog("Roads: $%d (%d tiles, %.1fx difficulty)", (int)RoadFund, RoadTotal + RailTotal, DifficultyMaintenanceCost[GameLevel]);
     addDebugLog("Fire: $%d (%d stations)", (int)FireFund, FirePop);
     addDebugLog("Police: $%d (%d stations)", (int)PoliceFund, PolicePop);
 
     /* Only process budget if there are people to tax */
     if (TotalPop > 0) {
-        /* Calculate tax income using original formula */
-        TaxFund = (QUAD)(((TotalPop * LVAverage) / 120) * TaxRate * FLevels[GameLevel]);
+        /* Calculate tax income using original formula with difficulty multiplier */
+        TaxFund = (QUAD)(((TotalPop * LVAverage) / 120) * TaxRate * DifficultyTaxEfficiency[GameLevel]);
 
         /* Log tax collection */
         addGameLog("Annual tax collection: $%d", (int)TaxFund);
         addDebugLog("Tax details: Rate %d%%, Total pop %d, LV avg %d, Difficulty modifier %.1f", 
-                    TaxRate, TotalPop, LVAverage, FLevels[GameLevel]);
+                    TaxRate, TotalPop, LVAverage, DifficultyTaxEfficiency[GameLevel]);
 
         /* Add funds to treasury */
         Spend(-TaxFund);

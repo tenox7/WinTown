@@ -275,9 +275,13 @@ static void DoSPZ(int x, int y) {
 
     /* Handle special case of nuclear power */
     if (z == NUCLEAR) {
-        /* Handle nuclear power plant (no meltdowns for now) */
-        if (ZoneRandom(10000) == 0) {
-            /* Create meltdown (would be implemented later) */
+        NuclearPop++;
+        
+        /* Check for nuclear meltdown based on difficulty level */
+        if (DisastersEnabled && ZoneRandom(DifficultyMeltdownRisk[GameLevel]) == 0) {
+            /* Trigger nuclear meltdown disaster */
+            addGameLog("CRITICAL: Nuclear power plant meltdown detected!");
+            makeMeltdown();
         }
         return;
     }

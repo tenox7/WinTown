@@ -121,6 +121,16 @@ int ValveFlag = 0;
 extern short DisasterEvent; /* Defined in scenarios.c */
 extern short DisasterWait;  /* Defined in scenarios.c */
 int DisasterLevel = 0;
+int DisastersEnabled = 1;  /* Enable/disable disasters (0=disabled, 1=enabled) */
+int AutoBulldoze = 1;      /* Auto-bulldoze enabled flag */
+int SimTimerDelay = 200;   /* Timer delay in milliseconds based on speed */
+
+/* Difficulty level multiplier tables - based on original Micropolis */
+float DifficultyTaxEfficiency[3] = { 1.4f, 1.2f, 0.8f };      /* Easy, Medium, Hard */
+float DifficultyMaintenanceCost[3] = { 0.7f, 0.9f, 1.2f };    /* Easy, Medium, Hard */
+float DifficultyIndustrialGrowth[3] = { 1.2f, 1.1f, 0.98f };  /* Easy, Medium, Hard */
+short DifficultyDisasterChance[3] = { 480, 240, 60 };         /* Easy, Medium, Hard */
+short DifficultyMeltdownRisk[3] = { 30000, 20000, 10000 };    /* Easy, Medium, Hard */
 
 /* Internal work variables - also used by power.c */
 int SMapX, SMapY; /* Current map position (no longer static, needed by power.c) */
@@ -611,6 +621,21 @@ void DoTimeStuff(void) {
             rDelta = SimRandom(600) - 100; /* Bias toward positive values */
             cDelta = SimRandom(600) - 100;
             iDelta = SimRandom(600) - 100;
+            
+            /* Apply difficulty multipliers to growth rates */
+            rDelta = (int)(rDelta * 1.0f);  /* Residential growth not affected by difficulty */
+            cDelta = (int)(cDelta * 1.0f);  /* Commercial growth not affected by difficulty */
+            iDelta = (int)(iDelta * DifficultyIndustrialGrowth[GameLevel]);  /* Industrial growth affected by difficulty */
+            
+            /* Apply tax burden effects - higher difficulty makes tax increases more punishing */
+            if (TaxRate > 7) {  /* Default tax rate is 7% */
+                int taxPenalty = (TaxRate - 7) * 10 * (GameLevel + 1);  /* More penalty on higher difficulty */
+                rDelta -= taxPenalty;
+                cDelta -= taxPenalty;
+                iDelta -= taxPenalty;
+                addDebugLog("Tax burden penalty applied: -%d per valve (Rate: %d%%, Difficulty: %d)", 
+                           taxPenalty, TaxRate, GameLevel);
+            }
 
             RValve += rDelta;
             CValve += cDelta;
@@ -664,8 +689,8 @@ void DoTimeStuff(void) {
     }
 
     /* Manage disasters */
-    if (disastersDisabled) {
-        /* Clear any active disasters if cheat is enabled */
+    if (disastersDisabled || !DisastersEnabled) {
+        /* Clear any active disasters if cheat is enabled or disasters disabled */
         DisasterEvent = 0;
         DisasterWait = 0;
     } else if (DisasterEvent) {
@@ -674,34 +699,37 @@ void DoTimeStuff(void) {
         if (DisasterWait > 0) {
             DisasterWait--;
         } else {
-            /* Check for random disasters when counter reaches zero */
-            if (GameLevel > 0) {
-                if (SimRandom(9 - GameLevel) == 0) {
-                    /* Choose a disaster type */
-                    switch (SimRandom(8)) {
-                    case 0:
-                    case 1:
-                        /* ToDo: MakeFlood(); */
-                        break;
-                    case 2:
-                    case 3:
-                        /* ToDo: MakeFire(); */
-                        break;
-                    case 4:
-                    case 5:
-                        /* ToDo: MakeAirCrash(); */
-                        break;
-                    case 6:
-                        /* ToDo: MakeTornado(); */
-                        break;
-                    case 7:
-                        /* ToDo: MakeEarthquake(); */
-                        break;
-                    }
+            /* Check for random disasters based on difficulty level */
+            if (SimRandom(DifficultyDisasterChance[GameLevel]) == 0) {
+                /* Choose a disaster type */
+                switch (SimRandom(8)) {
+                case 0:
+                case 1:
+                    /* ToDo: MakeFlood(); */
+                    addGameLog("Flood disaster triggered!");
+                    break;
+                case 2:
+                case 3:
+                    /* ToDo: MakeFire(); */
+                    addGameLog("Fire disaster triggered!");
+                    break;
+                case 4:
+                case 5:
+                    /* ToDo: MakeAirCrash(); */
+                    addGameLog("Air crash disaster triggered!");
+                    break;
+                case 6:
+                    /* ToDo: MakeTornado(); */
+                    addGameLog("Tornado disaster triggered!");
+                    break;
+                case 7:
+                    /* ToDo: MakeEarthquake(); */
+                    addGameLog("Earthquake disaster triggered!");
+                    break;
                 }
             }
-            /* Reset disaster wait period */
-            DisasterWait = SimRandom(51) + 49;
+            /* Reset disaster wait period using difficulty-based timing */
+            DisasterWait = SimRandom(DifficultyDisasterChance[GameLevel] / 10) + (DifficultyDisasterChance[GameLevel] / 20);
         }
     }
 }
