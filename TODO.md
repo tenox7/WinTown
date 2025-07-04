@@ -4,22 +4,20 @@
 ## Major Features Missing
 - Save game
 - New game / map generator
-- Difficulty level, Priority
-- Crime, fire, pollution, etc
-- Zone demand
 - Better notifications (fire, crime, pollution, traffic)
-- Disasters
-- Rating/approval, Impeachment
 - Scenarios as real scenarios, not just map load
 - Bridges, power over water
-- Minimap stats not working: fire police
-- Zone to rubble
-- Options Menu
-- Priority and Speed
+- Minimap stats not working: fire, police
 - Evaluation window
 - Non debug log window
 - Better RCI and mini chart indicators
-- Better notifications / alerts
+
+## Audit Code
+- Crime, fire, pollution, etc
+- Zone demand
+- Disasters
+- Rating/approval, Impeachment
+- Zone to rubble
 
 
 ## Cosmetic
