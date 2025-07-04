@@ -86,6 +86,7 @@
 #define MINIMAP_TIMER_INTERVAL 100 /* Update minimap every 100ms */
 #define CHART_TIMER_ID 4
 #define CHART_TIMER_INTERVAL 1000 /* Update charts every 1000ms */
+#define EARTHQUAKE_TIMER_ID 5
 #define MINIMAP_SCALE 3 /* 3x3 pixels per tile */
 
 /* Minimap view modes */
@@ -238,6 +239,11 @@ int gameLevel = LEVEL_EASY;       /* Current difficulty level (0=easy, 1=medium,
 int autoBulldoze = 1;             /* Auto-bulldoze enabled flag */
 int disastersEnabled = 1;         /* Disasters enabled flag (will replace disastersDisabled) */
 int simTimerDelay = 200;          /* Timer delay in milliseconds */
+
+/* Earthquake shake effect variables */
+int shakeNow = 0;                 /* Earthquake shake intensity (0 = no shake) */
+unsigned int earthquakeTimer = 0; /* Timer ID for earthquake duration */
+#define EARTHQUAKE_DURATION 3000  /* Earthquake duration in milliseconds */
 
 /* External reference to scenario variables (defined in scenarios.c) */
 extern short ScenarioID;    /* Current scenario ID (0 = none) */
@@ -2254,6 +2260,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 InvalidateRect(hwnd, NULL, FALSE);
             }
             return 0;
+        } else if (wParam == EARTHQUAKE_TIMER_ID) {
+            /* Earthquake duration timer expired - stop shaking */
+            stopEarthquake();
+            return 0;
         }
         break;
 
@@ -2285,6 +2295,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc;
+        int shakeX = 0, shakeY = 0;
+        int i;
 
         hdc = BeginPaint(hwnd, &ps);
 
@@ -2304,9 +2316,22 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             /* Draw the city to our buffer */
             drawCity(hdcBuffer);
 
-            /* Copy the buffer to the screen with offset for toolbar */
-            BitBlt(hdc, toolbarWidth, 0, cxClient - toolbarWidth, cyClient, hdcBuffer, 0, 0,
-                   SRCCOPY);
+            /* Calculate earthquake shake offset */
+            if (shakeNow > 0) {
+                for (i = 0; i < shakeNow; i++) {
+                    shakeX += (SimRandom(16) - 8);
+                    shakeY += (SimRandom(16) - 8);
+                }
+                /* Limit shake to reasonable bounds */
+                if (shakeX > 20) shakeX = 20;
+                if (shakeX < -20) shakeX = -20;
+                if (shakeY > 20) shakeY = 20;
+                if (shakeY < -20) shakeY = -20;
+            }
+            
+            /* Copy the buffer to the screen with offset for toolbar and earthquake shake */
+            BitBlt(hdc, toolbarWidth + shakeX, shakeY, cxClient - toolbarWidth, cyClient, 
+                   hdcBuffer, 0, 0, SRCCOPY);
         }
 
         EndPaint(hwnd, &ps);
@@ -4900,5 +4925,39 @@ void TogglePause() {
     } else {
         PauseSimulation();
     }
+}
+
+/* Earthquake screen shake effect functions */
+void startEarthquake(void) {
+    shakeNow = 1; /* Start shake effect */
+    
+    /* Kill any existing earthquake timer */
+    if (earthquakeTimer != 0) {
+        KillTimer(hwndMain, EARTHQUAKE_TIMER_ID);
+        earthquakeTimer = 0;
+    }
+    
+    /* Start timer to stop earthquake after duration */
+    earthquakeTimer = SetTimer(hwndMain, EARTHQUAKE_TIMER_ID, EARTHQUAKE_DURATION, NULL);
+    
+    /* Force screen redraw to show shake immediately */
+    InvalidateRect(hwndMain, NULL, FALSE);
+    
+    addGameLog("Earthquake screen shake started");
+}
+
+void stopEarthquake(void) {
+    shakeNow = 0; /* Stop shake effect */
+    
+    /* Kill earthquake timer */
+    if (earthquakeTimer != 0) {
+        KillTimer(hwndMain, EARTHQUAKE_TIMER_ID);
+        earthquakeTimer = 0;
+    }
+    
+    /* Force screen redraw to stop shake */
+    InvalidateRect(hwndMain, NULL, FALSE);
+    
+    addGameLog("Earthquake screen shake stopped");
 }
 

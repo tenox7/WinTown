@@ -518,6 +518,10 @@ void makeMonster(void);                  /* Create a monster */
 void makeExplosion(int x, int y);        /* Create an explosion */
 void makeMeltdown(void);                 /* Create a nuclear meltdown */
 
+/* Earthquake screen shake effects (main.c) */
+void startEarthquake(void);              /* Start earthquake screen shake */
+void stopEarthquake(void);               /* Stop earthquake screen shake */
+
 /* File I/O functions (main.c) */
 int loadFile(char *filename);    /* Load city file data */
 

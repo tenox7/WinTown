@@ -49,6 +49,9 @@ void doEarthquake(void) {
     /* Show enhanced notification dialog */
     ShowNotificationAt(NOTIF_EARTHQUAKE, epicenterX, epicenterY);
 
+    /* Start earthquake screen shake effect */
+    startEarthquake();
+
     /* Log the earthquake */
     addGameLog("DISASTER: EARTHQUAKE!!!");
     addGameLog("Epicenter at coordinates %d,%d", epicenterX, epicenterY);
