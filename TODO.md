@@ -5,10 +5,9 @@
 - Save game
 - New game / map generator
 - Difficulty level
-- Budgets, reporting, economy, money system
 - Crime, fire, pollution, etc
 - Zone demand
-- Better Alerts (fire, crime, pollution, traffic)
+- Better notifications (fire, crime, pollution, traffic)
 - Disasters
 - Rating/approval, Impeachment
 - Scenarios as real scenarios, not just map load
