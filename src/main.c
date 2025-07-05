@@ -39,7 +39,7 @@
 
 /* View menu IDs */
 #define IDM_VIEW_INFOWINDOW 4100
-/* Log window menu removed */
+#define IDM_VIEW_LOGWINDOW 4101
 #define IDM_VIEW_POWER_OVERLAY 4102
 #define IDM_VIEW_DEBUG_LOGS 4103
 #define IDM_VIEW_MINIMAPWINDOW 4104
@@ -112,7 +112,11 @@
 #define INFO_TIMER_ID 2
 #define INFO_TIMER_INTERVAL 500 /* Update info window every 500ms */
 
-/* Log window definitions removed - logging now goes to debug.log file */
+/* Log window definitions */
+#define LOG_WINDOW_CLASS "MicropolisLogWindow"
+#define LOG_WINDOW_WIDTH 500
+#define LOG_WINDOW_HEIGHT 400
+#define MAX_LOG_LINES 100
 
 /* Tiles debug window definitions */
 #define TILES_WINDOW_CLASS "MicropolisTilesWindow"
@@ -177,7 +181,7 @@ short MiscHis[MISCHISTLEN / 2];
 
 HWND hwndMain = NULL; /* Main window handle - used by other modules */
 HWND hwndInfo = NULL; /* Info window handle for displaying city stats */
-/* Log window removed - logging now goes to debug.log file */
+HWND hwndLog = NULL; /* Log window handle for displaying game events */
 HWND hwndMinimap = NULL; /* Minimap window handle for overview and navigation */
 HWND hwndTiles = NULL; /* Tiles debug window handle for tileset inspection */
 HWND hwndCharts = NULL; /* Charts window handle for data visualization */
@@ -197,7 +201,11 @@ static int minimapDragY = 0; /* Drag start position */
 /* Charts window variables */
 static BOOL chartsWindowVisible = TRUE; /* Track charts window visibility */
 
-/* Log window variables removed - logging now goes to debug.log file */
+/* Log window variables */
+static BOOL logWindowVisible = TRUE; /* Track log window visibility - on by default */
+static char logMessages[MAX_LOG_LINES][256]; /* Circular buffer for log messages */
+static int logMessageCount = 0; /* Number of messages in buffer */
+static int logScrollPos = 0; /* Current scroll position */
 int showDebugLogs = 1; /* Flag to control whether debug logs are shown (enabled by default) */
 static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
@@ -370,9 +378,13 @@ extern short ScoreWait;     /* Score wait for scenario */
 #define TILES_PER_ROW 32
 LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK infoWndProc(HWND, UINT, WPARAM, LPARAM);
-/* Log window procedure removed */
+LRESULT CALLBACK logWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK minimapWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK tilesWndProc(HWND, UINT, WPARAM, LPARAM);
+
+/* Log window helper functions */
+void addToLogWindow(const char *message);
+void updateLogWindow(void);
 
 /* Function to add a game log entry */
 void addGameLog(const char *format, ...);
@@ -497,7 +509,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    /* Log window class registration removed */
+    /* Register log window class */
+    wcInfo.lpfnWndProc = logWndProc;
+    wcInfo.lpszClassName = LOG_WINDOW_CLASS;
+
+    if (!RegisterClass(&wcInfo)) {
+        MessageBox(NULL, "Log Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
 
     /* Register minimap window class */
     wcInfo.lpfnWndProc = minimapWndProc;
@@ -558,7 +577,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         SetTimer(hwndInfo, INFO_TIMER_ID, INFO_TIMER_INTERVAL, NULL);
     }
 
-    /* Log window creation removed - logging now goes to debug.log file */
+    /* Create log window */
+    hwndLog = CreateWindowEx(WS_EX_TOOLWINDOW, LOG_WINDOW_CLASS, "Micropolis Message Log",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE | WS_VSCROLL,
+        mainWindowX + rect.right - rect.left + 10, mainWindowY + INFO_WINDOW_HEIGHT + 30, /* Position below info window */
+        LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+
+    if (hwndLog == NULL) {
+        MessageBox(NULL, "Log Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        /* Continue anyway, just without the log window */
+    }
 
     /* Create minimap window */
     {
@@ -703,6 +731,9 @@ void addGameLog(const char *format, ...) {
             fclose(logFile);
         }
     }
+    
+    /* Add to log window display (without the final newline) */
+    addToLogWindow(fullMessage);
 }
 
 /**
@@ -711,23 +742,192 @@ void addGameLog(const char *format, ...) {
 void addDebugLog(const char *format, ...) {
     va_list args;
     char buffer[512];
-    char debugPrefix[16] = "[DEBUG] ";
-    char fullMessage[512];
+    char timeBuffer[64];
+    char fullMessage[1024];
+    SYSTEMTIME st;
+    FILE *logFile;
 
-    /* Format debug message */
+    /* Get current time */
+    GetLocalTime(&st);
+    sprintf(timeBuffer, "[%02d:%02d:%02d] [DEBUG] ", st.wHour, st.wMinute, st.wSecond);
+
+    /* Format message */
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
-
-    /* Create a new message with debug prefix */
-    strcpy(fullMessage, debugPrefix);
+    
+    /* Create full message with timestamp and debug prefix */
+    strcpy(fullMessage, timeBuffer);
     strcat(fullMessage, buffer);
+    strcat(fullMessage, "\n");
 
-    /* ALWAYS write to log file via addGameLog */
-    addGameLog("%s", fullMessage);
+    /* Write ONLY to debug.log file - do NOT call addGameLog */
+    {
+        char debugLogPath[MAX_PATH];
+        wsprintf(debugLogPath, "%s\\debug.log", progPathName);
+        logFile = fopen(debugLogPath, "a");
+        if (logFile) {
+            fputs(fullMessage, logFile);
+            fclose(logFile);
+        }
+    }
 }
 
-/* Log window procedure removed - logging now goes to debug.log file */
+LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc;
+        RECT rect;
+        HFONT hFont, hOldFont;
+        int i, y, lineHeight;
+        int linesVisible, startIndex, endIndex;
+        
+        hdc = BeginPaint(hwnd, &ps);
+        GetClientRect(hwnd, &rect);
+        
+        hFont = CreateFont(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+            ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, DEFAULT_PITCH | FF_MODERN, "Courier New");
+        hOldFont = SelectObject(hdc, hFont);
+        
+        FillRect(hdc, &rect, (HBRUSH)(COLOR_WINDOW + 1));
+        SetBkColor(hdc, GetSysColor(COLOR_WINDOW));
+        SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
+        
+        lineHeight = 16;
+        y = 5;
+        
+        /* Calculate which messages to show based on scroll position */
+        linesVisible = (rect.bottom - 10) / lineHeight;
+        startIndex = logScrollPos;
+        endIndex = logMessageCount;
+        if (endIndex > startIndex + linesVisible) {
+            endIndex = startIndex + linesVisible;
+        }
+        
+        /* Draw visible messages */
+        for (i = startIndex; i < endIndex; i++) {
+            TextOut(hdc, 5, y, logMessages[i], strlen(logMessages[i]));
+            y += lineHeight;
+        }
+        
+        SelectObject(hdc, hOldFont);
+        DeleteObject(hFont);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    
+    case WM_VSCROLL: {
+        RECT rect;
+        int linesVisible, maxScroll, newPos;
+        
+        GetClientRect(hwnd, &rect);
+        linesVisible = (rect.bottom - 10) / 16; /* 16 = lineHeight */
+        maxScroll = max(0, logMessageCount - linesVisible);
+        
+        switch (LOWORD(wParam)) {
+        case SB_LINEUP:
+            newPos = max(0, logScrollPos - 1);
+            break;
+        case SB_LINEDOWN:
+            newPos = min(maxScroll, logScrollPos + 1);
+            break;
+        case SB_PAGEUP:
+            newPos = max(0, logScrollPos - linesVisible);
+            break;
+        case SB_PAGEDOWN:
+            newPos = min(maxScroll, logScrollPos + linesVisible);
+            break;
+        case SB_THUMBPOSITION:
+        case SB_THUMBTRACK:
+            newPos = HIWORD(wParam);
+            if (newPos < 0) newPos = 0;
+            if (newPos > maxScroll) newPos = maxScroll;
+            break;
+        case SB_TOP:
+            newPos = 0;
+            break;
+        case SB_BOTTOM:
+            newPos = maxScroll;
+            break;
+        default:
+            return 0;
+        }
+        
+        if (newPos != logScrollPos) {
+            logScrollPos = newPos;
+            SetScrollPos(hwnd, SB_VERT, logScrollPos, TRUE);
+            InvalidateRect(hwnd, NULL, TRUE);
+        }
+        return 0;
+    }
+    
+    case WM_CLOSE:
+        ShowWindow(hwnd, SW_HIDE);
+        logWindowVisible = FALSE;
+        if (hwndMain) {
+            HMENU hMenu = GetMenu(hwndMain);
+            HMENU hViewMenu = GetSubMenu(hMenu, 4);
+            CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+        }
+        return 0;
+    }
+    
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+void addToLogWindow(const char *message) {
+    char *newlinePos;
+    int i;
+    RECT rect;
+    int linesVisible, maxScroll, oldMaxScroll;
+    
+    if (logMessageCount >= MAX_LOG_LINES) {
+        /* Shift all messages up by one to make room for new message */
+        for (i = 0; i < MAX_LOG_LINES - 1; i++) {
+            strcpy(logMessages[i], logMessages[i + 1]);
+        }
+        logMessageCount = MAX_LOG_LINES - 1;
+    }
+    
+    /* Copy message and remove trailing newline if present */
+    strcpy(logMessages[logMessageCount], message);
+    newlinePos = strchr(logMessages[logMessageCount], '\n');
+    if (newlinePos) *newlinePos = '\0';
+    
+    logMessageCount++;
+    
+    /* Update the log window display and scrollbar */
+    if (hwndLog && logWindowVisible) {
+        
+        GetClientRect(hwndLog, &rect);
+        linesVisible = (rect.bottom - 10) / 16; /* 16 = lineHeight */
+        
+        if (logMessageCount > linesVisible) {
+            oldMaxScroll = max(0, (logMessageCount - 1) - linesVisible);
+            maxScroll = logMessageCount - linesVisible;
+            SetScrollRange(hwndLog, SB_VERT, 0, maxScroll, FALSE);
+            
+            /* Only auto-scroll if user was exactly at the bottom */
+            if (logScrollPos == oldMaxScroll) {
+                SetScrollPos(hwndLog, SB_VERT, maxScroll, TRUE);
+                logScrollPos = maxScroll;
+            }
+        } else {
+            SetScrollRange(hwndLog, SB_VERT, 0, 0, FALSE);
+            logScrollPos = 0;
+        }
+        
+        InvalidateRect(hwndLog, NULL, TRUE);
+    }
+}
+
+void updateLogWindow(void) {
+    if (hwndLog && logWindowVisible) {
+        InvalidateRect(hwndLog, NULL, TRUE);
+    }
+}
 
 /**
  * Info window procedure - handles messages for the info window
@@ -1739,7 +1939,26 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
 
-        /* Log window menu case removed */
+        case IDM_VIEW_LOGWINDOW:
+            if (hwndLog) {
+                HMENU hMenu = GetMenu(hwnd);
+                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                UINT state = GetMenuState(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND);
+
+                if (state & MF_CHECKED) {
+                    /* Hide log window */
+                    CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                    ShowWindow(hwndLog, SW_HIDE);
+                    logWindowVisible = FALSE;
+                } else {
+                    /* Show log window */
+                    CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                    ShowWindow(hwndLog, SW_SHOW);
+                    SetFocus(hwnd); /* Keep focus on main window */
+                    logWindowVisible = TRUE;
+                }
+            }
+            return 0;
 
 
         case IDM_VIEW_POWER_OVERLAY: {
@@ -4293,7 +4512,9 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_INFOWINDOW, "&Info Window");
     /* Check it by default since the info window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_CHECKED);
-    /* Log window menu creation removed */
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_LOGWINDOW, "&Message Log");
+    /* Check it by default since the log window is shown on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_CHECKED);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_MINIMAPWINDOW, "&Minimap Window");
     /* Check it by default since the minimap window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_CHECKED);
