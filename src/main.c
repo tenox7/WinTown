@@ -206,6 +206,7 @@ static BOOL logWindowVisible = TRUE; /* Track log window visibility - on by defa
 static char logMessages[MAX_LOG_LINES][256]; /* Circular buffer for log messages */
 static int logMessageCount = 0; /* Number of messages in buffer */
 static int logScrollPos = 0; /* Current scroll position */
+static BOOL autoScrollEnabled = TRUE; /* Auto-scroll when user is at bottom */
 int showDebugLogs = 1; /* Flag to control whether debug logs are shown (enabled by default) */
 static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
@@ -858,6 +859,10 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (newPos != logScrollPos) {
             logScrollPos = newPos;
             SetScrollPos(hwnd, SB_VERT, logScrollPos, TRUE);
+            
+            /* Update auto-scroll flag - only enable if user scrolled to bottom */
+            autoScrollEnabled = (logScrollPos == maxScroll);
+            
             InvalidateRect(hwnd, NULL, TRUE);
         }
         return 0;
@@ -881,7 +886,7 @@ void addToLogWindow(const char *message) {
     char *newlinePos;
     int i;
     RECT rect;
-    int linesVisible, maxScroll, oldMaxScroll;
+    int linesVisible, maxScroll;
     
     if (logMessageCount >= MAX_LOG_LINES) {
         /* Shift all messages up by one to make room for new message */
@@ -904,19 +909,18 @@ void addToLogWindow(const char *message) {
         GetClientRect(hwndLog, &rect);
         linesVisible = (rect.bottom - 10) / 16; /* 16 = lineHeight */
         
-        if (logMessageCount > linesVisible) {
-            oldMaxScroll = max(0, (logMessageCount - 1) - linesVisible);
-            maxScroll = logMessageCount - linesVisible;
-            SetScrollRange(hwndLog, SB_VERT, 0, maxScroll, FALSE);
-            
-            /* Only auto-scroll if user was exactly at the bottom */
-            if (logScrollPos == oldMaxScroll) {
-                SetScrollPos(hwndLog, SB_VERT, maxScroll, TRUE);
-                logScrollPos = maxScroll;
-            }
-        } else {
-            SetScrollRange(hwndLog, SB_VERT, 0, 0, FALSE);
+        /* Calculate the new scroll range */
+        maxScroll = max(0, logMessageCount - linesVisible);
+        SetScrollRange(hwndLog, SB_VERT, 0, maxScroll, FALSE);
+        
+        /* Only auto-scroll if auto-scroll is enabled (user was at bottom) */
+        if (autoScrollEnabled && maxScroll > 0) {
+            SetScrollPos(hwndLog, SB_VERT, maxScroll, TRUE);
+            logScrollPos = maxScroll;
+        } else if (maxScroll == 0) {
+            /* All messages fit in window, reset scroll position */
             logScrollPos = 0;
+            autoScrollEnabled = TRUE; /* Re-enable auto-scroll when all messages fit */
         }
         
         InvalidateRect(hwndLog, NULL, TRUE);
