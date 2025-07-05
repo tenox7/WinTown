@@ -515,6 +515,7 @@ void makeFlood(void);                    /* Create a flood */
 void makeFire(int x, int y);             /* Start a fire */
 void spreadFire(void);                   /* Check for and spread fires */
 void makeMonster(void);                  /* Create a monster */
+void makeTornado(void);                  /* Create a tornado */
 void makeExplosion(int x, int y);        /* Create an explosion */
 void makeMeltdown(void);                 /* Create a nuclear meltdown */
 

@@ -5,6 +5,7 @@
 #include "sim.h"
 #include "tiles.h"
 #include "notifications.h"
+#include "sprite.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -198,70 +199,33 @@ void spreadFire(void) {
 /* Create a monster (Godzilla-like) disaster */
 void makeMonster(void) {
     int x, y;
-    int found = 0;
-    int attempts = 0;
-    int i, tx, ty, dir;
-    short tile;
+    SimSprite *monster;
 
     /* Log the monster disaster */
     addGameLog("DISASTER: A monster has been reported in the city!");
     addGameLog("Monster is destroying everything in its path!");
-    addDebugLog("Monster disaster starting at random location");
+    addDebugLog("Monster disaster starting - creating animated sprite");
 
-    /* Try to find a valid starting position for the monster */
-    while (!found && attempts < 100) {
-        /* Generate random position within world bounds */
-        x = SimRandom(WORLD_X);
+    /* Find a good starting position (preferably at edge of map) */
+    if (SimRandom(2) == 0) {
+        /* Start from left or right edge */
+        x = (SimRandom(2) == 0) ? 0 : (WORLD_X - 1);
         y = SimRandom(WORLD_Y);
+    } else {
+        /* Start from top or bottom edge */
+        x = SimRandom(WORLD_X);
+        y = (SimRandom(2) == 0) ? 0 : (WORLD_Y - 1);
+    }
 
-        /* Make sure position is valid */
-        if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
-            tile = Map[y][x] & LOMASK;
-
-            /* Only place monster on non-dirt tiles */
-            if (tile != 0) {
-                /* Create fire at monster's starting position */
-                setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeMonster-start");
-                found = 1;
-
-                /* Monster moves randomly destroying things */
-                for (i = 0; i < 100; i++) {
-                    dir = SimRandom(4);
-
-                    /* Move in a random direction */
-                    switch (dir) {
-                    case 0:
-                        tx = x;
-                        ty = y - 1;
-                        break; /* North */
-                    case 1:
-                        tx = x + 1;
-                        ty = y;
-                        break; /* East */
-                    case 2:
-                        tx = x;
-                        ty = y + 1;
-                        break; /* South */
-                    case 3:
-                        tx = x - 1;
-                        ty = y;
-                        break; /* West */
-                    default:
-                        tx = x;
-                        ty = y;
-                        break; /* Error case - stay put */
-                    }
-
-                    /* Check bounds before setting new position */
-                    if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
-                        x = tx;
-                        y = ty;
-                        setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeMonster-destroy");
-                    }
-                }
-            }
-        }
-        attempts++;
+    /* Create animated monster sprite */
+    monster = NewSprite(SPRITE_MONSTER, x << 4, y << 4);
+    if (monster) {
+        addGameLog("Animated monster sprite created at %d,%d", x, y);
+        addDebugLog("Monster sprite: x=%d y=%d type=%d", monster->x, monster->y, monster->type);
+    } else {
+        addGameLog("Failed to create monster sprite - falling back to fire");
+        /* Fallback: create fire if sprite creation failed */
+        makeFire(x, y);
     }
 
     /* Show enhanced notification dialog */
@@ -403,6 +367,38 @@ void makeMeltdown(void) {
             break;
         }
     }
+
+    /* Force redraw */
+    InvalidateRect(hwndMain, NULL, FALSE);
+}
+
+/* Create a tornado disaster */
+void makeTornado(void) {
+    int x, y;
+    SimSprite *tornado;
+
+    /* Log the tornado disaster */
+    addGameLog("DISASTER: Tornado warning issued\!");
+    addGameLog("Tornado touching down and moving across the city\!");
+    addDebugLog("Tornado disaster starting - creating animated sprite");
+
+    /* Pick a random starting position */
+    x = SimRandom(WORLD_X);
+    y = SimRandom(WORLD_Y);
+
+    /* Create animated tornado sprite */
+    tornado = NewSprite(SPRITE_TORNADO, x << 4, y << 4);
+    if (tornado) {
+        addGameLog("Animated tornado sprite created at %d,%d", x, y);
+        addDebugLog("Tornado sprite: x=%d y=%d type=%d", tornado->x, tornado->y, tornado->type);
+    } else {
+        addGameLog("Failed to create tornado sprite - falling back to fire");
+        /* Fallback: create fire if sprite creation failed */
+        makeFire(x, y);
+    }
+
+    /* Show enhanced notification dialog */
+    ShowNotificationAt(NOTIF_TORNADO, x, y);
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);

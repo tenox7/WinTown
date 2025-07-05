@@ -15,7 +15,6 @@
 ## Audit Code
 - Crime, fire, pollution, etc
 - Zone demand
-- Disasters
 - Rating/approval, Impeachment
 - Zone to rubble
 
@@ -31,5 +30,6 @@
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Assets as resources
+- Helicopter too slow
 
 

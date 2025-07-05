@@ -2111,18 +2111,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             
         case IDM_DISASTER_TORNADO:
             if (disastersEnabled) {
-                /* Tornado not implemented yet, create multiple fires in tornado pattern */
-                int x, y, i;
-                int centerX = SimRandom(WORLD_X - 20) + 10;
-                int centerY = SimRandom(WORLD_Y - 20) + 10;
-                
-                for (i = 0; i < 10; i++) {
-                    x = centerX + SimRandom(10) - 5;
-                    y = centerY + SimRandom(10) - 5;
-                    if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
-                        makeFire(x, y);
-                    }
-                }
+                makeTornado();
                 addGameLog("Tornado disaster manually triggered");
             } else {
                 addGameLog("Disasters are disabled - cannot trigger tornado");
@@ -4099,6 +4088,14 @@ void drawCity(HDC hdc) {
                             hSpriteBrush = CreateSolidBrush(RGB(255, 128, 0)); /* Orange */
                             hSpritePen = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
                             break;
+                        case SPRITE_MONSTER:
+                            hSpriteBrush = CreateSolidBrush(RGB(128, 255, 128)); /* Light green */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+                            break;
+                        case SPRITE_TORNADO:
+                            hSpriteBrush = CreateSolidBrush(RGB(64, 64, 64)); /* Dark gray */
+                            hSpritePen = CreatePen(PS_SOLID, 1, RGB(128, 128, 128));
+                            break;
                         default:
                             hSpriteBrush = CreateSolidBrush(RGB(255, 0, 255)); /* Magenta */
                             hSpritePen = CreatePen(PS_SOLID, 1, RGB(128, 0, 128));
@@ -4109,7 +4106,8 @@ void drawCity(HDC hdc) {
                     hOldPen = SelectObject(hdc, hSpritePen);
                     
                     /* Draw sprite bitmap with transparency */
-                    if (sprite->type >= SPRITE_TRAIN && sprite->type <= SPRITE_BUS) {
+                    if ((sprite->type >= SPRITE_TRAIN && sprite->type <= SPRITE_BUS) ||
+                        sprite->type == SPRITE_MONSTER || sprite->type == SPRITE_TORNADO) {
                         HBITMAP hbmSprite;
                         int frameIndex;
                         
@@ -4136,6 +4134,12 @@ void drawCity(HDC hdc) {
                                 break;
                             case SPRITE_EXPLOSION:
                                 if (frameIndex > 5) frameIndex = frameIndex % 6;
+                                break;
+                            case SPRITE_MONSTER:
+                                if (frameIndex > 15) frameIndex = frameIndex % 16;
+                                break;
+                            case SPRITE_TORNADO:
+                                if (frameIndex > 2) frameIndex = frameIndex % 3;
                                 break;
                         }
                         
@@ -4169,6 +4173,10 @@ void drawCity(HDC hdc) {
                             Rectangle(hdc, spriteScreenX - 8, spriteScreenY - 8,
                                      spriteScreenX + 8, spriteScreenY + 8);
                         }
+                    } else {
+                        /* Draw simple rectangle for sprites without bitmaps */
+                        Rectangle(hdc, spriteScreenX - 8, spriteScreenY - 8,
+                                 spriteScreenX + 8, spriteScreenY + 8);
                     }
                     
                     /* Cleanup GDI objects */
@@ -4362,8 +4370,8 @@ HMENU createMainMenu(void) {
 void loadSpriteBitmaps(void) {
     char filename[MAX_PATH];
     int type, frame;
-    int maxFrames[9] = {5, 8, 11, 8, 16, 3, 6, 4, 0}; /* Max frames per sprite type */
-    char *prefix[9] = {"train", "helicopter", "airplane", "ship", "monster", "tornado", "explosion", "bus", NULL};
+    int maxFrames[9] = {5, 8, 11, 8, 4, 16, 3, 6, 0}; /* Max frames per sprite type */
+    char *prefix[9] = {"train", "helicopter", "airplane", "ship", "bus", "monster", "tornado", "explosion", NULL};
     
     /* Create sprite DC if not exists */
     if (!hdcSprites) {

@@ -177,6 +177,26 @@ SimSprite* NewSprite(int type, int x, int y) {
             sprite->y_hot = -8;
             sprite->frame = 1;
             break;
+            
+        case SPRITE_MONSTER:
+            sprite->width = 48;
+            sprite->height = 48;
+            sprite->x_offset = 24;
+            sprite->y_offset = 16;
+            sprite->x_hot = 24;
+            sprite->y_hot = 16;
+            sprite->frame = 0; /* Will be set to 1 in behavior function */
+            break;
+            
+        case SPRITE_TORNADO:
+            sprite->width = 48;
+            sprite->height = 48;
+            sprite->x_offset = 24;
+            sprite->y_offset = 24;
+            sprite->x_hot = 24;
+            sprite->y_hot = 24;
+            sprite->frame = 0; /* Will be set to 1 in behavior function */
+            break;
     }
     
     SpriteCount++;
@@ -228,6 +248,14 @@ void MoveSprites(void) {
                 
             case SPRITE_BUS:
                 DoBusSprite(sprite);
+                break;
+                
+            case SPRITE_MONSTER:
+                DoMonsterSprite(sprite);
+                break;
+                
+            case SPRITE_TORNADO:
+                DoTornadoSprite(sprite);
                 break;
                 
             case SPRITE_EXPLOSION:
@@ -941,4 +969,149 @@ SimSprite* GetSprite(int index) {
         }
     }
     return NULL;
+}
+
+/* Monster (Godzilla) sprite behavior */
+void DoMonsterSprite(SimSprite *sprite) {
+    static short Gx[5] = {2, 2, -2, -2, 0}; /* X movement deltas */
+    static short Gy[5] = {-2, 2, 2, -2, 0}; /* Y movement deltas */
+    int dx, dy, d, z;
+    int mapX, mapY;
+    
+    /* Initialize sprite on first run */
+    if (sprite->frame == 0) {
+        sprite->frame = 1;
+        sprite->count = 1000; /* Lifespan */
+        sprite->dest_x = (WORLD_X / 2) << 4; /* Target city center initially */
+        sprite->dest_y = (WORLD_Y / 2) << 4;
+        sprite->dir = 0;
+        sprite->flag = 0;
+        sprite->step = 0;
+    }
+    
+    /* Check lifespan */
+    if (sprite->count > 0) {
+        sprite->count--;
+    } else {
+        /* Monster dies */
+        DestroySprite(sprite);
+        return;
+    }
+    
+    /* Navigate toward destination */
+    dx = sprite->dest_x - sprite->x;
+    dy = sprite->dest_y - sprite->y;
+    
+    if (abs(dx) < 32 && abs(dy) < 32) {
+        /* Reached destination - pick new target (high pollution area) */
+        sprite->dest_x = (SimRandom(WORLD_X) << 4);
+        sprite->dest_y = (SimRandom(WORLD_Y) << 4);
+    }
+    
+    /* Determine movement direction */
+    d = 4; /* Default: stop */
+    if (abs(dx) > abs(dy)) {
+        if (dx > 0) d = 0; /* East */
+        else d = 2; /* West */
+    } else {
+        if (dy > 0) d = 1; /* South */
+        else d = 3; /* North */
+    }
+    
+    sprite->dir = d;
+    
+    /* Move monster */
+    if (d < 4) {
+        sprite->x += Gx[d];
+        sprite->y += Gy[d];
+    }
+    
+    /* Update animation frame */
+    z = sprite->step;
+    if (SpriteCycle & 1) { /* Update every other cycle */
+        z = (((d * 3) + z) + 1) % 16; /* 16 frames total */
+        sprite->step = z;
+    }
+    sprite->frame = z + 1; /* Frame 1-16 */
+    
+    /* Destroy buildings around monster */
+    mapX = (sprite->x + 48) >> 4;
+    mapY = (sprite->y + 16) >> 4;
+    
+    if (mapX >= 1 && mapX < WORLD_X - 1 && mapY >= 1 && mapY < WORLD_Y - 1) {
+        int i, j;
+        /* Destroy 3x3 area */
+        for (i = -1; i <= 1; i++) {
+            for (j = -1; j <= 1; j++) {
+                if (!disastersDisabled) {
+                    makeFire(mapX + i, mapY + j);
+                }
+            }
+        }
+    }
+}
+
+/* Tornado sprite behavior */
+void DoTornadoSprite(SimSprite *sprite) {
+    static short CDx[9] = {2, 3, 2, 0, -2, -3}; /* Random X movement */
+    static short CDy[9] = {-2, 0, 2, 3, 2, 0}; /* Random Y movement */
+    int z, d;
+    int mapX, mapY;
+    
+    /* Initialize sprite on first run */
+    if (sprite->frame == 0) {
+        sprite->frame = 1;
+        sprite->count = 200; /* Lifespan */
+        sprite->dir = SimRandom(8);
+        sprite->flag = 0;
+    }
+    
+    /* Check lifespan and random termination */
+    if (sprite->count > 0) {
+        sprite->count--;
+    } else {
+        DestroySprite(sprite);
+        return;
+    }
+    
+    /* Random early termination */
+    if (SimRandom(500) == 0) {
+        DestroySprite(sprite);
+        return;
+    }
+    
+    /* Random movement */
+    if (SimRandom(4) == 0) {
+        d = SimRandom(6); /* Use first 6 directions */
+        sprite->x += CDx[d];
+        sprite->y += CDy[d];
+    }
+    
+    /* Update spinning animation */
+    z = sprite->frame;
+    if (z == 2) { /* Cycle animation */
+        if (sprite->flag) {
+            z = 3;
+        } else {
+            z = 1;
+        }
+    } else {
+        if (z == 1) {
+            sprite->flag = 1;
+        } else {
+            sprite->flag = 0;
+        }
+        z = 2;
+    }
+    sprite->frame = z;
+    
+    /* Destroy buildings in tornado's path */
+    mapX = (sprite->x + 48) >> 4;
+    mapY = (sprite->y + 40) >> 4;
+    
+    if (mapX >= 0 && mapX < WORLD_X && mapY >= 0 && mapY < WORLD_Y) {
+        if (!disastersDisabled) {
+            makeFire(mapX, mapY);
+        }
+    }
 }
