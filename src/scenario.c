@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "notifications.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -62,8 +63,7 @@ int loadScenario(int scenarioId) {
 
     /* Validate scenario ID range */
     if ((scenarioId < 1) || (scenarioId > 8)) {
-        MessageBox(hwndMain, "Invalid scenario ID! Using Dullsville (1) instead.", "Warning",
-                   MB_ICONWARNING | MB_OK);
+        addGameLog("WARNING: Invalid scenario ID! Using Dullsville (1) instead.");
         scenarioId = 1;
     }
 
@@ -100,9 +100,7 @@ int loadScenario(int scenarioId) {
 
     f = fopen(path, "rb");
     if (f == NULL) {
-        MessageBox(hwndMain,
-                   "Scenario files not found!\nPlease copy scenario files to the cities directory.",
-                   "Error", MB_ICONERROR | MB_OK);
+        addGameLog("ERROR: Scenario files not found! Please copy scenario files to the cities directory.");
         return 0;
     }
     fclose(f);
@@ -242,7 +240,7 @@ int loadScenario(int scenarioId) {
     /* Load scenario file */
     wsprintf(path, "cities\\%s", fname);
     if (!loadFile(path)) {
-        MessageBox(hwndMain, "Failed to load scenario file", "Error", MB_ICONERROR | MB_OK);
+        addGameLog("ERROR: Failed to load scenario file: %s", path);
         return 0;
     }
 
@@ -607,9 +605,20 @@ void DoScenarioScore(void) {
         CityScore = -200;
     }
     
-    /* Show message box with result */
-    MessageBox(hwndMain, message, win ? "Scenario Complete - YOU WIN!" : "Scenario Failed", 
-               win ? (MB_ICONINFORMATION | MB_OK) : (MB_ICONWARNING | MB_OK));
+    /* Show notification dialog with result */
+    {
+        Notification notif;
+        notif.id = win ? 7001 : 7002; /* Custom scenario result IDs */
+        notif.type = win ? NOTIF_MILESTONE : NOTIF_WARNING;
+        strcpy(notif.title, win ? "Scenario Complete - YOU WIN!" : "Scenario Failed");
+        strcpy(notif.message, message);
+        strcpy(notif.explanation, win ? "Congratulations! You have successfully completed this scenario challenge." : "The scenario objectives were not met. Review your strategy and try again.");
+        strcpy(notif.advice, win ? "You can try other scenarios or continue playing in sandbox mode." : "Focus on the specific requirements mentioned in the scenario description.");
+        notif.hasLocation = 0;
+        notif.priority = win ? 1 : 2;
+        notif.timestamp = GetTickCount();
+        CreateNotificationDialog(&notif);
+    }
     
     /* Reset scenario */
     ScenarioID = 0;

@@ -2565,12 +2565,11 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
             /* Display result if needed */
             if (result == TOOLRESULT_NO_MONEY) {
-                MessageBox(hwnd, "Not enough money!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
+                addGameLog("TOOL ERROR: Not enough money!");
             } else if (result == TOOLRESULT_NEED_BULLDOZE) {
-                MessageBox(hwnd, "You need to bulldoze this area first!", "Tool Error",
-                           MB_ICONEXCLAMATION | MB_OK);
+                addGameLog("TOOL ERROR: You need to bulldoze this area first!");
             } else if (result == TOOLRESULT_FAILED) {
-                MessageBox(hwnd, "Can't build there!", "Tool Error", MB_ICONEXCLAMATION | MB_OK);
+                addGameLog("TOOL ERROR: Can't build there!");
             }
         } else {
             /* Regular map dragging */
@@ -3597,7 +3596,7 @@ int loadCity(char *filename) {
     lstrcpy(cityFileName, filename);
 
     if (!loadFile(filename)) {
-        MessageBox(hwndMain, "Failed to load city file", "Error", MB_ICONERROR | MB_OK);
+        addGameLog("ERROR: Failed to load city file: %s", filename);
         return 0;
     }
 

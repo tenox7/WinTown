@@ -2692,8 +2692,8 @@ int DoQuery(int mapX, int mapY) {
     wsprintf(message, "Location: %d, %d\nTile Type: %s\nHas Power: %s", mapX, mapY, zoneName,
              (tile & POWERBIT) ? "Yes" : "No");
 
-    /* Display the message box with information */
-    MessageBox(hwndMain, message, "Zone Info", MB_OK | MB_ICONINFORMATION);
+    /* Display zone information in game log */
+    addGameLog("ZONE INFO: %s", message);
 
     return TOOLRESULT_OK;
 }

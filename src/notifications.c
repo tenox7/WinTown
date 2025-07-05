@@ -279,6 +279,22 @@ void doMessage(void) {
             case 17: strcpy(messageStr, "Roads deteriorating rapidly."); break;
             case 18: strcpy(messageStr, "Fire departments need funding."); break;
             case 19: strcpy(messageStr, "Police departments need funding."); break;
+            case 20: strcpy(messageStr, "Fire reported!"); break;
+            case 21: strcpy(messageStr, "Monster attack!"); break;
+            case 22: strcpy(messageStr, "Earthquake!"); break;
+            case 23: strcpy(messageStr, "Tornado!"); break;
+            case 24: strcpy(messageStr, "Flooding!"); break;
+            case 25: strcpy(messageStr, "Nuclear meltdown!"); break;
+            case 26: strcpy(messageStr, "Airplane crashed!"); break;
+            case 27: strcpy(messageStr, "Train crashed!"); break;
+            case 28: strcpy(messageStr, "Ship crashed!"); break;
+            case 29: strcpy(messageStr, "Helicopter crashed!"); break;
+            case 30: strcpy(messageStr, "Major fire spreading!"); break;
+            case 35: strcpy(messageStr, "Population reached 2,000! Your village has become a town."); break;
+            case 36: strcpy(messageStr, "Population reached 10,000! Your town has become a city."); break;
+            case 37: strcpy(messageStr, "Population reached 50,000! Your city has become a capital."); break;
+            case 38: strcpy(messageStr, "Population reached 100,000! Your capital has become a metropolis."); break;
+            case 39: strcpy(messageStr, "Population reached 500,000! Your metropolis has become a megalopolis."); break;
             default: sprintf(messageStr, "City Message %d", MesNum); break;
         }
 
