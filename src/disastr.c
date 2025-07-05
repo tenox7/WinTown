@@ -47,9 +47,6 @@ void doEarthquake(void) {
         time = 1000; /* Cap to prevent excessive processing */
     }
 
-    /* Show enhanced notification dialog */
-    ShowNotificationAt(NOTIF_EARTHQUAKE, epicenterX, epicenterY);
-
     /* Start earthquake screen shake effect */
     startEarthquake();
 
@@ -81,6 +78,11 @@ void doEarthquake(void) {
             }
         }
     }
+
+    /* Show enhanced notification dialog AFTER earthquake damage */
+    addDebugLog("Showing earthquake notification at (%d,%d)", epicenterX, epicenterY);
+    ShowNotificationAt(NOTIF_EARTHQUAKE, epicenterX, epicenterY);
+    addDebugLog("Earthquake notification call completed");
 
     /* Force redraw */
     InvalidateRect(hwndMain, NULL, FALSE);

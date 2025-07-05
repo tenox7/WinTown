@@ -22,6 +22,15 @@
 #define IDC_FIRE_PERCENT 1019
 #define IDC_POLICE_PERCENT 1020
 
+/* Notification Dialog Resource IDs */
+#define IDD_NOTIFICATION_DIALOG 9100
+#define IDC_NOTIF_TITLE 9102
+#define IDC_NOTIF_MESSAGE 9103
+#define IDC_NOTIF_EXPLANATION 9104
+#define IDC_NOTIF_ADVICE 9105
+#define IDC_NOTIF_LOCATION 9106
+#define IDC_GOTO_LOCATION 9107
+
 /* Budget Dialog Resource */
 IDD_BUDGET DIALOG 0, 0, 320, 250
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -61,5 +70,21 @@ BEGIN
     PUSHBUTTON      "Reset", IDC_RESET_BUDGET, 220, 205, 40, 15
     DEFPUSHBUTTON   "OK", IDOK_BUDGET, 265, 205, 40, 15
     PUSHBUTTON      "Cancel", IDCANCEL_BUDGET, 265, 225, 40, 15
+END
+
+/* Notification Dialog Resource */
+IDD_NOTIFICATION_DIALOG DIALOG 0, 0, 400, 300
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "City Notification"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Notification Title", IDC_NOTIF_TITLE, 10, 10, 380, 20
+    LTEXT           "Main notification message", IDC_NOTIF_MESSAGE, 10, 35, 380, 40
+    LTEXT           "Detailed explanation", IDC_NOTIF_EXPLANATION, 10, 80, 380, 60
+    LTEXT           "Recommended actions", IDC_NOTIF_ADVICE, 10, 145, 380, 60
+    LTEXT           "Location info", IDC_NOTIF_LOCATION, 10, 210, 200, 15
+    PUSHBUTTON      "Go To Location", IDC_GOTO_LOCATION, 10, 240, 80, 20
+    PUSHBUTTON      "OK", IDOK, 300, 240, 40, 20
+    PUSHBUTTON      "Cancel", IDCANCEL, 345, 240, 40, 20
 END
 

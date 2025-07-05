@@ -60,11 +60,8 @@ src\notifications.obj: src\notifications.c
 budget.res: budget.rc
 	$(RC) budget.rc
 
-notifications.res: notifications.rc
-	$(RC) notifications.rc
-
-ntpolis.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj budget.res notifications.res
-	link /NOLOGO /OUT:ntpolis.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj budget.res notifications.res $(LIBS)
+ntpolis.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj budget.res
+	link /NOLOGO /OUT:ntpolis.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj budget.res $(LIBS)
 
 clean:
 	del /q src\*.obj

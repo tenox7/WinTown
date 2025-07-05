@@ -231,13 +231,12 @@ static HMENU hDisasterMenu = NULL;
 static HMENU hSettingsMenu = NULL;
 static char currentTileset[MAX_PATH] = "classic";
 static int powerOverlayEnabled = 0; /* Power overlay display toggle */
-int disastersDisabled = 1; /* Cheat flag to disable disasters - global for other modules */
+int disastersDisabled = 0; /* Cheat flag to disable disasters - global for other modules */
 
 /* Game settings - Global variables for speed, difficulty, and auto-settings */
 int gameSpeed = SPEED_MEDIUM;     /* Current game speed (0=pause, 1=slow, 2=medium, 3=fast) */
 int gameLevel = LEVEL_EASY;       /* Current difficulty level (0=easy, 1=medium, 2=hard) */
 int autoBulldoze = 1;             /* Auto-bulldoze enabled flag */
-int disastersEnabled = 0;         /* Disasters enabled flag (will replace disastersDisabled) */
 int simTimerDelay = 200;          /* Timer delay in milliseconds */
 
 /* Earthquake shake effect variables */
@@ -2092,7 +2091,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             
         /* Disaster menu items */
         case IDM_DISASTER_FIRE:
-            if (disastersEnabled) {
+            if (!disastersDisabled) {
                 makeFire(SimRandom(WORLD_X), SimRandom(WORLD_Y));
                 addGameLog("Fire disaster manually triggered");
             } else {
@@ -2101,7 +2100,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
             
         case IDM_DISASTER_FLOOD:
-            if (disastersEnabled) {
+            if (!disastersDisabled) {
                 makeFlood();
                 addGameLog("Flood disaster manually triggered");
             } else {
@@ -2110,7 +2109,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
             
         case IDM_DISASTER_TORNADO:
-            if (disastersEnabled) {
+            if (!disastersDisabled) {
                 makeTornado();
                 addGameLog("Tornado disaster manually triggered");
             } else {
@@ -2119,7 +2118,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
             
         case IDM_DISASTER_EARTHQUAKE:
-            if (disastersEnabled) {
+            if (!disastersDisabled) {
                 doEarthquake();
                 addGameLog("Earthquake disaster manually triggered");
             } else {
@@ -2128,7 +2127,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
             
         case IDM_DISASTER_MONSTER:
-            if (disastersEnabled) {
+            if (!disastersDisabled) {
                 makeMonster();
                 addGameLog("Monster disaster manually triggered");
             } else {
@@ -2137,7 +2136,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
             
         case IDM_DISASTER_MELTDOWN:
-            if (disastersEnabled) {
+            if (!disastersDisabled) {
                 makeMeltdown();
                 addGameLog("Nuclear meltdown disaster manually triggered");
             } else {
@@ -2148,14 +2147,13 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* Handle disaster enable/disable from Settings menu */
         case IDM_CHEATS_DISABLE_DISASTERS:
             {
-                disastersEnabled = !disastersEnabled;
-                disastersDisabled = !disastersEnabled;
+                disastersDisabled = !disastersDisabled;
                 CheckMenuItem(hSettingsMenu, IDM_CHEATS_DISABLE_DISASTERS, 
-                            disastersEnabled ? MF_CHECKED : MF_UNCHECKED);
+                            !disastersDisabled ? MF_CHECKED : MF_UNCHECKED);
                 
-                addDebugLog("Disasters menu toggled: Enabled=%d, Disabled=%d", disastersEnabled, disastersDisabled);
+                addDebugLog("Disasters menu toggled: Enabled=%d, Disabled=%d", !disastersDisabled, disastersDisabled);
                 
-                if (!disastersEnabled) {
+                if (disastersDisabled) {
                     int x, y;
                     short tile;
                     int firesExtinguished = 0;
@@ -4355,7 +4353,7 @@ HMENU createMainMenu(void) {
     CheckMenuItem(hSettingsMenu, IDM_SETTINGS_LEVEL_EASY, MF_CHECKED);
     CheckMenuItem(hSettingsMenu, IDM_SETTINGS_AUTO_BUDGET, AutoBudget ? MF_CHECKED : MF_UNCHECKED);
     CheckMenuItem(hSettingsMenu, IDM_SETTINGS_AUTO_BULLDOZE, autoBulldoze ? MF_CHECKED : MF_UNCHECKED);
-    CheckMenuItem(hSettingsMenu, IDM_CHEATS_DISABLE_DISASTERS, disastersEnabled ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hSettingsMenu, IDM_CHEATS_DISABLE_DISASTERS, !disastersDisabled ? MF_CHECKED : MF_UNCHECKED);
 
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hFileMenu, "&File");
     AppendMenu(hMainMenu, MF_POPUP, (UINT)hScenarioMenu, "&Scenarios");
