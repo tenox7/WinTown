@@ -56,9 +56,19 @@ int PrevCityPop = 0;      /* Debug tracker for last city population value */
 extern short ScenarioID;
 extern short DisasterEvent;
 extern short DisasterWait;
+extern short ScoreType;
 extern short ScoreWait;
 extern void scenarioDisaster(void);
 extern void DoScenarioScore(void);
+
+/* Zone population totals for SendMessages */
+int TotalZPop = 0;
+int ResZPop = 0;
+int ComZPop = 0;
+int IndZPop = 0;
+int CoalPop = 0;
+int FireStPop = 0;
+int CityTax = 7;  /* Tax rate (same as TaxRate but different name) */
 
 /* Counters */
 int Scycle = 0;
@@ -339,6 +349,10 @@ void Simulate(int mod16) {
 
         /* Move transportation sprites */
         MoveSprites();
+        
+        /* Original Micropolis message system */
+        SendMessages();
+        doMessage();
         break;
 
     case 1:

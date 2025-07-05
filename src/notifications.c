@@ -1,164 +1,385 @@
-/* notifications.c - Simple single-message notification system for MicropolisNT
- * Based on original Micropolis SendMes() function
+/* notifications.c - Original Micropolis message system for MicropolisNT
+ * Based on s_msg.c from original Micropolis
  */
 
 #include "notifications.h"
 #include "sim.h"
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
+#include <windows.h>
 
 /* External functions */
 extern HWND hwndMain;
 extern void addGameLog(const char *format, ...);
 extern void addDebugLog(const char *format, ...);
 
-/* Single message system like original Micropolis */
-static int activeNotificationId = 0;  /* 0 = no active notification */
-static DWORD notificationStartTime = 0;
-static DWORD lastDisasterTime = 0;
-static int lastPicNum = 0;            /* Last disaster type shown (like original LastPicNum) */
-static int disasterCooldown = 20000;  /* 20 seconds */
-static int messageDuration = 30000;   /* 30 seconds */
+/* Message system variables - like original Micropolis */
+int MessagePort = 0;
+int MesX = 0, MesY = 0;
+int MesNum = 0;
+int LastPicNum = 0;
+DWORD LastMesTime = 0;
 
-/* Simple notification check - like original SendMes */
-static int CanSendNotification(int notificationId) {
-    DWORD currentTime = GetTickCount();
-    
-    /* Check if current message has timed out */
-    if (activeNotificationId != 0 && 
-        (currentTime - notificationStartTime) > messageDuration) {
-        activeNotificationId = 0;
-        addDebugLog("Notification %d timed out, cleared", activeNotificationId);
+/* External simulation variables */
+extern int CityTime;
+extern int TotalZPop, ResZPop, ComZPop, IndZPop;
+extern int NuclearPop, CoalPop;
+extern int RoadTotal, RailTotal;
+extern int ResPop, StadiumPop, IndPop, PortPop, ComPop, APortPop;
+extern int UnpwrdZCnt, PwrdZCnt;
+extern int PollutionAverage, CrimeAverage, TotalPop, FireStPop, PolicePop;
+extern int CityTax, TaxRate, RoadEffect, FireEffect, PoliceEffect, TrafficAverage;
+extern int ScenarioID, ScoreType, ScoreWait;
+extern int ResCap, IndCap, ComCap;
+
+/* Forward declarations */
+int SendMes(int Mnum);
+void SendMesAt(int Mnum, int x, int y);
+void CheckGrowth(void);
+void DoScenarioScore(int type);
+void ClearMes(void);
+
+/* Original SendMessages function - called every simulation cycle */
+void SendMessages(void) {
+    int z;
+    int PowerPop;
+    float TM;
+
+    if (ScenarioID && ScoreType && ScoreWait) {
+        ScoreWait--;
+        if (!ScoreWait)
+            DoScenarioScore(ScoreType);
     }
-    
-    /* Emergency messages (like original picture messages) - implement LastPicNum logic */
-    if (notificationId >= 1000 && notificationId < 2000) {  /* Emergency range */
-        /* CRITICAL: Like original - only show if different disaster type than last */
-        if (notificationId != lastPicNum) {
-            lastDisasterTime = currentTime;
-            lastPicNum = notificationId;
-            addDebugLog("Emergency notification %d allowed (different from last %d)", notificationId, lastPicNum);
+
+    CheckGrowth();
+
+    /* Sync message system variables with simulation variables */
+    TotalZPop = ResZPop + ComZPop + IndZPop;
+    PowerPop = NuclearPop + CoalPop;
+    CityTax = TaxRate;  /* Keep in sync */
+
+    z = CityTime & 63;
+
+    switch(z) {
+        case 1:
+            if ((TotalZPop >> 2) >= ResZPop)
+                SendMes(1); /* need Res */
+            break;
+        case 5:
+            if ((TotalZPop >> 3) >= ComZPop)
+                SendMes(2); /* need Com */
+            break;
+        case 10:
+            if ((TotalZPop >> 3) >= IndZPop)
+                SendMes(3); /* need Ind */
+            break;
+        case 14:
+            if ((TotalZPop > 10) && ((TotalZPop << 1) > RoadTotal))
+                SendMes(4);
+            break;
+        case 18:
+            if ((TotalZPop > 50) && (TotalZPop > RailTotal))
+                SendMes(5);
+            break;
+        case 22:
+            if ((TotalZPop > 10) && (PowerPop == 0))
+                SendMes(6); /* need Power */
+            break;
+        case 26:
+            if ((ResPop > 500) && (StadiumPop == 0)) {
+                SendMes(7); /* need Stad */
+                ResCap = 1;
+            } else
+                ResCap = 0;
+            break;
+        case 28:
+            if ((IndPop > 70) && (PortPop == 0)) {
+                SendMes(8);
+                IndCap = 1;
+            } else
+                IndCap = 0;
+            break;
+        case 30:
+            if ((ComPop > 100) && (APortPop == 0)) {
+                SendMes(9);
+                ComCap = 1;
+            } else
+                ComCap = 0;
+            break;
+        case 32:
+            TM = UnpwrdZCnt + PwrdZCnt;
+            if (TM)
+                if ((PwrdZCnt / TM) < 0.7)
+                    SendMes(15);
+            break;
+        case 35:
+            if (PollutionAverage > 60)
+                SendMes(-10);
+            break;
+        case 42:
+            if (CrimeAverage > 100)
+                SendMes(-11);
+            break;
+        case 45:
+            if ((TotalPop > 60) && (FireStPop == 0))
+                SendMes(13);
+            break;
+        case 48:
+            if ((TotalPop > 60) && (PolicePop == 0))
+                SendMes(14);
+            break;
+        case 51:
+            if (CityTax > 12)
+                SendMes(16);
+            break;
+        case 54:
+            if ((RoadEffect < 20) && (RoadTotal > 30))
+                SendMes(17);
+            break;
+        case 57:
+            if ((FireEffect < 700) && (TotalPop > 20))
+                SendMes(18);
+            break;
+        case 60:
+            if ((PoliceEffect < 700) && (TotalPop > 20))
+                SendMes(19);
+            break;
+        case 63:
+            if (TrafficAverage > 60)
+                SendMes(-12);
+            break;
+    }
+}
+
+/* Original CheckGrowth function */
+void CheckGrowth(void) {
+    static QUAD LastCityPop = 0;
+    static int LastCategory = 0;
+    QUAD ThisCityPop;
+    int z;
+
+    if (!(CityTime & 3)) {
+        z = 0;
+        ThisCityPop = ((ResPop) + (ComPop * 8L) + (IndPop * 8L)) * 20L;
+        if (LastCityPop) {
+            if ((LastCityPop < 2000) && (ThisCityPop >= 2000)) z = 35;
+            if ((LastCityPop < 10000) && (ThisCityPop >= 10000)) z = 36;
+            if ((LastCityPop < 50000L) && (ThisCityPop >= 50000L)) z = 37;
+            if ((LastCityPop < 100000L) && (ThisCityPop >= 100000L)) z = 38;
+            if ((LastCityPop < 500000L) && (ThisCityPop >= 500000L)) z = 39;
+        }
+        if (z)
+            if (z != LastCategory) {
+                SendMes(-z);
+                LastCategory = z;
+            }
+        LastCityPop = ThisCityPop;
+    }
+}
+
+/* Original SendMes function - CRITICAL anti-spam logic */
+int SendMes(int Mnum) {
+    if (Mnum < 0) {
+        /* Picture message (disaster) - only if different from last */
+        if (Mnum != LastPicNum) {
+            MessagePort = Mnum;
+            MesX = 0;
+            MesY = 0;
+            LastPicNum = Mnum;
+            addDebugLog("SendMes: Picture message %d allowed (different from last %d)", Mnum, LastPicNum);
             return 1;
         } else {
-            addDebugLog("Emergency notification %d BLOCKED - same as last disaster type", notificationId);
-            return 0;  /* Block duplicate disaster types */
+            addDebugLog("SendMes: Picture message %d BLOCKED - same as last", Mnum);
+            return 0;
+        }
+    } else {
+        /* Text message - only if no active message */
+        if (!MessagePort) {
+            MessagePort = Mnum;
+            MesX = 0;
+            MesY = 0;
+            addDebugLog("SendMes: Text message %d allowed", Mnum);
+            return 1;
+        } else {
+            addDebugLog("SendMes: Text message %d BLOCKED - active message %d", Mnum, MessagePort);
+            return 0;
         }
     }
-    
-    /* Block advisory messages during disaster cooldown */
-    if (notificationId >= 2000 && 
-        (currentTime - lastDisasterTime) < disasterCooldown) {
-        addDebugLog("Advisory notification %d blocked by disaster cooldown", notificationId);
-        return 0;
-    }
-    
-    /* Block if there's already an active notification */
-    if (activeNotificationId != 0) {
-        addDebugLog("Notification %d blocked - active: %d", notificationId, activeNotificationId);
-        return 0;
-    }
-    
-    return 1;
 }
 
-/* Initialize notification system */
-void InitNotificationSystem(void) {
-    activeNotificationId = 0;
-    notificationStartTime = 0;
-    lastDisasterTime = 0;
+/* Original SendMesAt function - for disaster locations */
+void SendMesAt(int Mnum, int x, int y) {
+    if (SendMes(Mnum)) {
+        MesX = x;
+        MesY = y;
+        addDebugLog("SendMesAt: Message %d at (%d,%d)", Mnum, x, y);
+    }
 }
 
-/* Simple notification - just show MessageBox for now */
+/* Clear message system */
+void ClearMes(void) {
+    MessagePort = 0;
+    MesX = 0;
+    MesY = 0;
+    LastPicNum = 0;
+    addDebugLog("ClearMes: Message system cleared");
+}
+
+/* Process active message */
+void doMessage(void) {
+    char messageStr[256];
+    int firstTime;
+
+    messageStr[0] = 0;
+
+    if (MessagePort) {
+        MesNum = MessagePort;
+        MessagePort = 0;
+        LastMesTime = GetTickCount();
+        firstTime = 1;
+        addDebugLog("doMessage: Processing message %d", MesNum);
+    } else {
+        firstTime = 0;
+        if (MesNum == 0) return;
+        if (MesNum < 0) {
+            MesNum = -MesNum;
+            LastMesTime = GetTickCount();
+        } else if ((GetTickCount() - LastMesTime) > (60 * 1000)) { /* 60 seconds timeout */
+            MesNum = 0;
+            addDebugLog("doMessage: Message timed out");
+            return;
+        }
+    }
+
+    if (MesNum >= 0) {
+        if (MesNum == 0) return;
+        if (MesNum > 60) {
+            MesNum = 0;
+            return;
+        }
+
+        /* Get message text */
+        switch(MesNum) {
+            case 1: strcpy(messageStr, "More residential zones needed."); break;
+            case 2: strcpy(messageStr, "More commercial zones needed."); break;
+            case 3: strcpy(messageStr, "More industrial zones needed."); break;
+            case 4: strcpy(messageStr, "More roads required."); break;
+            case 5: strcpy(messageStr, "More rail system needed."); break;
+            case 6: strcpy(messageStr, "More power needed."); break;
+            case 7: strcpy(messageStr, "Residents demand a stadium."); break;
+            case 8: strcpy(messageStr, "Industry requires a seaport."); break;
+            case 9: strcpy(messageStr, "Commerce requires an airport."); break;
+            case 10: strcpy(messageStr, "Pollution very high."); break;
+            case 11: strcpy(messageStr, "Crime very high."); break;
+            case 12: strcpy(messageStr, "Traffic very heavy."); break;
+            case 13: strcpy(messageStr, "Fire protection needed."); break;
+            case 14: strcpy(messageStr, "Police protection needed."); break;
+            case 15: strcpy(messageStr, "Blackouts reported. More power needed."); break;
+            case 16: strcpy(messageStr, "Tax rate too high."); break;
+            case 17: strcpy(messageStr, "Roads deteriorating rapidly."); break;
+            case 18: strcpy(messageStr, "Fire departments need funding."); break;
+            case 19: strcpy(messageStr, "Police departments need funding."); break;
+            default: sprintf(messageStr, "City Message %d", MesNum); break;
+        }
+
+        addGameLog("CITY: %s", messageStr);
+
+    } else {
+        /* Picture message (disaster) */
+        int pictId = -(MesNum);
+        
+        switch(pictId) {
+            case 10: strcpy(messageStr, "Pollution very high!"); break;
+            case 11: strcpy(messageStr, "Crime wave spreading!"); break;
+            case 12: strcpy(messageStr, "Traffic jams everywhere!"); break;
+            case 20: strcpy(messageStr, "FIRE REPORTED!"); break;
+            case 21: strcpy(messageStr, "MONSTER ATTACK!"); break;
+            case 22: strcpy(messageStr, "EARTHQUAKE!"); break;
+            case 23: strcpy(messageStr, "TORNADO!"); break;
+            case 24: strcpy(messageStr, "FLOODING!"); break;
+            case 25: strcpy(messageStr, "NUCLEAR MELTDOWN!"); break;
+            case 35: strcpy(messageStr, "Population reached 2,000!"); break;
+            case 36: strcpy(messageStr, "Population reached 10,000!"); break;
+            case 37: strcpy(messageStr, "Population reached 50,000!"); break;
+            case 38: strcpy(messageStr, "Population reached 100,000!"); break;
+            case 39: strcpy(messageStr, "Population reached 500,000!"); break;
+            default: sprintf(messageStr, "Disaster %d", pictId); break;
+        }
+
+        if (MesX > 0 && MesY > 0) {
+            char locStr[64];
+            sprintf(locStr, " at (%d,%d)", MesX, MesY);
+            strcat(messageStr, locStr);
+        }
+
+        addGameLog("ALERT: %s", messageStr);
+        
+        /* Show dialog for disasters only */
+        if (pictId >= 20 && pictId <= 25) {
+            Notification notif;
+            notif.id = pictId;
+            notif.locationX = MesX;
+            notif.locationY = MesY;
+            notif.hasLocation = (MesX > 0 && MesY > 0) ? 1 : 0;
+            strcpy(notif.message, messageStr);
+            notif.timestamp = GetTickCount();
+            notif.priority = 3;
+            CreateNotificationDialog(&notif);
+        }
+
+        MessagePort = pictId; /* resend text message */
+    }
+}
+
+/* Replace old notification functions with new SendMes equivalents */
 void ShowNotification(int notificationId, ...) {
-    char message[256];
-    va_list args;
-    
-    if (!CanSendNotification(notificationId)) {
-        return;
-    }
-    
-    /* Set as active */
-    activeNotificationId = notificationId;
-    notificationStartTime = GetTickCount();
-    
-    /* Format message */
-    va_start(args, notificationId);
-    switch (notificationId) {
+    /* Map new IDs to original message numbers */
+    switch(notificationId) {
         case NOTIF_EARTHQUAKE:
-            strcpy(message, "Major Earthquake!");
+            SendMes(-22);
             break;
         case NOTIF_FIRE_REPORTED:
-            strcpy(message, "Fire Reported!");
+            SendMes(-20);
             break;
         case NOTIF_MONSTER_SIGHTED:
-            strcpy(message, "Monster Sighted!");
+            SendMes(-21);
             break;
         default:
-            sprintf(message, "City Notification %d", notificationId);
+            addDebugLog("ShowNotification: Unknown ID %d", notificationId);
             break;
     }
-    va_end(args);
-    
-    addGameLog("NOTIFICATION: %s", message);
-    addDebugLog("Showing notification %d: %s", notificationId, message);
-    
-    /* NO MESSAGE BOX - just log only */
-    
-    /* DON'T clear immediately - let it timeout like original (30 seconds) */
 }
 
-/* Simple notification with location */
 void ShowNotificationAt(int notificationId, int x, int y, ...) {
-    char message[256];
-    va_list args;
-    
-    if (!CanSendNotification(notificationId)) {
-        return;
-    }
-    
-    /* Set as active */
-    activeNotificationId = notificationId;
-    notificationStartTime = GetTickCount();
-    
-    /* Format message with location */
-    va_start(args, y);
-    switch (notificationId) {
+    /* Map new IDs to original message numbers */
+    switch(notificationId) {
         case NOTIF_EARTHQUAKE:
-            sprintf(message, "Major Earthquake at (%d,%d)!", x, y);
+            SendMesAt(-22, x, y);
             break;
         case NOTIF_FIRE_REPORTED:
-            sprintf(message, "Fire at (%d,%d)!", x, y);
+            SendMesAt(-20, x, y);
             break;
         case NOTIF_MONSTER_SIGHTED:
-            sprintf(message, "Monster at (%d,%d)!", x, y);
+            SendMesAt(-21, x, y);
+            break;
+        case NOTIF_TORNADO:
+            SendMesAt(-23, x, y);
+            break;
+        case NOTIF_FLOODING:
+            SendMesAt(-24, x, y);
+            break;
+        case NOTIF_NUCLEAR_MELTDOWN:
+            SendMesAt(-25, x, y);
             break;
         default:
-            sprintf(message, "Alert at (%d,%d)", x, y);
+            addDebugLog("ShowNotificationAt: Unknown ID %d", notificationId);
             break;
     }
-    va_end(args);
-    
-    addGameLog("NOTIFICATION: %s", message);
-    addDebugLog("Showing notification %d at (%d,%d): %s", notificationId, x, y, message);
-    
-    /* Show dialog ONLY for emergency notifications (disasters) */
-    if (notificationId >= 1000 && notificationId < 2000) {
-        Notification notif;
-        notif.id = notificationId;
-        notif.locationX = x;
-        notif.locationY = y;
-        notif.hasLocation = (x >= 0 && y >= 0) ? 1 : 0;
-        strcpy(notif.message, message);
-        notif.timestamp = GetTickCount();
-        notif.priority = 3; /* Critical for disasters */
-        CreateNotificationDialog(&notif);
-    }
-    
-    /* DON'T clear immediately - let it timeout like original (30 seconds) */
 }
 
-/* Notification dialog implementation */
+/* DoScenarioScore is defined in scenario.c */
+
+/* Notification dialog - keep existing implementation */
 static Notification* currentNotification = NULL;
 
 void CreateNotificationDialog(Notification* notif) {
@@ -185,19 +406,18 @@ BOOL CALLBACK NotificationDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case WM_INITDIALOG:
             if (!notif) return FALSE;
             
-            /* Set dialog title based on notification type */
             switch (notif->id) {
-                case NOTIF_EARTHQUAKE:
+                case 22: /* EARTHQUAKE */
                     strcpy(titleText, "EARTHQUAKE DISASTER");
                     strcpy(explanationText, "A major earthquake has struck your city! Buildings have been damaged and infrastructure may be compromised.");
                     strcpy(adviceText, "Rebuild damaged areas quickly. Consider earthquake-resistant construction for the future.");
                     break;
-                case NOTIF_FIRE_REPORTED:
+                case 20: /* FIRE */
                     strcpy(titleText, "FIRE EMERGENCY");
                     strcpy(explanationText, "A serious fire has broken out in your city! Fire departments are responding to the emergency.");
                     strcpy(adviceText, "Ensure adequate fire station coverage. Consider fireproof building materials in high-risk areas.");
                     break;
-                case NOTIF_MONSTER_SIGHTED:
+                case 21: /* MONSTER */
                     strcpy(titleText, "MONSTER ATTACK");
                     strcpy(explanationText, "A giant monster has appeared in your city! It is causing massive destruction as it moves through the area.");
                     strcpy(adviceText, "The monster will eventually leave on its own. Focus on rebuilding damaged areas afterward.");
@@ -209,13 +429,11 @@ BOOL CALLBACK NotificationDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                     break;
             }
             
-            /* Set dialog text */
             SetDlgItemText(hwnd, IDC_NOTIF_TITLE, titleText);
             SetDlgItemText(hwnd, IDC_NOTIF_MESSAGE, notif->message);
             SetDlgItemText(hwnd, IDC_NOTIF_EXPLANATION, explanationText);
             SetDlgItemText(hwnd, IDC_NOTIF_ADVICE, adviceText);
             
-            /* Set location text */
             if (notif->hasLocation && notif->locationX >= 0 && notif->locationY >= 0) {
                 sprintf(locationText, "Location: Sector %d, %d", notif->locationX, notif->locationY);
                 SetDlgItemText(hwnd, IDC_NOTIF_LOCATION, locationText);
@@ -251,15 +469,8 @@ void CenterMapOnLocation(int x, int y) {
     addGameLog("Centering map on (%d, %d)", x, y);
 }
 
-void addGameLogWithDialog(int showDialog, const char *format, ...) {
-    va_list args;
-    char buffer[512];
-    
-    va_start(args, format);
-    vsprintf(buffer, format, args);
-    va_end(args);
-    
-    addGameLog("%s", buffer);
-    
-    /* NO MESSAGE BOX - disabled to prevent spam */
+/* Initialize notification system */
+void InitNotificationSystem(void) {
+    ClearMes();
+    addDebugLog("Notification system initialized with original Micropolis logic");
 }

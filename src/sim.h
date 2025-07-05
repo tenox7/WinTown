@@ -10,6 +10,20 @@
 /* External declaration for UpdateToolbar function */
 extern void UpdateToolbar(void);
 
+/* Message system variables - like original Micropolis */
+extern int MessagePort;
+extern int MesX, MesY;
+extern int MesNum;
+extern int LastPicNum;
+extern DWORD LastMesTime;
+
+/* Message system functions */
+void SendMessages(void);
+void doMessage(void);
+int SendMes(int Mnum);
+void SendMesAt(int Mnum, int x, int y);
+void ClearMes(void);
+
 /* Basic type definitions */
 typedef unsigned char Byte;
 typedef long QUAD;
