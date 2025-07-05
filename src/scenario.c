@@ -31,6 +31,7 @@ extern void doEarthquake(void);          /* Earthquake disaster */
 extern void makeFlood(void);             /* Flooding disaster */
 extern void makeFire(int x, int y);      /* Fire disaster at specific location */
 extern void makeMonster(void);           /* Monster attack disaster */
+extern void makeTornado(void);           /* Tornado disaster */
 extern void makeExplosion(int x, int y); /* Explosion at specific location */
 extern void makeMeltdown(void);          /* Nuclear meltdown disaster */
 
@@ -41,7 +42,7 @@ extern void ForceFullCensus(void); /* Census calculation function */
 extern HWND hwndMain;
 extern char cityFileName[MAX_PATH];
 
-/* Disaster timing arrays */
+/* Disaster timing arrays - matches original Micropolis */
 static short DisTab[9] = {0, 2, 10, 5, 20, 3, 5, 5, 2 * 48};
 static short ScoreWaitTab[9] = {0,      30 * 48, 5 * 48, 5 * 48, 10 * 48,
                                 5 * 48, 10 * 48, 5 * 48, 10 * 48};
@@ -197,8 +198,9 @@ int loadScenario(int scenarioId) {
             addDebugLog("Scenario goal: Rebuild after fire bombing");
             break;
         case 4:
-            addGameLog("Bern 1965: Beautiful Swiss capital");
-            addDebugLog("Scenario goal: Manage traffic and growth");
+            addGameLog("Bern 1965: Beautiful Swiss capital with growing traffic problems");
+            addGameLog("WARNING: Traffic congestion is becoming severe!");
+            addDebugLog("Scenario goal: Keep traffic average below 80");
             break;
         case 5:
             addGameLog("Tokyo 1957: Dense Japanese metropolis");
@@ -206,8 +208,9 @@ int loadScenario(int scenarioId) {
             addDebugLog("Scenario goal: Recover from monster disaster");
             break;
         case 6:
-            addGameLog("Detroit 1972: Struggling with economic decline");
-            addDebugLog("Scenario goal: Reverse economic decay");
+            addGameLog("Detroit 1972: Struggling with economic decline and high crime");
+            addGameLog("WARNING: Crime levels are dangerously high!");
+            addDebugLog("Scenario goal: Reduce crime average below 60");
             break;
         case 7:
             addGameLog("Boston 2010: Home to high-tech industry");
@@ -271,8 +274,9 @@ int loadScenario(int scenarioId) {
     /* Initialize budget system without resetting population */
     InitBudget();
 
-    /* Generate a random disaster wait period */
-    DisasterWait = SimRandom(51) + 49;
+    /* Note: DisasterWait is already set correctly from DisTab[] array above */
+    addDebugLog("Scenario %d: Disaster wait period = %d", ScenarioID, DisasterWait);
+    addDebugLog("Disaster system: Event=%d, Wait=%d, Disabled=%d", DisasterEvent, DisasterWait, disastersDisabled);
 
     /* CRITICAL: Add initial population even before census to avoid zero values */
     {
@@ -354,6 +358,22 @@ int loadScenario(int scenarioId) {
         /* Restore from previous value if we lost it */
         CityPop = PrevCityPop;
     }
+    
+    /* Set scenario-specific initial conditions */
+    switch (ScenarioID) {
+        case 4: /* Bern - High initial traffic */
+            TrafficAverage = 120; /* Start with high traffic */
+            addDebugLog("Bern scenario: Initial traffic set to %d", TrafficAverage);
+            break;
+        case 6: /* Detroit - High initial crime */
+            CrimeAverage = 100; /* Start with high crime */
+            addDebugLog("Detroit scenario: Initial crime set to %d", CrimeAverage);
+            break;
+        case 7: /* Boston - Low initial land value (pre-meltdown) */
+            LVAverage = 80; /* Start with lower land values */
+            addDebugLog("Boston scenario: Initial land value set to %d", LVAverage);
+            break;
+    }
 
     /* We no longer need to change SkipCensusReset flag as we've modified ClearCensus
        to always reset population counters which allows them to be properly recounted
@@ -369,9 +389,17 @@ int loadScenario(int scenarioId) {
 /* Process scenario disasters */
 void scenarioDisaster(void) {
     static int disasterX, disasterY;
+    static int debugCounter = 0;
 
-    /* Early return if no disaster, waiting period is over, or disasters are disabled */
-    if (DisasterEvent == 0 || DisasterWait == 0 || disastersDisabled) {
+    /* Add periodic debug logging */
+    debugCounter++;
+    if (debugCounter % 50 == 0) { /* Log every 50 calls */
+        addDebugLog("scenarioDisaster called: Event=%d, Wait=%d, Disabled=%d", 
+                   DisasterEvent, DisasterWait, disastersDisabled);
+    }
+
+    /* Early return if no disaster or disasters are disabled */
+    if (DisasterEvent == 0 || disastersDisabled) {
         return;
     }
 
@@ -385,10 +413,17 @@ void scenarioDisaster(void) {
     case 1: /* Dullsville */
         break;
     case 2: /* San Francisco */
-        if (DisasterWait == 1) {
+        if (DisasterWait <= 1) {
             addGameLog("SCENARIO EVENT: San Francisco earthquake is happening now!");
             addGameLog("Significant damage reported throughout the city!");
             doEarthquake();
+        } else {
+            /* Debug logging for earthquake countdown */
+            static int lastReported = -1;
+            if (DisasterWait != lastReported) {
+                addDebugLog("San Francisco earthquake countdown: %d", DisasterWait);
+                lastReported = DisasterWait;
+            }
         }
         break;
     case 3: /* Hamburg */
@@ -410,17 +445,22 @@ void scenarioDisaster(void) {
         /* No disaster in Bern scenario */
         break;
     case 5: /* Tokyo */
-        if (DisasterWait == 1) {
+        if (DisasterWait <= 1) {
             addGameLog("SCENARIO EVENT: Tokyo monster attack is underway!");
             addGameLog("Giant creature is destroying buildings in its path!");
             makeMonster();
         }
         break;
     case 6: /* Detroit */
-        /* No disaster in Detroit scenario */
+        /* Detroit gets tornado to simulate urban decay */
+        if (DisasterWait <= 1) {
+            addGameLog("SCENARIO EVENT: Detroit tornado has touched down!");
+            addGameLog("Severe weather compounds the city's problems!");
+            makeTornado();
+        }
         break;
     case 7: /* Boston */
-        if (DisasterWait == 1) {
+        if (DisasterWait <= 1) {
             addGameLog("SCENARIO EVENT: Boston nuclear meltdown is happening!");
             addGameLog("Nuclear power plant has suffered a catastrophic failure!");
             makeMeltdown();
@@ -456,4 +496,124 @@ void scenarioDisaster(void) {
     } else {
         DisasterEvent = 0;
     }
+}
+
+/* Evaluate scenario goals and determine win/lose status */
+void DoScenarioScore(void) {
+    int win = 0;
+    int score = 0;
+    char message[256];
+    
+    /* Only evaluate if we have an active scenario and score wait has expired */
+    if (ScenarioID == 0 || ScoreWait > 0) {
+        return;
+    }
+    
+    /* Check victory conditions based on scenario */
+    switch (ScenarioID) {
+        case 1: /* Dullsville - reach City Class 4 or higher */
+            if (CityClass >= 4) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Congratulations! You've transformed Dullsville into a thriving metropolis!");
+            } else {
+                strcpy(message, "You failed to develop Dullsville into a major city. Try building more zones!");
+            }
+            break;
+            
+        case 2: /* San Francisco - reach City Class 4 or higher after earthquake */
+            if (CityClass >= 4) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Amazing! You've rebuilt San Francisco after the devastating earthquake!");
+            } else {
+                strcpy(message, "San Francisco remains in ruins. Focus on rebuilding residential and commercial areas!");
+            }
+            break;
+            
+        case 3: /* Hamburg - reach City Class 4 or higher after bombing */
+            if (CityClass >= 4) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Excellent! Hamburg has risen from the ashes of war!");
+            } else {
+                strcpy(message, "Hamburg couldn't recover from the bombing. Try faster reconstruction!");
+            }
+            break;
+            
+        case 4: /* Bern - keep traffic average below 80 */
+            if (TrafficAverage < 80) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Perfect! You've solved Bern's traffic problems with excellent planning!");
+            } else {
+                strcpy(message, "Traffic congestion remains a problem in Bern. Build more roads and rails!");
+            }
+            break;
+            
+        case 5: /* Tokyo - achieve City Score above 500 after monster attack */
+            if (CityScore > 500) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Incredible! Tokyo has recovered and thrived after the monster attack!");
+            } else {
+                strcpy(message, "Tokyo couldn't fully recover from the monster attack. Focus on rebuilding!");
+            }
+            break;
+            
+        case 6: /* Detroit - reduce crime average below 60 */
+            if (CrimeAverage < 60) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Outstanding! You've cleaned up Detroit and made it safe again!");
+            } else {
+                strcpy(message, "Crime remains too high in Detroit. Build more police stations!");
+            }
+            break;
+            
+        case 7: /* Boston - restore land value average above 120 after meltdown */
+            if (LVAverage > 120) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Remarkable! Boston has recovered from the nuclear disaster!");
+            } else {
+                strcpy(message, "Land values remain low after the meltdown. Clean up radiation and rebuild!");
+            }
+            break;
+            
+        case 8: /* Rio - achieve City Score above 500 despite flooding */
+            if (CityScore > 500) {
+                win = 1;
+                score = 500;
+                strcpy(message, "Brilliant! Rio thrives despite the coastal flooding challenges!");
+            } else {
+                strcpy(message, "Rio couldn't overcome the flooding problems. Try building away from water!");
+            }
+            break;
+            
+        default:
+            /* Unknown scenario */
+            return;
+    }
+    
+    /* Log the result */
+    if (win) {
+        addGameLog("SCENARIO SUCCESS: %s", message);
+        addGameLog("Final Score: %d", score);
+        CityScore = score;
+    } else {
+        addGameLog("SCENARIO FAILED: %s", message);
+        addGameLog("Final Score: -200");
+        CityScore = -200;
+    }
+    
+    /* Show message box with result */
+    MessageBox(hwndMain, message, win ? "Scenario Complete - YOU WIN!" : "Scenario Failed", 
+               win ? (MB_ICONINFORMATION | MB_OK) : (MB_ICONWARNING | MB_OK));
+    
+    /* Reset scenario */
+    ScenarioID = 0;
+    ScoreWait = 0;
+    DisasterEvent = 0;
+    DisasterWait = 0;
 }

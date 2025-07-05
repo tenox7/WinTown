@@ -508,6 +508,7 @@ void SetFirePercent(float percent);      /* Set fire department funding percenta
 /* Scenario functions (scenarios.c) */
 int loadScenario(int scenarioId);        /* Load a scenario by ID */
 void scenarioDisaster(void);             /* Process scenario disasters */
+void DoScenarioScore(void);              /* Evaluate scenario victory conditions */
 
 /* Disaster functions (disasters.c) */
 void doEarthquake(void);                 /* Create an earthquake */

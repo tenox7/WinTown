@@ -4,8 +4,8 @@
 ## Major Features Missing
 - Save game
 - New game / map generator
+- Notifications not showing 
 - Better notifications (fire, crime, pollution, traffic)
-- Scenarios as real scenarios, not just map load
 - Bridges, power over water
 - Minimap stats not working: fire, police
 - Evaluation window

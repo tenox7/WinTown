@@ -56,7 +56,9 @@ int PrevCityPop = 0;      /* Debug tracker for last city population value */
 extern short ScenarioID;
 extern short DisasterEvent;
 extern short DisasterWait;
+extern short ScoreWait;
 extern void scenarioDisaster(void);
+extern void DoScenarioScore(void);
 
 /* Counters */
 int Scycle = 0;
@@ -551,9 +553,28 @@ void Simulate(int mod16) {
         }
 
         /* Process disasters */
+        addDebugLog("DISASTER CHECK: Event=%d, Disabled=%d, Case=15", DisasterEvent, disastersDisabled);
         if (DisasterEvent && !disastersDisabled) {
             /* Process scenario-based disasters */
+            addDebugLog("CALLING scenarioDisaster()");
             scenarioDisaster();
+        } else {
+            /* Debug why scenarioDisaster is not being called */
+            static int debugCount = 0;
+            debugCount++;
+            if (debugCount % 100 == 0) { /* Log every 100 cycles */
+                addDebugLog("scenarioDisaster NOT called: Event=%d, Disabled=%d (cycle %d)", 
+                           DisasterEvent, disastersDisabled, debugCount);
+            }
+        }
+        
+        /* Process scenario evaluation */
+        if (ScenarioID > 0 && ScoreWait > 0) {
+            ScoreWait--;
+            if (ScoreWait == 0) {
+                /* Trigger scenario evaluation */
+                DoScenarioScore();
+            }
         }
 
         /* Process tile animations again at the end of the cycle */

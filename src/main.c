@@ -237,7 +237,7 @@ int disastersDisabled = 1; /* Cheat flag to disable disasters - global for other
 int gameSpeed = SPEED_MEDIUM;     /* Current game speed (0=pause, 1=slow, 2=medium, 3=fast) */
 int gameLevel = LEVEL_EASY;       /* Current difficulty level (0=easy, 1=medium, 2=hard) */
 int autoBulldoze = 1;             /* Auto-bulldoze enabled flag */
-int disastersEnabled = 1;         /* Disasters enabled flag (will replace disastersDisabled) */
+int disastersEnabled = 0;         /* Disasters enabled flag (will replace disastersDisabled) */
 int simTimerDelay = 200;          /* Timer delay in milliseconds */
 
 /* Earthquake shake effect variables */
@@ -2152,6 +2152,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 disastersDisabled = !disastersEnabled;
                 CheckMenuItem(hSettingsMenu, IDM_CHEATS_DISABLE_DISASTERS, 
                             disastersEnabled ? MF_CHECKED : MF_UNCHECKED);
+                
+                addDebugLog("Disasters menu toggled: Enabled=%d, Disabled=%d", disastersEnabled, disastersDisabled);
                 
                 if (!disastersEnabled) {
                     int x, y;
