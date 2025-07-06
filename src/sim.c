@@ -509,9 +509,9 @@ void Simulate(int mod16) {
             addDebugLog("Land value average: %d", LVAverage);
         }
 
-        /* Update special animations (power plants, etc.) - increased frequency for faster
-         * animations */
-        if ((Scycle % 2) == 0) {
+        /* Update special animations (power plants, etc.) - Issue #19 timing fix
+         * Align with CityTime-based timing to avoid unnecessary calls */
+        if ((Scycle % 8) == 0) {
             UpdateSpecialAnimations();
         }
 

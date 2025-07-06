@@ -118,11 +118,15 @@ void SetSmoke(int x, int y) {
 
             /* Make sure the smoke position is valid */
             if (BOUNDS_CHECK(xx, yy)) {
+                /* Cache tile value to avoid multiple lookups - Issue #18 optimization */
+                short currentTile = Map[yy][xx];
+                short baseTile = currentTile & LOMASK;
+                
                 /* Only set the tile if it doesn't already have the animation bit set
                    or if it's not already a smoke tile. This avoids resetting the
                    animation sequence and makes it flow better. */
-                if (!(Map[yy][xx] & ANIMBIT) || (Map[yy][xx] & LOMASK) < COALSMOKE1 ||
-                    (Map[yy][xx] & LOMASK) > COALSMOKE4 + 4) {
+                if (!(currentTile & ANIMBIT) || baseTile < COALSMOKE1 ||
+                    baseTile > COALSMOKE4 + 4) {
 
                     /* Set the appropriate smoke tile with animation */
                     switch (i) {
@@ -209,6 +213,10 @@ static void DoIndustrialSmoke(int x, int y) {
 
             /* Make sure the smoke position is valid */
             if (BOUNDS_CHECK(xx, yy)) {
+                /* Cache tile value to avoid multiple lookups - Issue #18 optimization */
+                short currentTile = Map[yy][xx];
+                short baseTile = currentTile & LOMASK;
+                
                 /* Choose the appropriate smoke stack tile */
                 switch (i) {
                 case 0: smokeTile = INDSMOKE1; break;
@@ -220,8 +228,8 @@ static void DoIndustrialSmoke(int x, int y) {
                 }
 
                 /* Skip if already animated with the right tile - use TELEBASE range */
-                if ((Map[yy][xx] & ANIMBIT) && (Map[yy][xx] & LOMASK) >= TELEBASE &&
-                    (Map[yy][xx] & LOMASK) <= TELELAST) {
+                if ((currentTile & ANIMBIT) && baseTile >= TELEBASE &&
+                    baseTile <= TELELAST) {
                     continue;
                 }
 
@@ -359,30 +367,37 @@ void UpdateSpecialAnimations(void) {
     /* Scan entire map for special animations */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            tileValue = Map[y][x] & LOMASK;
+            /* Cache full tile value to avoid multiple lookups - Issue #18 optimization */
+            short fullTileValue = Map[y][x];
+            tileValue = fullTileValue & LOMASK;
+            
+            /* Only process zone centers to avoid unnecessary work */
+            if (!(fullTileValue & ZONEBIT)) {
+                continue;
+            }
 
             /* Add smoke to power plants */
-            if (tileValue == POWERPLANT && (Map[y][x] & ZONEBIT)) {
+            if (tileValue == POWERPLANT) {
                 SetSmoke(x, y);
             }
 
             /* Add smoke to industrial buildings */
-            if (tileValue >= INDBASE && tileValue <= LASTIND && (Map[y][x] & ZONEBIT)) {
+            if (tileValue >= INDBASE && tileValue <= LASTIND) {
                 DoIndustrialSmoke(x, y);
             }
 
             /* Animate nuclear plants */
-            if (tileValue == NUCLEAR && (Map[y][x] & ZONEBIT)) {
+            if (tileValue == NUCLEAR) {
                 UpdateNuclearPower(x, y);
             }
 
             /* Animate airport radar */
-            if (tileValue == AIRPORT && (Map[y][x] & ZONEBIT)) {
+            if (tileValue == AIRPORT) {
                 UpdateAirportRadar(x, y);
             }
             
             /* Animate stadium */
-            if (tileValue == STADIUM && (Map[y][x] & ZONEBIT)) {
+            if (tileValue == STADIUM) {
                 DoStadiumAnimation(x, y);
             }
         }
