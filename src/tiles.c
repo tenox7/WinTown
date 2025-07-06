@@ -22,6 +22,9 @@ static int initTileLogging() {
         if (tileLogFile) {
             fprintf(tileLogFile, "=== Tile logging started ===\n");
             fflush(tileLogFile);
+        } else {
+            addDebugLog("ERROR: Failed to open tiles.log for writing\n");
+            return 0;
         }
     }
     return (tileLogFile != (FILE*)0);
@@ -206,11 +209,11 @@ int resetTileStats() {
 
 /* Print statistics */
 int printTileStats() {
-    printf("Tile Statistics:\n");
-    printf("  Changes: %ld\n", tileChangeCount);
-    printf("  Errors: %ld\n", tileErrorCount);
+    addDebugLog("Tile Statistics:\n");
+    addDebugLog("  Changes: %ld\n", tileChangeCount);
+    addDebugLog("  Errors: %ld\n", tileErrorCount);
     if (tileLogFile) {
-        printf("  Debug log: tiles.log\n");
+        addDebugLog("  Debug log: tiles.log\n");
     }
     return 1;
 }

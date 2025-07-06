@@ -21,6 +21,7 @@
 #define SPRITE_TORNADO      7
 #define SPRITE_EXPLOSION    8
 #define SPRITE_FERRY        9
+#define SPRITE_POLICE       10
 
 /* Train and bus groove offsets for lane positioning */
 #define TRA_GROOVE_X    -39
@@ -69,6 +70,7 @@ void DoShipSprite(SimSprite *sprite);
 void DoAirplaneSprite(SimSprite *sprite);
 void DoCopterSprite(SimSprite *sprite);
 void DoBusSprite(SimSprite *sprite);
+void DoPoliceSprite(SimSprite *sprite);
 void DoMonsterSprite(SimSprite *sprite);
 void DoTornadoSprite(SimSprite *sprite);
 void DoExplosion(SimSprite *sprite);

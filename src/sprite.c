@@ -5,7 +5,7 @@
 
 #include "sprite.h"
 #include "sim.h"
-#include <math.h>
+#include <stdlib.h>
 
 /* External cheat flags */
 extern int disastersDisabled;
@@ -178,6 +178,17 @@ SimSprite* NewSprite(int type, int x, int y) {
             sprite->frame = 1;
             break;
             
+        case SPRITE_POLICE:
+            sprite->width = 32;
+            sprite->height = 32;
+            sprite->x_offset = BUS_GROOVE_X;
+            sprite->y_offset = BUS_GROOVE_Y;
+            sprite->x_hot = 40;
+            sprite->y_hot = -8;
+            sprite->frame = 1;
+            sprite->count = 300; /* Police stay for 5 minutes */
+            break;
+            
         case SPRITE_MONSTER:
             sprite->width = 48;
             sprite->height = 48;
@@ -248,6 +259,10 @@ void MoveSprites(void) {
                 
             case SPRITE_BUS:
                 DoBusSprite(sprite);
+                break;
+                
+            case SPRITE_POLICE:
+                DoPoliceSprite(sprite);
                 break;
                 
             case SPRITE_MONSTER:
@@ -585,6 +600,38 @@ void DoBusSprite(SimSprite *sprite) {
             /* Stuck - remove bus */
             DestroySprite(sprite);
         }
+    }
+}
+
+/* Police sprite behavior */
+void DoPoliceSprite(SimSprite *sprite) {
+    int dx, dy, z;
+    
+    /* Police car stays stationary at congestion point */
+    if (sprite->count > 0) {
+        sprite->count--;
+        
+        /* Flash police lights by alternating frame */
+        if ((SpriteCycle & 7) == 0) {
+            sprite->frame = (sprite->frame == 1) ? 2 : 1;
+        }
+        
+        /* Check traffic density periodically */
+        if ((sprite->count % 50) == 0) {
+            dx = sprite->x >> 5;
+            dy = sprite->y >> 5;
+            
+            if (dx >= 0 && dx < WORLD_X/2 && dy >= 0 && dy < WORLD_Y/2) {
+                z = TrfDensity[dy][dx];
+                if (z > 200 && SimRandom(5) == 0) {
+                    /* Report heavy traffic */
+                    MakeSound(SOUND_HEAVY_TRAFFIC, sprite->x, sprite->y);
+                }
+            }
+        }
+    } else {
+        /* Police car duty time expired - remove sprite */
+        DestroySprite(sprite);
     }
 }
 

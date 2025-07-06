@@ -4,6 +4,7 @@
 
 #include "sim.h"
 #include "tiles.h"
+#include "sprite.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -276,7 +277,10 @@ static void SetTrafMem(void) {
                     z = 240;
                     TrafMaxX = SMapX;
                     TrafMaxY = SMapY;
-                    /* TODO: Add police car sprite at congestion point */
+                    /* Add police car sprite at congestion point */
+                    if (SimRandom(8) == 0) {
+                        NewSprite(SPRITE_POLICE, SMapX << 4, SMapY << 4);
+                    }
                 }
 
                 TrfDensity[ty][tx] = (Byte)z;
