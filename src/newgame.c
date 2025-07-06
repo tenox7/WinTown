@@ -103,9 +103,14 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         
         /* Populate scenario list */
         listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+        /* CRITICAL: Clear any existing items first to prevent corruption */
+        SendMessage(listBox, LB_RESETCONTENT, 0, 0);
+        addGameLog("DEBUG: Cleared and populating NEW GAME scenario listbox with %d scenarios", scenarioCount);
         for (i = 0; i < scenarioCount; i++) {
-            SendMessage(listBox, LB_ADDSTRING, 0, (LPARAM)scenarios[i].name);
-            SendMessage(listBox, LB_SETITEMDATA, i, i);
+            int addResult = SendMessage(listBox, LB_ADDSTRING, 0, (LPARAM)scenarios[i].name);
+            int dataResult = SendMessage(listBox, LB_SETITEMDATA, i, i);
+            addGameLog("DEBUG: Adding scenario %d: ID=%d, Name='%s' (add=%d, data=%d)", 
+                      i, scenarios[i].id, scenarios[i].name, addResult, dataResult);
         }
         
         /* Select first scenario by default */
@@ -179,9 +184,15 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             if (HIWORD(wParam) == LBN_SELCHANGE) {
                 HWND listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
                 int sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                int itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
                 
+                addGameLog("DEBUG: Listbox selection changed - sel=%d, itemData=%d", sel, itemData);
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
+                    addGameLog("New game dialog: Selected scenario %d (%s): %s", 
+                              sel, scenarios[sel].name, scenarios[sel].description);
                     SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[sel].description);
+                } else {
+                    addGameLog("DEBUG: Invalid selection - sel=%d, scenarioCount=%d", sel, scenarioCount);
                 }
             }
             break;
@@ -235,6 +246,8 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
                     currentConfig->scenarioId = scenarios[sel].id;
+                    addGameLog("New game dialog: Starting scenario %d (%s)", 
+                              scenarios[sel].id, scenarios[sel].name);
                 } else {
                     MessageBox(hwnd, "Please select a scenario.", "Error", MB_OK | MB_ICONERROR);
                     return TRUE;
@@ -299,6 +312,8 @@ BOOL CALLBACK scenarioDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
                 int sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
                 
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
+                    addGameLog("Scenario dialog: Selected scenario %d (%s): %s", 
+                              sel, scenarios[sel].name, scenarios[sel].description);
                     SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[sel].description);
                 }
             } else if (HIWORD(wParam) == LBN_DBLCLK) {
@@ -313,6 +328,8 @@ BOOL CALLBACK scenarioDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             
             if (sel != LB_ERR && sel >= 0 && sel < scenarioCount && selectedScenario) {
                 *selectedScenario = scenarios[sel].id;
+                addGameLog("Scenario dialog: Selected scenario %d (%s) for loading", 
+                          scenarios[sel].id, scenarios[sel].name);
                 EndDialog(hwnd, 1);
             }
             return TRUE;
