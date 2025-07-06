@@ -124,9 +124,8 @@ static void DoPopNum(void) {
 
     /* CityPop is already calculated in TakeCensus since we need it
        updated more frequently, but calculate it here too for consistency */
-    if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
-        CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
-    } else if (CityPop == 0) {
+    CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
+    if (CityPop == 0 && (ResPop > 0 || ComPop > 0 || IndPop > 0)) {
         CityPop = 100; /* Minimum population display */
     }
 

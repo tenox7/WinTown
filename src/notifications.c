@@ -160,7 +160,7 @@ void CheckGrowth(void) {
 
     if (!(CityTime & 3)) {
         z = 0;
-        ThisCityPop = ((ResPop) + (ComPop * 8L) + (IndPop * 8L)) * 20L;
+        ThisCityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
         if (LastCityPop) {
             if ((LastCityPop < 2000) && (ThisCityPop >= 2000)) z = 35;
             if ((LastCityPop < 10000) && (ThisCityPop >= 10000)) z = 36;

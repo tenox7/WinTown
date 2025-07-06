@@ -309,11 +309,14 @@ int loadScenario(int scenarioId) {
             IndPop = indCount * 8; /* Doubled from 4 */
         }
 
-        /* Initialize total population */
-        TotalPop = (ResPop + ComPop + IndPop) * 8;
+        /* Initialize total population using unified function */
+        TotalPop = CalculateTotalPopulation(ResPop, ComPop, IndPop);
 
-        /* Initialize city population with higher multiplier */
-        CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 25; /* Increased from 20 */
+        /* Initialize city population - scenarios use higher multiplier for challenge */
+        CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
+        if (CityPop > 0) {
+            CityPop = (CityPop * 25) / 20; /* 25% boost for scenarios */
+        }
 
         /* Initialize class based on population */
         CityClass = 0; /* Village */

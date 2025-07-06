@@ -456,12 +456,7 @@ void Simulate(int mod16) {
         }
 
         /* Update city population more frequently than just at census time */
-        if (ResPop > 0 || ComPop > 0 || IndPop > 0) {
-            CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
-        } else {
-            /* No zones means no population */
-            CityPop = 0;
-        }
+        CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
 
         /* Run animations for smoother motion */
         AnimateTiles();
@@ -863,8 +858,8 @@ void TakeCensus(void) {
         ResPop = 50;  /* Set a minimal initial population */
     }
 
-    /* Calculate total population - normalize for simulation */
-    TotalPop = ResPop + ComPop + IndPop;
+    /* Calculate total population - use unified function */
+    TotalPop = CalculateTotalPopulation(ResPop, ComPop, IndPop);
 
     /* Sanity check population values before calculation */
     if (ResPop < 0 || ComPop < 0 || IndPop < 0) {
@@ -878,8 +873,8 @@ void TakeCensus(void) {
         if (IndPop < 0) IndPop = 0;
     }
 
-    /* Calculate new city population from zone populations using the official formula */
-    newCityPop = ((QUAD)ResPop + ((QUAD)ComPop * 8L) + ((QUAD)IndPop * 8L)) * 20L;
+    /* Calculate new city population using unified function */
+    newCityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
 
     /* Sanity check the result */
     if (newCityPop < 0) {
@@ -938,8 +933,8 @@ void TakeCensus(void) {
 
     /* Only set minimum population if we actually have zones */
     if (CityPop == 0 && (ResPop > 0 || ComPop > 0 || IndPop > 0)) {
-        /* Calculate from zone counts */
-        CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+        /* Calculate from zone counts using unified function */
+        CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
 
         /* If still zero despite having zones, use minimum value */
         if (CityPop == 0) {
@@ -1025,6 +1020,47 @@ void MapScan(int x1, int x2, int y1, int y2) {
             }
         }
     }
+}
+
+/* Unified population calculation functions */
+
+/* Calculate city population using standard Micropolis formula */
+QUAD CalculateCityPopulation(int resPop, int comPop, int indPop) {
+    QUAD result;
+    
+    /* Sanity check inputs */
+    if (resPop < 0) resPop = 0;
+    if (comPop < 0) comPop = 0;
+    if (indPop < 0) indPop = 0;
+    
+    /* Use standard Micropolis formula: CityPop = (Res + Com*8 + Ind*8) * 20 */
+    result = ((QUAD)resPop + ((QUAD)comPop * 8L) + ((QUAD)indPop * 8L)) * 20L;
+    
+    /* Ensure non-negative result */
+    if (result < 0) {
+        result = 0;
+    }
+    
+    return result;
+}
+
+/* Calculate total population for game mechanics */
+int CalculateTotalPopulation(int resPop, int comPop, int indPop) {
+    long result;
+    
+    /* Sanity check inputs */
+    if (resPop < 0) resPop = 0;
+    if (comPop < 0) comPop = 0;
+    if (indPop < 0) indPop = 0;
+    
+    /* Use standard formula: TotalPop = (Res + Com + Ind) * 8 */
+    result = (long)(resPop + comPop + indPop) * 8L;
+    
+    /* Clamp to int range */
+    if (result > 32767) result = 32767;
+    if (result < 0) result = 0;
+    
+    return (int)result;
 }
 
 int GetPValue(int x, int y) {

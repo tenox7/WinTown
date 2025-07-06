@@ -3566,11 +3566,9 @@ void ForceFullCensus(void) {
         }
     }
 
-    /* Calculate total population */
-    TotalPop = (ResPop + ComPop + IndPop) * 8;
-
-    /* Also directly calculate CityPop to ensure it's set immediately */
-    CityPop = ((ResPop) + (ComPop * 8) + (IndPop * 8)) * 20;
+    /* Calculate total population using unified functions */
+    TotalPop = CalculateTotalPopulation(ResPop, ComPop, IndPop);
+    CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
 
     /* Determine city class based on population */
     CityClass = 0; /* Village */
@@ -3643,7 +3641,7 @@ int loadCity(char *filename) {
         ResPop = oldResPop;
         ComPop = oldComPop;
         IndPop = oldIndPop;
-        TotalPop = (ResPop + ComPop + IndPop) * 8;
+        TotalPop = CalculateTotalPopulation(ResPop, ComPop, IndPop);
         CityPop = oldCityPop;
 
         /* Update city class based on restored population */

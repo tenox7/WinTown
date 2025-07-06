@@ -447,6 +447,10 @@ void TakeCensus(void);
 void MapScan(int x1, int x2, int y1, int y2);
 int GetPValue(int x, int y);
 int TestBounds(int x, int y);
+
+/* Unified population calculation functions */
+QUAD CalculateCityPopulation(int resPop, int comPop, int indPop);
+int CalculateTotalPopulation(int resPop, int comPop, int indPop);
 void SetSimulationSpeed(HWND hwnd, int speed);
 void CleanupSimTimer(HWND hwnd);
 void SetGameSpeed(int speed);

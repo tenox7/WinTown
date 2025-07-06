@@ -12,10 +12,7 @@
 extern void addDebugLog(const char *format, ...);
 
 /* Population table values for different zone types */
-/* These are local overrides for specific use in this file */
-#define LOCAL_RZB 0    /* Residential base level (different from simulation.h) */
-#define LOCAL_CZB 0    /* Commercial base level (different from simulation.h) */
-#define LOCAL_IZB 0    /* Industrial base level (different from simulation.h) */
+/* Use global zone base constants from sim.h: RZB=265, CZB=436, IZB=625 */
 
 /* Some definitions needed by zone.c - matches simulation.h values */
 #define HOSPITALBASE 400  /* Hospital base */
@@ -1096,67 +1093,26 @@ static int DoFreePop(int x, int y) {
     return count;
 }
 
-/* Set zone power status - simplified for reliability */
+/* Set zone power status - unified with main power system */
 static void SetZPower(int x, int y) {
-    short z;
     int powered;
-    int dx, dy;
 
-    /* First check if this is a power plant - they're always powered */
-    z = Map[y][x] & LOMASK;
+    /* Use the unified power system from power.c - PowerMap is authoritative */
+    powered = (PowerMap[y][x] == 1);
 
-    if (z == NUCLEAR || z == POWERPLANT) {
-        /* Power plants are always powered */
-        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-powerplant");
-        PwrdZCnt++;
-        return;
-    }
-
-    /* Check if already powered according to PowerMap */
-    if (PowerMap[y][x] == 1) {
-        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-powermap");
-        powered = 1;
-    }
-    /* If not already powered, check surrounding tiles */
-    else {
-        powered = 0;
-
-        /* Check all 8 surrounding tiles for power */
-        for (dy = -1; dy <= 1 && !powered; dy++) {
-            for (dx = -1; dx <= 1 && !powered; dx++) {
-                int nx = x + dx;
-                int ny = y + dy;
-
-                /* Skip the center tile */
-                if (dx == 0 && dy == 0) {
-                    continue;
-                }
-
-                /* Check if neighbor is in bounds */
-                if (nx >= 0 && nx < WORLD_X && ny >= 0 && ny < WORLD_Y) {
-                    /* If a neighboring tile has power, this zone gets power */
-                    if (Map[ny][nx] & POWERBIT) {
-                        powered = 1;
-                        break;
-                    }
-                }
-            }
-        }
-
-        /* Update the power bit based on our check */
-        if (powered) {
-            setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-powered");
-            PowerMap[y][x] = 1;
-        } else {
-            setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "SetZPower-unpowered");
-            PowerMap[y][x] = 0;
-        }
-    }
-
-    /* Update power count - use the external variables from sim.h */
+    /* Set or clear the power bit to match PowerMap */
     if (powered) {
-        PwrdZCnt++;
+        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-unified");
     } else {
-        UnpwrdZCnt++;
+        setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "SetZPower-unified");
+    }
+
+    /* Update power counts for zones only */
+    if (Map[y][x] & ZONEBIT) {
+        if (powered) {
+            PwrdZCnt++;
+        } else {
+            UnpwrdZCnt++;
+        }
     }
 }
