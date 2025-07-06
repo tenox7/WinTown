@@ -243,9 +243,9 @@ static void DoHospChur(int x, int y) {
     if (z == HOSPITAL) {
         /* Add hospital population to census directly */
         if (zonePowered) {
-            TempResPop += 30;
+            ResPop += 30;
         } else {
-            TempResPop += 5; /* Even unpowered hospitals have some population */
+            ResPop += 5; /* Even unpowered hospitals have some population */
         }
 
         /* Also increment trade zone count on some cycles */
@@ -258,9 +258,9 @@ static void DoHospChur(int x, int y) {
     if (z == CHURCH) {
         /* Add church population to census directly */
         if (zonePowered) {
-            TempResPop += 10;
+            ResPop += 10;
         } else {
-            TempResPop += 2; /* Even unpowered churches have some population */
+            ResPop += 2; /* Even unpowered churches have some population */
         }
 
         /* Also increment residential zone count on some cycles */
@@ -302,7 +302,7 @@ static void DoSPZ(int x, int y) {
         ypos = (y - 1) + ZoneRandom(3);
 
         /* Add stadium population to census directly */
-        TempComPop += 50; /* Stadiums contribute to commercial population */
+        ComPop += 50; /* Stadiums contribute to commercial population */
 
         /* Additional random chance to increase commercial zone */
         if (ZoneRandom(5) == 1) {
@@ -437,7 +437,7 @@ static void DoIndustrial(int x, int y) {
     }
 
     /* Add to total industrial population for the census */
-    TempIndPop += pop;
+    IndPop += pop;
 
     /* Generate traffic from industrial zones at a certain rate */
     if (pop > 0 && (CityTime & 7) == 0) {
@@ -504,7 +504,7 @@ static void DoCommercial(int x, int y) {
     }
 
     /* Add to total commercial population for the census */
-    TempComPop += pop;
+    ComPop += pop;
 
     /* Generate traffic from commercial zones at a certain rate */
     if (pop > 0 && (CityTime & 7) == 0) {
@@ -571,7 +571,7 @@ static void DoResidential(int x, int y) {
     }
 
     /* Add to total residential population for the census */
-    TempResPop += pop;
+    ResPop += pop;
 
     /* Generate traffic from residential zones at a certain rate */
     if (pop > 0 && (CityTime & 7) == 0) {
@@ -1097,3 +1097,4 @@ static void SetZPower(int x, int y) {
     /* Power status is already set in the tile POWERBIT by DoPowerScan */
     /* No need to duplicate - the power system now works directly with POWERBIT */
 }
+

@@ -382,10 +382,10 @@ extern int TotalPop;     /* Total population */
 extern int LastTotalPop; /* Previous total population */
 extern float Delta;      /* Population change coefficient */
 
-/* Temporary census accumulation variables to prevent display flicker */
-extern int TempResPop;   /* Temporary residential population during census */
-extern int TempComPop;   /* Temporary commercial population during census */
-extern int TempIndPop;   /* Temporary industrial population during census */
+/* Temporary census accumulation variables removed - Issue #17 fixed
+ * Population counters are now updated directly during map scanning
+ * Modern systems are fast enough that this doesn't cause display flicker
+ */
 
 /* Infrastructure counts */
 extern int PwrdZCnt;     /* Number of powered zones */

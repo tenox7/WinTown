@@ -96,10 +96,10 @@ int TotalPop = 0;
 int LastTotalPop = 0;
 float Delta = 1.0f;
 
-/* Temporary census accumulation variables to prevent display flicker */
-int TempResPop = 0;
-int TempComPop = 0;
-int TempIndPop = 0;
+/* Temporary census accumulation variables removed - Issue #17 fixed
+ * Modern systems are fast enough that direct updates to main variables
+ * during map scanning don't cause noticeable display flicker
+ */
 
 /* Infrastructure counts */
 int PwrdZCnt = 0;
@@ -384,12 +384,8 @@ void Simulate(int mod16) {
         /* Process taxes, maintenance, city evaluation if needed */
         /* ClearCensus is now done in case 1 before map scanning */
         
-        /* Copy temporary census values to display variables after map scan is complete */
-        ResPop = TempResPop;
-        ComPop = TempComPop;
-        IndPop = TempIndPop;
-        
         /* Update CityPop only when population counters change */
+        /* Population counters are now updated directly during map scanning */
         CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
 
         /* Update police coverage display map immediately after stations are scanned */
@@ -1062,13 +1058,13 @@ int CalculateTotalPopulation(int resPop, int comPop, int indPop) {
 void AddToZonePopulation(int zoneType, int amount) {
     switch (zoneType) {
         case ZONE_TYPE_RESIDENTIAL:
-            TempResPop += amount;
+            ResPop += amount;
             break;
         case ZONE_TYPE_COMMERCIAL:
-            TempComPop += amount;
+            ComPop += amount;
             break;
         case ZONE_TYPE_INDUSTRIAL:
-            TempIndPop += amount;
+            IndPop += amount;
             break;
         default:
             /* Invalid zone type - do nothing */
@@ -1078,9 +1074,9 @@ void AddToZonePopulation(int zoneType, int amount) {
 
 /* Reset temporary census counters */
 void ResetCensusCounters(void) {
-    TempResPop = 0;
-    TempComPop = 0;
-    TempIndPop = 0;
+    ResPop = 0;
+    ComPop = 0;
+    IndPop = 0;
 }
 
 /* Set tile with power status in one operation */
