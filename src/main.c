@@ -2001,8 +2001,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 /* Enable power overlay */
                 CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_CHECKED);
                 addGameLog("Power overlay enabled");
-                /* Update power grid immediately when overlay is enabled */
-                DoPowerScan();
+                /* Power grid is updated regularly by simulation - no immediate update needed */
             } else {
                 /* Disable power overlay */
                 CheckMenuItem(hViewMenu, IDM_VIEW_POWER_OVERLAY, MF_BYCOMMAND | MF_UNCHECKED);
@@ -3549,12 +3548,8 @@ void ForceFullCensus(void) {
                 /* Note: We don't count power plants here since CountSpecialTiles() in evaluation.c
                  * handles it */
 
-                /* Count powered/unpowered zones */
-                if (tile & POWERBIT) {
-                    PwrdZCnt++;
-                } else {
-                    UnpwrdZCnt++;
-                }
+                /* Power zone counting is handled exclusively by DoPowerScan() in power.c */
+                /* Do not count power zones here to avoid conflicts */
             }
 
             /* Count infrastructure */

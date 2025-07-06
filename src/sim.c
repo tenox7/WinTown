@@ -340,9 +340,7 @@ void Simulate(int mod16) {
             addDebugLog("Demand adjusted: R=%d C=%d I=%d", RValve, CValve, IValve);
         }
 
-        /* DIRECT FIX: Run the power scan at the start of each major cycle
-           to ensure power distribution happens frequently enough */
-        DoPowerScan();
+        /* Power scan moved to case 11 to avoid duplicate calls */
 
         /* Process tile animations */
         AnimateTiles();
@@ -1103,18 +1101,8 @@ void UpdatePowerStatus(int x, int y, int powered) {
         setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "UpdatePowerStatus-unpowered");
     }
     
-    /* Update power zone counts if this is a zone and status changed */
-    if ((Map[y][x] & ZONEBIT) && (powered != wasPowered)) {
-        if (powered) {
-            /* Zone became powered */
-            PwrdZCnt++;
-            if (UnpwrdZCnt > 0) UnpwrdZCnt--;
-        } else {
-            /* Zone became unpowered */
-            UnpwrdZCnt++;
-            if (PwrdZCnt > 0) PwrdZCnt--;
-        }
-    }
+    /* Power zone counts are managed exclusively by DoPowerScan() in power.c */
+    /* Individual updates should not modify zone counts to avoid conflicts */
 }
 
 int GetPValue(int x, int y) {
