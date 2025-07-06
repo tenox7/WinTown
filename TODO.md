@@ -4,11 +4,13 @@
 ## Major Features Missing
 - Save game
 - New game / map generator
-- Bridges, power over water
-- Minimap stats not working: fire, police
 - Evaluation window
-- Non debug log window
-- Better RCI and mini chart indicators
+
+## Bugs
+- Bridges, power over water
+- Power lines don't always work
+- Minimap stats not working: fire, police
+
 
 ## Audit Code
 - Crime, fire, pollution, etc
@@ -19,6 +21,7 @@
 
 ## Cosmetic
 - Some tilesets cause 100% CPU peg - may be num color related?
+- Better RCI and mini chart indicators
 - Wrong tiles, especially middle tile
 - No power needs to flash
 - Helicopter / plane etc wrong colors / colormap

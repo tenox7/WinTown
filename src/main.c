@@ -108,7 +108,7 @@
 /* Info window definitions */
 #define INFO_WINDOW_CLASS "MicropolisInfoWindow"
 #define INFO_WINDOW_WIDTH 300
-#define INFO_WINDOW_HEIGHT 300
+#define INFO_WINDOW_HEIGHT 320
 #define INFO_TIMER_ID 2
 #define INFO_TIMER_INTERVAL 500 /* Update info window every 500ms */
 
@@ -1050,6 +1050,11 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         y += 20;
 
         wsprintf(buffer, "Crime: %d  Land Value: %d", CrimeAverage, LVAverage);
+        TextOut(hdc, 10, y, buffer, lstrlen(buffer));
+        y += 20;
+
+        /* Draw power info */
+        wsprintf(buffer, "Power: Powered=%d Unpowered=%d", PwrdZCnt, UnpwrdZCnt);
         TextOut(hdc, 10, y, buffer, lstrlen(buffer));
 
         EndPaint(hwnd, &ps);

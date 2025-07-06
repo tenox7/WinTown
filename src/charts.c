@@ -917,6 +917,15 @@ void DrawChartLegend(HDC hdc) {
         }
     }
     
+    /* Add power information at the bottom */
+    if (PwrdZCnt > 0 || UnpwrdZCnt > 0) {
+        char powerBuffer[128];
+        y += 20;
+        SetTextColor(hdc, RGB(60, 60, 60));
+        sprintf(powerBuffer, "Power: Powered=%d Unpowered=%d", PwrdZCnt, UnpwrdZCnt);
+        TextOut(hdc, 10, y, powerBuffer, strlen(powerBuffer));
+    }
+    
     SelectObject(hdc, hOldFont);
     DeleteObject(hFont);
 }
