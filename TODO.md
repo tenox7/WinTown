@@ -11,6 +11,7 @@
 - Bridges, power over water
 - Power lines don't always work
 - Minimap stats not working: fire, police
+- Pink squares on roads due to incorrect ties
 
 
 ## Audit Code

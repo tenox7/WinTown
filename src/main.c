@@ -4070,7 +4070,7 @@ void drawCity(HDC hdc) {
                             LineTo(hdc, tileRect.left + 2, tileRect.top + 6);
                             DeleteObject(hOverlayBrush);
                         }
-                    } else if (PowerMap[y][x] == 1) {
+                    } else if (Map[y][x] & POWERBIT) {
                         /* Show power conducting elements (power lines, roads, etc.) clearly */
                         hOverlayBrush = CreateSolidBrush(RGB(0, 200, 0));
                         /* Show the power path with an overlay */

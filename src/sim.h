@@ -149,17 +149,9 @@ typedef long QUAD;
  #define VROADPOWER	85  /* Vertical road with horizontal power line */
  #define BRWH		79
  #define LTRFBASE	80
- #define HTRFBASE	144
  #define BRWV		95
- #define BRWXXX1		111
- #define BRWXXX2		127
- #define BRWXXX3		143
  #define HTRFBASE	144
- #define BRWXXX4		159
- #define BRWXXX5		175
- #define BRWXXX6		191
  #define LASTROAD	206
- #define BRWXXX7		207
  #define POWERBASE	208
  #define HPOWER		208
  #define VPOWER		209
@@ -328,7 +320,6 @@ extern Byte TrfDensity[WORLD_Y/2][WORLD_X/2]; /* Traffic density map (half size)
 extern Byte PollutionMem[WORLD_Y/2][WORLD_X/2]; /* Pollution density map (half size) */
 extern Byte LandValueMem[WORLD_Y/2][WORLD_X/2]; /* Land value map (half size) */
 extern Byte CrimeMem[WORLD_Y/2][WORLD_X/2];   /* Crime map (half size) */
-extern short PowerMap[WORLD_Y][WORLD_X];  /* Power connectivity map */
 
 /* Quarter-sized maps for effects */
 extern Byte TerrainMem[WORLD_Y/4][WORLD_X/4];  /* Terrain memory (quarter size) */

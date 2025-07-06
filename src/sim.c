@@ -26,7 +26,6 @@ Byte TrfDensity[WORLD_Y / 2][WORLD_X / 2];
 Byte PollutionMem[WORLD_Y / 2][WORLD_X / 2];
 Byte LandValueMem[WORLD_Y / 2][WORLD_X / 2];
 Byte CrimeMem[WORLD_Y / 2][WORLD_X / 2];
-short PowerMap[WORLD_Y][WORLD_X];
 
 /* Quarter-sized maps for effects */
 Byte TerrainMem[WORLD_Y / 4][WORLD_X / 4];
@@ -214,11 +213,10 @@ void DoSimInit(void) {
         }
     }
 
-    /* Clear power map and set to unpowered (0) */
+    /* Clear power status from all tiles */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            PowerMap[y][x] = 0; /* Use 0 instead of -1 */
-            /* Also clear the power bit in the map */
+            /* Clear the power bit in the map */
             setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "DoSimInit-clear");
         }
     }
@@ -1140,10 +1138,7 @@ void SetPowerStatusOnly(int x, int y, int powered) {
         return;
     }
     
-    /* Update PowerMap - this is the authoritative source */
-    PowerMap[y][x] = powered ? 1 : 0;
-    
-    /* Update the tile power bit to match */
+    /* Update the tile power bit directly */
     if (powered) {
         setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetPowerStatusOnly-powered");
     } else {
@@ -1162,10 +1157,7 @@ void UpdatePowerStatus(int x, int y, int powered) {
     /* Check current power status before changing */
     wasPowered = (Map[y][x] & POWERBIT) != 0;
     
-    /* Update PowerMap - this is the authoritative source */
-    PowerMap[y][x] = powered ? 1 : 0;
-    
-    /* Update the tile power bit to match */
+    /* Update the tile power bit directly */
     if (powered) {
         setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "UpdatePowerStatus-powered");
     } else {

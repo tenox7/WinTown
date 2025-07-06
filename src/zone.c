@@ -328,9 +328,10 @@ static void DoSPZ(int x, int y) {
     if (z == POLICESTATION) {
         int effect;
         
-        PolicePop++;
+        /* Police count managed by census - no need to duplicate here */
         
-        /* Police effectiveness based on power */
+        /* Police effectiveness calculated by scanner.c using smoothing algorithm */
+        /* Mark station location for scanner.c to process */
         if (Map[y][x] & POWERBIT) {
             effect = PoliceEffect;
         } else {
@@ -342,8 +343,8 @@ static void DoSPZ(int x, int y) {
             effect = effect >> 1;  /* Half effect without road access */
         }
         
-        /* Update police coverage map (quarter size) */
-        PoliceMap[y >> 2][x >> 2] += effect;
+        /* Set base effect at station location - scanner.c will smooth this */
+        PoliceMap[y >> 2][x >> 2] = effect;
         
         /* Debug logging */
         addDebugLog("POLICE: Added %d to map at (%d,%d) -> quarter (%d,%d), value now %d", 
@@ -363,9 +364,10 @@ static void DoSPZ(int x, int y) {
     if (z == FIRESTATION) {
         int effect;
         
-        FirePop++;
+        /* Fire station count managed by census - no need to duplicate here */
         
-        /* Fire station effectiveness based on power */
+        /* Fire station effectiveness calculated by scanner.c using smoothing algorithm */
+        /* Mark station location for scanner.c to process */
         if (Map[y][x] & POWERBIT) {
             effect = FireEffect;
         } else {
@@ -377,8 +379,8 @@ static void DoSPZ(int x, int y) {
             effect = effect >> 1;  /* Half effect without road access */
         }
         
-        /* Update fire coverage map (quarter size) */
-        FireStMap[y >> 2][x >> 2] += effect;
+        /* Set base effect at station location - scanner.c will smooth this */
+        FireStMap[y >> 2][x >> 2] = effect;
         
         /* Cap the value to prevent overflow */
         if (FireStMap[y >> 2][x >> 2] > 250) {
@@ -702,7 +704,7 @@ static void DoComIn(int pop, int value) {
     z = z >>5;
     if (pop > z) return;
     
-    if (pop < 5) {
+    if (pop < 6) {
         ComPlop(SMapX, SMapY, pop);
         IncROG(8);
     }
@@ -1092,11 +1094,6 @@ static int DoFreePop(int x, int y) {
 
 /* Set zone power status - wrapper for unified power system */
 static void SetZPower(int x, int y) {
-    int powered;
-
-    /* Use the unified power system from power.c - PowerMap is authoritative */
-    powered = (PowerMap[y][x] == 1);
-
-    /* Apply power status without updating zone counts (counts managed by DoPowerScan) */
-    SetPowerStatusOnly(x, y, powered);
+    /* Power status is already set in the tile POWERBIT by DoPowerScan */
+    /* No need to duplicate - the power system now works directly with POWERBIT */
 }
