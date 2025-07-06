@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
-// Used by budget.rc
+// Used by micropolis.rc
 //
 #define IDD_NEWGAME                     100
 #define IDD_SCENARIO_SELECT             101

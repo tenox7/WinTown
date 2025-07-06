@@ -277,8 +277,17 @@ void DoSimInit(void) {
 
 void SimFrame(void) {
     /* Main simulation frame entry point */
+    static int debugCounter = 0;
+    
+    debugCounter++;
+    if (debugCounter % 60 == 0) { /* Log every 60 frames (about once per second) */
+        addDebugLog("SimFrame called: SimPaused=%d, SimSpeed=%d, Spdcycle=%d", SimPaused, SimSpeed, Spdcycle);
+    }
 
     if (SimPaused) {
+        if (debugCounter % 60 == 0) {
+            addDebugLog("SimFrame: Simulation is paused, returning early");
+        }
         return;
     }
 

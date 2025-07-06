@@ -3,6 +3,7 @@
  */
 
 #include "sim.h"
+#include "sprite.h"
 #include "notifications.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -247,12 +248,13 @@ int loadScenario(int scenarioId) {
     /* CRITICAL: Set the flag to prevent ClearCensus from erasing population */
     SkipCensusReset = 1;
 
-    /* Set simulation to medium speed */
-    SimSpeed = SPEED_MEDIUM;
-    SimPaused = 0;
-
     /* IMPORTANT: SKIP DoSimInit() for scenarios, as it would reset population!
        Instead, do a directed initialization that preserves scenario values */
+
+    /* CRITICAL: Initialize timer properly by calling SetSimulationSpeed directly */
+    addDebugLog("loadScenario: About to call SetSimulationSpeed with hwndMain=%p", hwndMain);
+    SetSimulationSpeed(hwndMain, SPEED_MEDIUM);
+    addDebugLog("loadScenario: SetSimulationSpeed complete - SimPaused=%d, SimSpeed=%d", SimPaused, SimSpeed);
 
     /* Initialize various simulation subsystems */
     /* These are the essential parts of DoSimInit() */
@@ -271,6 +273,12 @@ int loadScenario(int scenarioId) {
 
     /* Initialize budget system without resetting population */
     InitBudget();
+
+    /* Initialize sprite system for animations and transportation */
+    InitSprites();
+
+    /* Initialize evaluation system */
+    EvalInit();
 
     /* Note: DisasterWait is already set correctly from DisTab[] array above */
     addDebugLog("Scenario %d: Disaster wait period = %d", ScenarioID, DisasterWait);

@@ -1911,6 +1911,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             if (showNewGameDialog(hwnd, &config)) {
                 if (initNewGame(&config)) {
                     addGameLog("New game started successfully");
+                    addGameLog("DEBUG: Before SetGameSpeed - SimPaused=%d, SimSpeed=%d", SimPaused, SimSpeed);
+                    /* Start the simulation at medium speed */
+                    SetGameSpeed(SPEED_MEDIUM);
+                    addGameLog("DEBUG: After SetGameSpeed - SimPaused=%d, SimSpeed=%d", SimPaused, SimSpeed);
                     InvalidateRect(hwnd, NULL, TRUE);
                 } else {
                     MessageBox(hwnd, "Failed to start new game.", "Error", MB_OK | MB_ICONERROR);
@@ -1945,35 +1949,51 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         /* Scenario menu items */
         case IDM_SCENARIO_DULLSVILLE:
-            loadScenario(1);
+            if (loadScenario(1)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_SANFRANCISCO:
-            loadScenario(2);
+            if (loadScenario(2)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_HAMBURG:
-            loadScenario(3);
+            if (loadScenario(3)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_BERN:
-            loadScenario(4);
+            if (loadScenario(4)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_TOKYO:
-            loadScenario(5);
+            if (loadScenario(5)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_DETROIT:
-            loadScenario(6);
+            if (loadScenario(6)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_BOSTON:
-            loadScenario(7);
+            if (loadScenario(7)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         case IDM_SCENARIO_RIO:
-            loadScenario(8);
+            if (loadScenario(8)) {
+                SetGameSpeed(SPEED_MEDIUM);
+            }
             return 0;
 
         /* View menu items */
