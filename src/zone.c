@@ -1093,26 +1093,13 @@ static int DoFreePop(int x, int y) {
     return count;
 }
 
-/* Set zone power status - unified with main power system */
+/* Set zone power status - wrapper for unified power system */
 static void SetZPower(int x, int y) {
     int powered;
 
     /* Use the unified power system from power.c - PowerMap is authoritative */
     powered = (PowerMap[y][x] == 1);
 
-    /* Set or clear the power bit to match PowerMap */
-    if (powered) {
-        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetZPower-unified");
-    } else {
-        setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "SetZPower-unified");
-    }
-
-    /* Update power counts for zones only */
-    if (Map[y][x] & ZONEBIT) {
-        if (powered) {
-            PwrdZCnt++;
-        } else {
-            UnpwrdZCnt++;
-        }
-    }
+    /* Apply power status without updating zone counts (counts managed by DoPowerScan) */
+    SetPowerStatusOnly(x, y, powered);
 }

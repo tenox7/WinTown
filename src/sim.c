@@ -46,7 +46,7 @@ int CityTime = 0;
 int CityYear = 1900;
 int CityMonth = 0;
 QUAD TotalFunds = 5000;
-int TaxRate = 7;
+int TaxRate = 7;      /* City tax rate 0-20% */
 int SkipCensusReset = 0;  /* Flag to skip census reset after loading a scenario */
 int DebugCensusReset = 0; /* Debug counter for tracking census resets */
 int PrevResPop = 0;       /* Debug tracker for last residential population value */
@@ -68,7 +68,7 @@ int ComZPop = 0;
 int IndZPop = 0;
 int CoalPop = 0;
 int FireStPop = 0;
-int CityTax = 7;  /* Tax rate (same as TaxRate but different name) */
+/* CityTax variable removed - use TaxRate directly */
 
 /* Counters */
 int Scycle = 0;
@@ -1061,6 +1061,60 @@ int CalculateTotalPopulation(int resPop, int comPop, int indPop) {
     if (result < 0) result = 0;
     
     return (int)result;
+}
+
+/* Unified power status management function */
+/* Set power status without updating zone counts - for power scan algorithm */
+void SetPowerStatusOnly(int x, int y, int powered) {
+    /* Bounds check */
+    if (!BOUNDS_CHECK(x, y)) {
+        return;
+    }
+    
+    /* Update PowerMap - this is the authoritative source */
+    PowerMap[y][x] = powered ? 1 : 0;
+    
+    /* Update the tile power bit to match */
+    if (powered) {
+        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "SetPowerStatusOnly-powered");
+    } else {
+        setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "SetPowerStatusOnly-unpowered");
+    }
+}
+
+void UpdatePowerStatus(int x, int y, int powered) {
+    int wasPowered;
+    
+    /* Bounds check */
+    if (!BOUNDS_CHECK(x, y)) {
+        return;
+    }
+    
+    /* Check current power status before changing */
+    wasPowered = (Map[y][x] & POWERBIT) != 0;
+    
+    /* Update PowerMap - this is the authoritative source */
+    PowerMap[y][x] = powered ? 1 : 0;
+    
+    /* Update the tile power bit to match */
+    if (powered) {
+        setMapTile(x, y, 0, POWERBIT, TILE_SET_FLAGS, "UpdatePowerStatus-powered");
+    } else {
+        setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "UpdatePowerStatus-unpowered");
+    }
+    
+    /* Update power zone counts if this is a zone and status changed */
+    if ((Map[y][x] & ZONEBIT) && (powered != wasPowered)) {
+        if (powered) {
+            /* Zone became powered */
+            PwrdZCnt++;
+            if (UnpwrdZCnt > 0) UnpwrdZCnt--;
+        } else {
+            /* Zone became unpowered */
+            UnpwrdZCnt++;
+            if (PwrdZCnt > 0) PwrdZCnt--;
+        }
+    }
 }
 
 int GetPValue(int x, int y) {

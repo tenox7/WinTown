@@ -451,6 +451,10 @@ int TestBounds(int x, int y);
 /* Unified population calculation functions */
 QUAD CalculateCityPopulation(int resPop, int comPop, int indPop);
 int CalculateTotalPopulation(int resPop, int comPop, int indPop);
+
+/* Unified power management functions */
+void SetPowerStatusOnly(int x, int y, int powered);  /* Set power without updating zone counts */
+void UpdatePowerStatus(int x, int y, int powered);   /* Set power and update zone counts */
 void SetSimulationSpeed(HWND hwnd, int speed);
 void CleanupSimTimer(HWND hwnd);
 void SetGameSpeed(int speed);

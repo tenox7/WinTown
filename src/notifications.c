@@ -28,7 +28,7 @@ extern int RoadTotal, RailTotal;
 extern int ResPop, StadiumPop, IndPop, PortPop, ComPop, APortPop;
 extern int UnpwrdZCnt, PwrdZCnt;
 extern int PollutionAverage, CrimeAverage, TotalPop, FireStPop, PolicePop;
-extern int CityTax, TaxRate, RoadEffect, FireEffect, PoliceEffect, TrafficAverage;
+extern int TaxRate, RoadEffect, FireEffect, PoliceEffect, TrafficAverage;
 extern int ScenarioID, ScoreType, ScoreWait;
 extern int ResCap, IndCap, ComCap;
 
@@ -56,7 +56,7 @@ void SendMessages(void) {
     /* Sync message system variables with simulation variables */
     TotalZPop = ResZPop + ComZPop + IndZPop;
     PowerPop = NuclearPop + CoalPop;
-    CityTax = TaxRate;  /* Keep in sync */
+    /* CityTax variable eliminated - using TaxRate directly */
 
     z = CityTime & 63;
 
@@ -129,7 +129,7 @@ void SendMessages(void) {
                 SendMes(14);
             break;
         case 51:
-            if (CityTax > 12)
+            if (TaxRate > 12)
                 SendMes(16);
             break;
         case 54:

@@ -183,6 +183,26 @@ void FindPowerPlants(void) {
     }
 }
 
+/* Count powered and unpowered zones - unified helper function */
+static void CountPowerZones(void) {
+    int x, y;
+    
+    PwrdZCnt = 0;
+    UnpwrdZCnt = 0;
+    
+    for (y = 0; y < WORLD_Y; y++) {
+        for (x = 0; x < WORLD_X; x++) {
+            if (Map[y][x] & ZONEBIT) {
+                if (Map[y][x] & POWERBIT) {
+                    PwrdZCnt++;
+                } else {
+                    UnpwrdZCnt++;
+                }
+            }
+        }
+    }
+}
+
 /* Do a full power distribution scan - ORIGINAL ALGORITHM
    This uses the original Micropolis power transmission method that traces along
    power lines and conductive terrain rather than using a simple radius */
@@ -197,28 +217,21 @@ void DoPowerScan(void) {
     MaxPower = (CoalPop * 700L) + (NuclearPop * 2000L);
     NumPower = 0;
 
-    /* Clear the power map first */
+    /* Clear the power map first using unified system */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            setMapTile(x, y, 0, POWERBIT, TILE_CLEAR_FLAGS, "DoPowerScan-clear"); /* Turn off the power bit */
-            PowerMap[y][x] = 0;     /* Set PowerMap to unpowered */
+            SetPowerStatusOnly(x, y, 0); /* Clear power status without updating counts */
         }
     }
+    
+    /* Reset zone counts after clearing */
+    PwrdZCnt = 0;
+    UnpwrdZCnt = 0;
 
     /* If we have no power plants, no point in doing anything else */
     if (CoalPop == 0 && NuclearPop == 0) {
-        /* Update power counts */
-        PwrdZCnt = 0;
-        UnpwrdZCnt = 0;
-
-        /* Count unpowered zones */
-        for (y = 0; y < WORLD_Y; y++) {
-            for (x = 0; x < WORLD_X; x++) {
-                if (Map[y][x] & ZONEBIT) {
-                    UnpwrdZCnt++;
-                }
-            }
-        }
+        /* Count unpowered zones using unified system */
+        CountPowerZones();
         return;
     }
 
@@ -237,30 +250,16 @@ void DoPowerScan(void) {
             /* Increment the power counter - if over capacity, stop */
             if (++NumPower > MaxPower) {
                 /* We've reached the power capacity limit */
-                /* Update power zone counts */
-                PwrdZCnt = 0;
-                UnpwrdZCnt = 0;
-
-                for (y = 0; y < WORLD_Y; y++) {
-                    for (x = 0; x < WORLD_X; x++) {
-                        if (Map[y][x] & ZONEBIT) {
-                            if (Map[y][x] & POWERBIT) {
-                                PwrdZCnt++;
-                            } else {
-                                UnpwrdZCnt++;
-                            }
-                        }
-                    }
-                }
+                /* Count power zones using unified system */
+                CountPowerZones();
                 return;
             }
 
             /* Move to the current direction */
             MoveMapSim(ADir);
 
-            /* Power the current position */
-            setMapTile(SMapX, SMapY, 0, POWERBIT, TILE_SET_FLAGS, "DoPowerScan-power");
-            PowerMap[SMapY][SMapX] = 1;
+            /* Power the current position using unified system */
+            SetPowerStatusOnly(SMapX, SMapY, 1);
 
             /* Look in all four directions for conducting tiles */
             ConNum = 0;
@@ -282,19 +281,6 @@ void DoPowerScan(void) {
         } while (ConNum); /* Continue as long as we have conductive paths */
     }
 
-    /* Update power zone counts */
-    PwrdZCnt = 0;
-    UnpwrdZCnt = 0;
-
-    for (y = 0; y < WORLD_Y; y++) {
-        for (x = 0; x < WORLD_X; x++) {
-            if (Map[y][x] & ZONEBIT) {
-                if (Map[y][x] & POWERBIT) {
-                    PwrdZCnt++;
-                } else {
-                    UnpwrdZCnt++;
-                }
-            }
-        }
-    }
+    /* Update power zone counts using unified system */
+    CountPowerZones();
 }
