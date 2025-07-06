@@ -4,6 +4,7 @@
 
 #include "newgame.h"
 #include "sim.h"
+#include "tiles.h"
 #include <windows.h>
 #include <commdlg.h>
 #include <stdio.h>
@@ -22,6 +23,14 @@ extern void SetValves(int res, int com, int ind);
 
 /* External variables */
 extern long TotalFunds;
+extern int ResPop;
+extern int ComPop;
+extern int IndPop;
+extern int TotalPop;
+extern QUAD CityPop;
+extern int CityClass;
+extern int LastTotalPop;
+extern int GameLevel;
 
 /* Scenario data based on original Micropolis */
 static ScenarioInfo scenarios[] = {
@@ -372,6 +381,29 @@ int initNewGame(NewGameConfig *config) {
     }
 }
 
+/* Clear map for new city */
+static void clearMapForNewCity(void) {
+    int x, y;
+    
+    addGameLog("Clearing map for new city");
+    
+    /* Clear the main map - set all tiles to empty dirt */
+    for (y = 0; y < WORLD_Y; y++) {
+        for (x = 0; x < WORLD_X; x++) {
+            setMapTile(x, y, DIRT, 0, TILE_SET_REPLACE, "clearMapForNewCity");
+        }
+    }
+    
+    /* Reset all population values to 0 for new city */
+    ResPop = 0;
+    ComPop = 0;
+    IndPop = 0;
+    TotalPop = 0;
+    CityPop = 0;
+    CityClass = 0;
+    LastTotalPop = 0;
+}
+
 /* Generate a new city */
 int generateNewCity(char *cityName, int difficulty) {
     if (!cityName) {
@@ -399,8 +431,27 @@ int generateNewCity(char *cityName, int difficulty) {
         break;
     }
     
-    /* Initialize simulation */
+    /* Clear the map completely for a fresh start */
+    clearMapForNewCity();
+    
+    /* Initialize simulation (but preserve the funds we just set) */
     DoSimInit();
+    
+    /* Restore the funds since DoSimInit overwrites them */
+    switch (difficulty) {
+    case DIFFICULTY_EASY:
+        TotalFunds = 20000;
+        break;
+    case DIFFICULTY_MEDIUM:
+        TotalFunds = 10000;
+        break;
+    case DIFFICULTY_HARD:
+        TotalFunds = 5000;
+        break;
+    default:
+        TotalFunds = 10000;
+        break;
+    }
     
     /* Set demand valves to initial values */
     SetValves(500, 300, 100);
