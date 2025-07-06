@@ -37,6 +37,9 @@ typedef long QUAD;
 #define SmX             (WORLD_X >> 1)
 #define SmY             (WORLD_Y >> 1)
 
+/* Bounds checking macro for world coordinates */
+#define BOUNDS_CHECK(x,y) ((x) >= 0 && (x) < WORLD_X && (y) >= 0 && (y) < WORLD_Y)
+
 /* Game levels */
 #define LEVEL_EASY      0
 #define LEVEL_MEDIUM    1

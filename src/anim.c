@@ -117,7 +117,7 @@ void SetSmoke(int x, int y) {
             yy = y + smokeOffsetY[i];
 
             /* Make sure the smoke position is valid */
-            if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+            if (BOUNDS_CHECK(xx, yy)) {
                 /* Only set the tile if it doesn't already have the animation bit set
                    or if it's not already a smoke tile. This avoids resetting the
                    animation sequence and makes it flow better. */
@@ -164,7 +164,7 @@ void SetSmoke(int x, int y) {
         xx = x + DX1[z];
         yy = y + DY1[z];
         
-        if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+        if (BOUNDS_CHECK(xx, yy)) {
             /* Only animate if it's the right base tile */
             if ((Map[yy][xx] & LOMASK) == AniTabC[z]) {
                 /* Set the animated smoke tile */
@@ -208,7 +208,7 @@ static void DoIndustrialSmoke(int x, int y) {
             yy = y + indOffsetY[i];
 
             /* Make sure the smoke position is valid */
-            if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+            if (BOUNDS_CHECK(xx, yy)) {
                 /* Choose the appropriate smoke stack tile */
                 switch (i) {
                 case 0: smokeTile = INDSMOKE1; break;
@@ -317,7 +317,7 @@ void UpdateNuclearPower(int x, int y) {
         xx = x + 2;
         yy = y - 1;
 
-        if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+        if (BOUNDS_CHECK(xx, yy)) {
             /* Set the nuclear swirl animation bit with appropriate flags */
             setMapTile(xx, yy, NUCLEAR_SWIRL, ANIMBIT | CONDBIT | POWERBIT | BURNBIT, TILE_SET_REPLACE, "UpdateNuclearPower-swirl");
         }
@@ -339,7 +339,7 @@ void UpdateAirportRadar(int x, int y) {
         xx = x + 1;
         yy = y - 1;
 
-        if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+        if (BOUNDS_CHECK(xx, yy)) {
             /* Set the radar animation bit with appropriate flags */
             setMapTile(xx, yy, RADAR0, ANIMBIT | CONDBIT | BURNBIT, TILE_SET_REPLACE, "UpdateAirportRadar-rotate");
         }

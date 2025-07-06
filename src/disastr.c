@@ -106,7 +106,7 @@ void makeExplosion(int x, int y) {
         ty = y + yDelta[dir];
 
         /* Check bounds for each surrounding tile */
-        if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
+        if (BOUNDS_CHECK(tx, ty)) {
             /* Only set fire if not a zone center */
             if (!(Map[ty][tx] & ZONEBIT)) {
                 setMapTile(tx, ty, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeExplosion-spread");
@@ -180,7 +180,7 @@ void spreadFire(void) {
                 ty = y + yDelta[dir];
 
                 /* Check if the target tile is in bounds */
-                if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
+                if (BOUNDS_CHECK(tx, ty)) {
                     /* Only spread to burnable tiles */
                     if (Map[ty][tx] & BURNBIT) {
                         /* Create a fire with animation */
@@ -257,7 +257,7 @@ void makeFlood(void) {
         y = SimRandom(WORLD_Y);
 
         /* Validate coordinates */
-        if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
+        if (BOUNDS_CHECK(x, y)) {
             tileValue = Map[y][x] & LOMASK;
 
             /* Look for river/water tiles */
@@ -268,7 +268,7 @@ void makeFlood(void) {
                     yy = y + yDelta[t];
 
                     /* Check if adjacent tile is in bounds and floodable */
-                    if (xx >= 0 && xx < WORLD_X && yy >= 0 && yy < WORLD_Y) {
+                    if (BOUNDS_CHECK(xx, yy)) {
                         if (Map[yy][xx] == DIRT ||
                             ((Map[yy][xx] & BULLBIT) && (Map[yy][xx] & BURNBIT))) {
 
@@ -287,7 +287,7 @@ void makeFlood(void) {
                                     ty = yy + yDelta[j];
 
                                     /* Only flood tiles that are in bounds and floodable */
-                                    if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
+                                    if (BOUNDS_CHECK(tx, ty)) {
                                         if (Map[ty][tx] == DIRT ||
                                             ((Map[ty][tx] & BULLBIT) && (Map[ty][tx] & BURNBIT))) {
                                             setMapTile(tx, ty, FLOOD, 0, TILE_SET_REPLACE, "makeFlood-adjacent");
@@ -299,7 +299,7 @@ void makeFlood(void) {
                                 tx = x + SimRandom(10) - 5;
                                 ty = y + SimRandom(10) - 5;
 
-                                if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
+                                if (BOUNDS_CHECK(tx, ty)) {
                                     if (Map[ty][tx] == DIRT ||
                                         ((Map[ty][tx] & BULLBIT) && (Map[ty][tx] & BURNBIT))) {
                                         setMapTile(tx, ty, FLOOD, 0, TILE_SET_REPLACE, "makeFlood-random");
@@ -350,14 +350,14 @@ void makeMeltdown(void) {
                     ty = y + SimRandom(20) - 10;
 
                     /* Ensure positions are within bounds */
-                    if (tx >= 0 && tx < WORLD_X && ty >= 0 && ty < WORLD_Y) {
+                    if (BOUNDS_CHECK(tx, ty)) {
                         /* Add radiation tiles */
                         setMapTile(tx, ty, RADTILE, 0, TILE_SET_REPLACE, "makeMeltdown-radiation");
                     }
                 }
 
                 /* Create fire at power plant location */
-                if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
+                if (BOUNDS_CHECK(x, y)) {
                     setMapTile(x, y, FIRE + SimRandom(8), ANIMBIT, TILE_SET_REPLACE, "makeMeltdown-fire");
                 }
 

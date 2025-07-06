@@ -423,7 +423,12 @@ int InitChartWindowGraphics(HWND hwnd) {
         return 0;
     }
     
-    SelectObject(g_chartData->hdcMem, g_chartData->hBitmap);
+    if (SelectObject(g_chartData->hdcMem, g_chartData->hBitmap) == NULL) {
+        DeleteObject(g_chartData->hBitmap);
+        DeleteDC(g_chartData->hdcMem);
+        ReleaseDC(hwnd, hdc);
+        return 0;
+    }
     ReleaseDC(hwnd, hdc);
     
     return 1;

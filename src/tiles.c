@@ -40,6 +40,8 @@ void resetTileLogging() {
 
 /* Convert flags to readable string */
 static void flagsToString(int flags, char* buffer, int bufSize) {
+    int len;
+    
     buffer[0] = '\0';
     
     if (flags & POWERBIT) strcat(buffer, "POWER ");
@@ -53,7 +55,7 @@ static void flagsToString(int flags, char* buffer, int bufSize) {
         strcpy(buffer, "NONE");
     } else {
         /* Remove trailing space */
-        int len = strlen(buffer);
+        len = strlen(buffer);
         if (len > 0 && buffer[len-1] == ' ') {
             buffer[len-1] = '\0';
         }
@@ -86,7 +88,7 @@ static int logTileChange(int x, int y, int oldTile, int newTile, char* caller) {
 
 /* Validate coordinates are within map bounds */
 int validateTileCoords(int x, int y) {
-    return (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y);
+    return BOUNDS_CHECK(x, y);
 }
 
 /* Validate tile value is reasonable */

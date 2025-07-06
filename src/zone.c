@@ -965,7 +965,7 @@ static int ZonePlop(int xpos, int ypos, int base) {
             x = xpos + dx;
             y = ypos + dy;
 
-            if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
+            if (BOUNDS_CHECK(x, y)) {
                 if (!(dx == 0 && dy == 0)) {
                     /* Not the center tile */
                     z = Map[y][x] & LOMASK;
@@ -1042,7 +1042,7 @@ static int DoFreePop(int x, int y) {
             xxx = x + xx;
             yyy = y + yy;
 
-            if (xxx >= 0 && xxx < WORLD_X && yyy >= 0 && yyy < WORLD_Y) {
+            if (BOUNDS_CHECK(xxx, yyy)) {
                 z = Map[yyy][xxx] & LOMASK;
 
                 if (z >= LHTHR && z <= HHTHR) {

@@ -602,6 +602,7 @@ void DoTimeStuff(void) {
     static int lastMilestone = 0;
     static int lastCityClass = 0;
     int currentMilestone;
+    char debugMsg[256];
 
     /* Process time advancement */
     CityTime++;
@@ -651,6 +652,7 @@ void DoTimeStuff(void) {
         /* Increased from every 2 years to every year */
         {
             int rDelta, cDelta, iDelta;
+            int taxPenalty;
 
             /* Much stronger bias toward positive growth */
             rDelta = SimRandom(600) - 100; /* Bias toward positive values */
@@ -664,7 +666,7 @@ void DoTimeStuff(void) {
             
             /* Apply tax burden effects - higher difficulty makes tax increases more punishing */
             if (TaxRate > 7) {  /* Default tax rate is 7% */
-                int taxPenalty = (TaxRate - 7) * 10 * (GameLevel + 1);  /* More penalty on higher difficulty */
+                taxPenalty = (TaxRate - 7) * 10 * (GameLevel + 1);  /* More penalty on higher difficulty */
                 rDelta -= taxPenalty;
                 cDelta -= taxPenalty;
                 iDelta -= taxPenalty;
@@ -709,8 +711,7 @@ void DoTimeStuff(void) {
 
             /* Debug valve changes */
             {
-                char debugMsg[256];
-                wsprintf(debugMsg, "VALVES: R=%d C=%d I=%d (Year %d)\n", RValve, CValve, IValve,
+                        wsprintf(debugMsg, "VALVES: R=%d C=%d I=%d (Year %d)\n", RValve, CValve, IValve,
                          CityYear);
                 OutputDebugString(debugMsg);
 
@@ -853,6 +854,9 @@ void TakeCensus(void) {
     /* Store city statistics in the history arrays */
     int i;
     QUAD newCityPop;
+    char debugMsg[256];
+    int growth;
+    int decline;
 
     /* CRITICAL: Make sure we have valid population counts even if they're small */
     if (ResPop <= 0 && (Map[4][4] & LOMASK) == RESBASE) {
@@ -864,7 +868,6 @@ void TakeCensus(void) {
 
     /* Sanity check population values before calculation */
     if (ResPop < 0 || ComPop < 0 || IndPop < 0) {
-        char debugMsg[256];
         wsprintf(debugMsg, "WARNING: Negative zone population detected! R=%d C=%d I=%d\n", 
                  ResPop, ComPop, IndPop);
         OutputDebugString(debugMsg);
@@ -880,7 +883,6 @@ void TakeCensus(void) {
 
     /* Sanity check the result */
     if (newCityPop < 0) {
-        char debugMsg[256];
         wsprintf(debugMsg, "ERROR: Negative CityPop calculated! R=%d C=%d I=%d -> %ld\n", 
                  ResPop, ComPop, IndPop, newCityPop);
         OutputDebugString(debugMsg);
@@ -906,7 +908,6 @@ void TakeCensus(void) {
 
     /* DEBUG: Output current population state */
     {
-        char debugMsg[256];
         wsprintf(debugMsg,
                  "DEBUG Population: Res=%d Com=%d Ind=%d Total=%d CityPop=%d (Prev=%d) Resets=%d\n",
                  ResPop, ComPop, IndPop, TotalPop, (int)CityPop, PrevCityPop, DebugCensusReset);
@@ -951,8 +952,6 @@ void TakeCensus(void) {
     /* Track population changes for growth rate calculations */
     if (CityPop > PrevCityPop) {
         /* Population is growing */
-        char debugMsg[256];
-        int growth;
 
         growth = (int)(CityPop - PrevCityPop);
         wsprintf(debugMsg, "GROWTH: Population increased from %d to %d (+%d)\n", PrevCityPop,
@@ -965,8 +964,6 @@ void TakeCensus(void) {
         }
     } else if (CityPop < PrevCityPop) {
         /* Population is declining */
-        char debugMsg[256];
-        int decline;
 
         decline = (int)(PrevCityPop - CityPop);
         wsprintf(debugMsg, "DECLINE: Population decreased from %d to %d (-%d)\n", PrevCityPop,
@@ -1032,7 +1029,7 @@ void MapScan(int x1, int x2, int y1, int y2) {
 
 int GetPValue(int x, int y) {
     /* Get power status at a given position */
-    if (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y) {
+    if (BOUNDS_CHECK(x, y)) {
         return (Map[y][x] & POWERBIT) != 0;
     }
     return 0;
@@ -1040,7 +1037,7 @@ int GetPValue(int x, int y) {
 
 /* Check if coordinates are within map bounds */
 int TestBounds(int x, int y) {
-    return (x >= 0 && x < WORLD_X && y >= 0 && y < WORLD_Y);
+    return BOUNDS_CHECK(x, y);
 }
 
 /* Timer ID for simulation */
