@@ -828,8 +828,7 @@ void ClearCensus(void) {
     PortPop = 0;
     APortPop = 0;
     NuclearPop = 0;
-    PwrdZCnt = 0;
-    UnpwrdZCnt = 0;
+    /* Power zone counts are managed exclusively by DoPowerScan() - do not reset here */
 
     /* Fire and police maps are now cleared in case 1 before map scanning */
 

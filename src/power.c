@@ -186,6 +186,8 @@ void FindPowerPlants(void) {
 /* Count powered and unpowered zones - unified helper function */
 static void CountPowerZones(void) {
     int x, y;
+    int oldPwrd = PwrdZCnt;
+    int oldUnpwrd = UnpwrdZCnt;
     
     PwrdZCnt = 0;
     UnpwrdZCnt = 0;
@@ -201,6 +203,12 @@ static void CountPowerZones(void) {
             }
         }
     }
+    
+    /* Debug logging to track changes */
+    if (PwrdZCnt != oldPwrd || UnpwrdZCnt != oldUnpwrd) {
+        addDebugLog("PowerZones: %d->%d powered, %d->%d unpowered", 
+                   oldPwrd, PwrdZCnt, oldUnpwrd, UnpwrdZCnt);
+    }
 }
 
 /* Do a full power distribution scan - ORIGINAL ALGORITHM
@@ -209,6 +217,8 @@ static void CountPowerZones(void) {
 void DoPowerScan(void) {
     int x, y;
     short ADir, ConNum, Dir;
+
+    addDebugLog("DoPowerScan: Starting power distribution scan");
 
     /* Count power plants */
     CountPowerPlants();
