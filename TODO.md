@@ -19,9 +19,11 @@
 - Zone demand
 - Rating/approval, Impeachment
 - Zone to rubble
+- Performance
 
 
 ## Cosmetic
+- Main screen in .rc file
 - Some tilesets cause 100% CPU peg - may be num color related?
 - Better RCI and mini chart indicators
 - Wrong tiles, especially middle tile

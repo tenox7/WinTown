@@ -8,6 +8,7 @@
 #include "tools.h"
 #include "charts.h"
 #include "notifications.h"
+#include "newgame.h"
 #include <commdlg.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -673,11 +674,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     /* Initialize chart system */
     InitChartSystem();
     
-    /* Then create new map (this will set the tileset to classic) */
-    createNewMap(hwndMain);
-
     ShowWindow(hwndMain, nCmdShow);
     UpdateWindow(hwndMain);
+    
+    /* Show new game dialog on startup */
+    {
+        NewGameConfig config;
+        addGameLog("About to show new game dialog...");
+        if (showNewGameDialog(hwndMain, &config)) {
+            addGameLog("User selected new game option: type=%d, difficulty=%d", config.gameType, config.difficulty);
+            if (initNewGame(&config)) {
+                addGameLog("New game started successfully");
+                InvalidateRect(hwndMain, NULL, TRUE);
+            } else {
+                addGameLog("Failed to initialize new game");
+                /* Fall back to creating empty map */
+                createNewMap(hwndMain);
+            }
+        } else {
+            addGameLog("User cancelled new game dialog - creating empty map");
+            /* User cancelled - create empty map as fallback */
+            createNewMap(hwndMain);
+        }
+    }
 
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
         TranslateMessage(&msg);
@@ -1887,9 +1906,18 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
-        case IDM_FILE_NEW:
-            createNewMap(hwnd);
+        case IDM_FILE_NEW: {
+            NewGameConfig config;
+            if (showNewGameDialog(hwnd, &config)) {
+                if (initNewGame(&config)) {
+                    addGameLog("New game started successfully");
+                    InvalidateRect(hwnd, NULL, TRUE);
+                } else {
+                    MessageBox(hwnd, "Failed to start new game.", "Error", MB_OK | MB_ICONERROR);
+                }
+            }
             return 0;
+        }
             
         case IDM_FILE_OPEN:
             openCityDialog(hwnd);

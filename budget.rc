@@ -1,91 +1,165 @@
-#include <windows.h>
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
 
-#define IDC_STATIC -1
-#define IDD_BUDGET 1001
-#define IDC_TAX_RATE_SLIDER 1002
-#define IDC_TAX_RATE_LABEL 1003
-#define IDC_ROAD_SLIDER 1004
-#define IDC_ROAD_LABEL 1005
-#define IDC_FIRE_SLIDER 1006
-#define IDC_FIRE_LABEL 1007
-#define IDC_POLICE_SLIDER 1008
-#define IDC_POLICE_LABEL 1009
-#define IDC_TAXES_COLLECTED 1010
-#define IDC_CASH_FLOW 1011
-#define IDC_PREVIOUS_FUNDS 1012
-#define IDC_CURRENT_FUNDS 1013
-#define IDC_AUTO_BUDGET 1014
-#define IDC_RESET_BUDGET 1015
-#define IDOK_BUDGET 1016
-#define IDCANCEL_BUDGET 1017
-#define IDC_ROAD_PERCENT 1018
-#define IDC_FIRE_PERCENT 1019
-#define IDC_POLICE_PERCENT 1020
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
 
-/* Notification Dialog Resource IDs */
-#define IDD_NOTIFICATION_DIALOG 9100
-#define IDC_NOTIF_TITLE 9102
-#define IDC_NOTIF_MESSAGE 9103
-#define IDC_NOTIF_EXPLANATION 9104
-#define IDC_NOTIF_ADVICE 9105
-#define IDC_NOTIF_LOCATION 9106
-#define IDC_GOTO_LOCATION 9107
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
 
-/* Budget Dialog Resource */
-IDD_BUDGET DIALOG 0, 0, 320, 250
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_BUDGET DIALOG DISCARDABLE  0, 0, 320, 250
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "City Budget"
 FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "Micropolis City Budget", IDC_STATIC, 10, 10, 300, 12
-    
-    GROUPBOX        "Tax Rate", IDC_STATIC, 10, 30, 300, 40
-    LTEXT           "Tax Rate: 7%", IDC_TAX_RATE_LABEL, 20, 45, 80, 10
-    SCROLLBAR       IDC_TAX_RATE_SLIDER, 110, 42, 180, 12, SBS_HORZ | WS_TABSTOP
-    LTEXT           "0%", IDC_STATIC, 110, 55, 15, 8
-    LTEXT           "20%", IDC_STATIC, 275, 55, 15, 8
-    
-    GROUPBOX        "Department Funding", IDC_STATIC, 10, 80, 300, 100
-    
-    LTEXT           "Road Funding: 100%", IDC_ROAD_LABEL, 20, 95, 90, 10
-    SCROLLBAR       IDC_ROAD_SLIDER, 120, 95, 120, 12, SBS_HORZ | WS_TABSTOP
-    LTEXT           "$0", IDC_ROAD_PERCENT, 250, 95, 40, 10
-    
-    LTEXT           "Fire Funding: 100%", IDC_FIRE_LABEL, 20, 115, 90, 10
-    SCROLLBAR       IDC_FIRE_SLIDER, 120, 115, 120, 12, SBS_HORZ | WS_TABSTOP
-    LTEXT           "$0", IDC_FIRE_PERCENT, 250, 115, 40, 10
-    
-    LTEXT           "Police Funding: 100%", IDC_POLICE_LABEL, 20, 135, 90, 10
-    SCROLLBAR       IDC_POLICE_SLIDER, 120, 135, 120, 12, SBS_HORZ | WS_TABSTOP
-    LTEXT           "$0", IDC_POLICE_PERCENT, 250, 135, 40, 10
-    
-    CHECKBOX        "Auto Budget", IDC_AUTO_BUDGET, 20, 155, 80, 15
-    
-    GROUPBOX        "Financial Summary", IDC_STATIC, 10, 190, 300, 40
-    LTEXT           "Taxes Collected: $0", IDC_TAXES_COLLECTED, 20, 205, 100, 10
-    LTEXT           "Cash Flow: +$0", IDC_CASH_FLOW, 130, 205, 80, 10
-    LTEXT           "Previous Funds: $0", IDC_PREVIOUS_FUNDS, 20, 215, 100, 10
-    LTEXT           "Current Funds: $0", IDC_CURRENT_FUNDS, 130, 215, 80, 10
-    
-    PUSHBUTTON      "Reset", IDC_RESET_BUDGET, 220, 205, 40, 15
-    DEFPUSHBUTTON   "OK", IDOK_BUDGET, 265, 205, 40, 15
-    PUSHBUTTON      "Cancel", IDCANCEL_BUDGET, 265, 225, 40, 15
+    LTEXT           "Micropolis City Budget",IDC_STATIC,10,10,300,12
+    GROUPBOX        "Tax Rate",IDC_STATIC,10,30,300,40
+    LTEXT           "Tax Rate: 7%",IDC_TAX_RATE_LABEL,20,45,80,10
+    SCROLLBAR       IDC_TAX_RATE_SLIDER,110,42,180,12,WS_TABSTOP
+    LTEXT           "0%",IDC_STATIC,110,55,15,8
+    LTEXT           "20%",IDC_STATIC,275,55,15,8
+    GROUPBOX        "Department Funding",IDC_STATIC,10,80,300,100
+    LTEXT           "Road Funding: 100%",IDC_ROAD_LABEL,20,95,90,10
+    SCROLLBAR       IDC_ROAD_SLIDER,120,95,120,12,WS_TABSTOP
+    LTEXT           "$0",IDC_ROAD_PERCENT,250,95,40,10
+    LTEXT           "Fire Funding: 100%",IDC_FIRE_LABEL,20,115,90,10
+    SCROLLBAR       IDC_FIRE_SLIDER,120,115,120,12,WS_TABSTOP
+    LTEXT           "$0",IDC_FIRE_PERCENT,250,115,40,10
+    LTEXT           "Police Funding: 100%",IDC_POLICE_LABEL,20,135,90,10
+    SCROLLBAR       IDC_POLICE_SLIDER,120,135,120,12,WS_TABSTOP
+    LTEXT           "$0",IDC_POLICE_PERCENT,250,135,40,10
+    CHECKBOX        "Auto Budget",IDC_AUTO_BUDGET,20,155,80,15
+    GROUPBOX        "Financial Summary",IDC_STATIC,10,190,300,40
+    LTEXT           "Taxes Collected: $0",IDC_TAXES_COLLECTED,20,205,100,10
+    LTEXT           "Cash Flow: +$0",IDC_CASH_FLOW,130,205,80,10
+    LTEXT           "Previous Funds: $0",IDC_PREVIOUS_FUNDS,20,215,100,10
+    LTEXT           "Current Funds: $0",IDC_CURRENT_FUNDS,130,215,80,10
+    PUSHBUTTON      "Reset",IDC_RESET_BUDGET,220,205,40,15
+    DEFPUSHBUTTON   "OK",IDOK_BUDGET,265,205,40,15
+    PUSHBUTTON      "Cancel",IDCANCEL_BUDGET,265,225,40,15
 END
 
-/* Notification Dialog Resource */
-IDD_NOTIFICATION_DIALOG DIALOG 0, 0, 400, 300
+IDD_NOTIFICATION_DIALOG DIALOG DISCARDABLE  0, 0, 400, 300
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "City Notification"
 FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "Notification Title", IDC_NOTIF_TITLE, 10, 10, 380, 20
-    LTEXT           "Main notification message", IDC_NOTIF_MESSAGE, 10, 35, 380, 40
-    LTEXT           "Detailed explanation", IDC_NOTIF_EXPLANATION, 10, 80, 380, 60
-    LTEXT           "Recommended actions", IDC_NOTIF_ADVICE, 10, 145, 380, 60
-    LTEXT           "Location info", IDC_NOTIF_LOCATION, 10, 210, 200, 15
-    PUSHBUTTON      "Go To Location", IDC_GOTO_LOCATION, 10, 240, 80, 20
-    PUSHBUTTON      "OK", IDOK, 300, 240, 40, 20
-    PUSHBUTTON      "Cancel", IDCANCEL, 345, 240, 40, 20
+    LTEXT           "Notification Title",IDC_NOTIF_TITLE,10,10,380,20
+    LTEXT           "Main notification message",IDC_NOTIF_MESSAGE,10,35,380,
+                    40
+    LTEXT           "Detailed explanation",IDC_NOTIF_EXPLANATION,10,80,380,
+                    60
+    LTEXT           "Recommended actions",IDC_NOTIF_ADVICE,10,145,380,60
+    LTEXT           "Location info",IDC_NOTIF_LOCATION,10,210,200,15
+    PUSHBUTTON      "Go To Location",IDC_GOTO_LOCATION,10,240,80,20
+    PUSHBUTTON      "OK",IDOK,300,240,40,20
+    PUSHBUTTON      "Cancel",IDCANCEL,345,240,40,20
 END
 
+IDD_NEWGAME DIALOG DISCARDABLE  0, 0, 420, 300
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Game - Micropolis"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Game Type",IDC_STATIC,10,10,120,80
+    CONTROL         "&New City",IDC_NEW_CITY,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,20,25,60,12
+    CONTROL         "&Load City",IDC_LOAD_CITY,"Button",BS_AUTORADIOBUTTON,
+                    20,42,60,12
+    CONTROL         "&Scenario",IDC_SCENARIO,"Button",BS_AUTORADIOBUTTON,20,
+                    59,60,12
+    LTEXT           "City Name:",IDC_STATIC,140,27,40,12
+    EDITTEXT        IDC_CITY_NAME,185,25,110,12,ES_AUTOHSCROLL
+    GROUPBOX        "Scenarios",IDC_STATIC,15,148,270,120
+    LISTBOX         IDC_SCENARIO_LIST,25,164,120,92,LBS_SORT | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "",IDC_SCENARIO_DESC,151,162,120,95
+    GROUPBOX        "Difficulty",IDC_STATIC,10,100,400,40
+    CONTROL         "&Easy ($20,000)",IDC_DIFFICULTY_EASY,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,20,115,70,12
+    CONTROL         "&Medium ($10,000)",IDC_DIFFICULTY_MEDIUM,"Button",
+                    BS_AUTORADIOBUTTON,110,115,80,12
+    CONTROL         "&Hard ($5,000)",IDC_DIFFICULTY_HARD,"Button",
+                    BS_AUTORADIOBUTTON,210,115,65,12
+    DEFPUSHBUTTON   "OK",IDC_OK,295,255,50,14
+    PUSHBUTTON      "Cancel",IDC_CANCEL,352,254,50,14
+END
+
+IDD_SCENARIO_SELECT DIALOGEX 0, 0, 400, 300
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select Scenario - Micropolis"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "Choose a scenario:",IDC_STATIC,10,10,80,12
+    LISTBOX         IDC_SCENARIO_LIST,10,25,160,200,LBS_SORT | WS_VSCROLL | 
+                    WS_TABSTOP
+    GROUPBOX        "Description",IDC_STATIC,180,25,210,200
+    LTEXT           "",IDC_SCENARIO_DESC,190,40,190,180
+    DEFPUSHBUTTON   "OK",IDC_SCENARIO_OK,235,245,50,14
+    PUSHBUTTON      "Cancel",IDC_SCENARIO_CANCEL,295,245,50,14
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
 
