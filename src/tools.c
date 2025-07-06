@@ -570,7 +570,7 @@ void put3x3Rubble(int x, int y) {
         for (xx = x - 1; xx <= x + 1; xx++) {
             if (TestBounds(xx, yy)) {
                 /* Clear the zone bit but preserve other flags */
-                setMapTile(xx, yy, 0, ZONEBIT, TILE_CLEAR_FLAGS, "put3x3Rubble-clear");
+                SetTileZone(xx, yy, Map[yy][xx] & LOMASK, 0);
             }
         }
     }
@@ -599,7 +599,7 @@ void put4x4Rubble(int x, int y) {
         for (xx = x - 1; xx <= x + 2; xx++) {
             if (TestBounds(xx, yy)) {
                 /* Clear the zone bit but preserve other flags */
-                setMapTile(xx, yy, 0, ZONEBIT, TILE_CLEAR_FLAGS, "put4x4Rubble-clear");
+                SetTileZone(xx, yy, Map[yy][xx] & LOMASK, 0);
             }
         }
     }
@@ -628,7 +628,7 @@ void put6x6Rubble(int x, int y) {
         for (xx = x - 2; xx <= x + 3; xx++) {
             if (TestBounds(xx, yy)) {
                 /* Clear the zone bit but preserve other flags */
-                setMapTile(xx, yy, 0, ZONEBIT, TILE_CLEAR_FLAGS, "put6x6Rubble-clear");
+                SetTileZone(xx, yy, Map[yy][xx] & LOMASK, 0);
             }
         }
     }

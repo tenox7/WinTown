@@ -754,7 +754,7 @@ static void DoResOut(int pop, int value, int x, int y) {
             
             /* Validate the new tile is in residential range and is a valid center */
             if (newTile >= RESBASE && newTile < COMBASE && (newTile - RZB) % 9 == 0) {
-                setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decline");
+                UpgradeTile(x, y, newTile);
                 addDebugLog("DoResOut decline: %d->%d at %d,%d", originalTile, newTile, x, y);
             }
         }
@@ -769,7 +769,7 @@ static void DoResOut(int pop, int value, int x, int y) {
             
             /* Validate the new tile is in residential range and is a valid center */
             if (newTile >= RESBASE && newTile < COMBASE && (newTile - RZB) % 9 == 0) {
-                setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "DoResOut-decay");
+                UpgradeTile(x, y, newTile);
                 addDebugLog("DoResOut decay: %d->%d at %d,%d", originalTile, newTile, x, y);
             }
         }
@@ -779,10 +779,7 @@ static void DoResOut(int pop, int value, int x, int y) {
     if ((originalTile <= (FREEZ + 18)) && (value < 30) && (!pop) && (ZoneRandom(4) == 0)) {
         if (ZoneRandom(2) == 0) {
             /* Make into rubble */
-            short z1;
-
-            z1 = (ZoneRandom(3) + 43) | BULLBIT;
-            setMapTile(x, y, z1, 0, TILE_SET_REPLACE, "DoResOut-rubble");
+            SetRubbleTile(x, y);
             addDebugLog("Zone ruined to rubble at %d,%d (month=%d)", x, y, CityMonth);
         }
     }
@@ -800,7 +797,7 @@ static void DoComOut(int pop, int x, int y) {
 
     if ((base > 0) && (ZoneRandom(8) == 0)) {
         /* Gradually decay */
-        setMapTile(x, y, COMBASE + base - 1, 0, TILE_SET_PRESERVE, "DoComOut-decline");
+        UpgradeTile(x, y, COMBASE + base - 1);
     }
 }
 

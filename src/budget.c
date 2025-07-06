@@ -309,38 +309,46 @@ int GetFireEffect(void) {
     return FireEffect;
 }
 
-/* Sets road funding percentage */
-void SetRoadPercent(float percent) {
+/* Unified budget percentage setter */
+void SetBudgetPercent(int budgetType, float percent) {
+    /* Validate percentage range */
     if (percent < 0.0f) {
         percent = 0.0f;
     } else if (percent > 1.0f) {
         percent = 1.0f;
     }
 
-    RoadPercent = percent;
+    /* Set the appropriate budget percentage */
+    switch (budgetType) {
+        case BUDGET_TYPE_ROAD:
+            RoadPercent = percent;
+            break;
+        case BUDGET_TYPE_POLICE:
+            PolicePercent = percent;
+            break;
+        case BUDGET_TYPE_FIRE:
+            FirePercent = percent;
+            break;
+        default:
+            /* Invalid budget type - do nothing */
+            return;
+    }
+
+    /* Update budget calculations */
     DoBudget();
+}
+
+/* Sets road funding percentage */
+void SetRoadPercent(float percent) {
+    SetBudgetPercent(BUDGET_TYPE_ROAD, percent);
 }
 
 /* Sets police funding percentage */
 void SetPolicePercent(float percent) {
-    if (percent < 0.0f) {
-        percent = 0.0f;
-    } else if (percent > 1.0f) {
-        percent = 1.0f;
-    }
-
-    PolicePercent = percent;
-    DoBudget();
+    SetBudgetPercent(BUDGET_TYPE_POLICE, percent);
 }
 
 /* Sets fire department funding percentage */
 void SetFirePercent(float percent) {
-    if (percent < 0.0f) {
-        percent = 0.0f;
-    } else if (percent > 1.0f) {
-        percent = 1.0f;
-    }
-
-    FirePercent = percent;
-    DoBudget();
+    SetBudgetPercent(BUDGET_TYPE_FIRE, percent);
 }

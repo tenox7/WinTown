@@ -457,6 +457,11 @@ int CalculateTotalPopulation(int resPop, int comPop, int indPop);
 #define ZONE_TYPE_COMMERCIAL    1  
 #define ZONE_TYPE_INDUSTRIAL    2
 
+/* Budget type constants */
+#define BUDGET_TYPE_ROAD        0
+#define BUDGET_TYPE_POLICE      1
+#define BUDGET_TYPE_FIRE        2
+
 /* Unified population management functions */
 void AddToZonePopulation(int zoneType, int amount);
 void ResetCensusCounters(void);
@@ -464,6 +469,12 @@ void ResetCensusCounters(void);
 /* Unified power management functions */
 void SetPowerStatusOnly(int x, int y, int powered);  /* Set power without updating zone counts */
 void UpdatePowerStatus(int x, int y, int powered);   /* Set power and update zone counts */
+
+/* Higher-level tile setting helper functions */
+void SetTileWithPower(int x, int y, int tile, int powered);
+void SetTileZone(int x, int y, int tile, int isZone);
+void UpgradeTile(int x, int y, int newTile);
+void SetRubbleTile(int x, int y);
 void SetSimulationSpeed(HWND hwnd, int speed);
 void CleanupSimTimer(HWND hwnd);
 void SetGameSpeed(int speed);
@@ -538,6 +549,7 @@ int GetFireEffect(void);       /* Get fire department effectiveness */
 void SetRoadPercent(float percent);      /* Set road funding percentage */
 void SetPolicePercent(float percent);    /* Set police funding percentage */
 void SetFirePercent(float percent);      /* Set fire department funding percentage */
+void SetBudgetPercent(int budgetType, float percent);  /* Unified budget percentage setter */
 
 /* Scenario functions (scenarios.c) */
 int loadScenario(int scenarioId);        /* Load a scenario by ID */

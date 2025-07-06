@@ -1085,6 +1085,53 @@ void ResetCensusCounters(void) {
     TempIndPop = 0;
 }
 
+/* Set tile with power status in one operation */
+void SetTileWithPower(int x, int y, int tile, int powered) {
+    if (!BOUNDS_CHECK(x, y)) {
+        return;
+    }
+    
+    if (powered) {
+        setMapTile(x, y, tile, POWERBIT, TILE_SET_REPLACE | TILE_SET_FLAGS, "SetTileWithPower-powered");
+    } else {
+        setMapTile(x, y, tile, 0, TILE_SET_REPLACE, "SetTileWithPower-unpowered");
+    }
+}
+
+/* Set tile zone status */
+void SetTileZone(int x, int y, int tile, int isZone) {
+    if (!BOUNDS_CHECK(x, y)) {
+        return;
+    }
+    
+    if (isZone) {
+        setMapTile(x, y, tile, ZONEBIT, TILE_SET_REPLACE | TILE_SET_FLAGS, "SetTileZone-zone");
+    } else {
+        setMapTile(x, y, tile, ZONEBIT, TILE_SET_REPLACE | TILE_CLEAR_FLAGS, "SetTileZone-clear");
+    }
+}
+
+/* Upgrade tile preserving existing flags */
+void UpgradeTile(int x, int y, int newTile) {
+    if (!BOUNDS_CHECK(x, y)) {
+        return;
+    }
+    
+    setMapTile(x, y, newTile, 0, TILE_SET_PRESERVE, "UpgradeTile");
+}
+
+/* Set rubble tile */
+void SetRubbleTile(int x, int y) {
+    int rubbleType;
+    
+    if (!BOUNDS_CHECK(x, y)) {
+        return;
+    }
+    
+    rubbleType = (SimRandom(4) + RUBBLE) | BULLBIT;
+    setMapTile(x, y, rubbleType, 0, TILE_SET_REPLACE, "SetRubbleTile");
+}
+
 /* Unified power status management function */
 /* Set power status without updating zone counts - for power scan algorithm */
 void SetPowerStatusOnly(int x, int y, int powered) {
