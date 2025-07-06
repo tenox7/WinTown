@@ -1989,7 +1989,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
 
     /* Register the toolbar window class if not already done */
     if (!GetClassInfo(NULL, "MicropolisToolbar", &wc)) {
-        //wc.cbSize = sizeof(WNDCLASS);
+        /*wc.cbSize = sizeof(WNDCLASS); */
         wc.style = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc = ToolbarProc;
         wc.cbClsExtra = 0;
@@ -2000,7 +2000,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
         wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
         wc.lpszMenuName = NULL;
         wc.lpszClassName = "MicropolisToolbar";
-        //wc.hIconSm = NULL;
+        /*wc.hIconSm = NULL; */
 
         RegisterClass(&wc);
     }

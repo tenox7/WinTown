@@ -483,7 +483,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Register main window class */
-    //wc.cbSize = sizeof(WNDCLASS);
+    /*wc.cbSize = sizeof(WNDCLASS);*/
     wc.style = CS_HREDRAW | CS_VREDRAW | CS_BYTEALIGNWINDOW;
     wc.lpfnWndProc = wndProc;
     wc.cbClsExtra = 0;
@@ -494,7 +494,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszMenuName = NULL;
     wc.lpszClassName = "MicropolisNT";
-    //wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+    /*wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);*/
 
     if (!RegisterClass(&wc)) {
         MessageBox(NULL, "Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -502,7 +502,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Register info window class */
-    //wcInfo.cbSize = sizeof(WNDCLASS);
+    /*wcInfo.cbSize = sizeof(WNDCLASS);*/
     wcInfo.style = CS_HREDRAW | CS_VREDRAW;
     wcInfo.lpfnWndProc = infoWndProc;
     wcInfo.cbClsExtra = 0;
@@ -513,7 +513,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcInfo.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wcInfo.lpszMenuName = NULL;
     wcInfo.lpszClassName = INFO_WINDOW_CLASS;
-    //wcInfo.hIconSm = NULL;
+    /*wcInfo.hIconSm = NULL;*/
 
     if (!RegisterClass(&wcInfo)) {
         MessageBox(NULL, "Info Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -720,17 +720,27 @@ void addGameLog(const char *format, ...) {
 
     /* Get current time */
     GetLocalTime(&st);
-    sprintf(timeBuffer, "[%02d:%02d:%02d] ", st.wHour, st.wMinute, st.wSecond);
+    wsprintf(timeBuffer, "[%02d:%02d:%02d] ", st.wHour, st.wMinute, st.wSecond);
 
-    /* Format message */
+    /* Format message with bounds checking */
     va_start(args, format);
-    vsprintf(buffer, format, args);
+    if (wvsprintf(buffer, format, args) >= sizeof(buffer)) {
+        /* Truncate if too long */
+        buffer[sizeof(buffer) - 1] = '\0';
+    }
     va_end(args);
     
-    /* Create full message with timestamp */
-    strcpy(fullMessage, timeBuffer);
-    strcat(fullMessage, buffer);
-    strcat(fullMessage, "\n");
+    /* Create full message with timestamp and bounds checking */
+    if (strlen(timeBuffer) + strlen(buffer) + 2 < sizeof(fullMessage)) {
+        strcpy(fullMessage, timeBuffer);
+        strcat(fullMessage, buffer);
+        strcat(fullMessage, "\n");
+    } else {
+        /* Buffer too small, create truncated version */
+        strcpy(fullMessage, "[TRUNCATED] ");
+        strncat(fullMessage, buffer, sizeof(fullMessage) - strlen(fullMessage) - 2);
+        strcat(fullMessage, "\n");
+    }
 
     /* Write to debug.log file */
     {
@@ -3032,11 +3042,11 @@ void initializeGraphics(HWND hwnd) {
     bi.biCompression = BI_RGB;
 
 	hbmBuffer = CreateDIBitmap(hdc, 
-		&bi,				// Pointer to BITMAPINFOHEADER
-		CBM_INIT,			// Initialize bitmap bits
-		NULL,				// Pointer to actual bitmap bits (if any)
-		&binfo,				// Pointer to BITMAPINFO
-		DIB_RGB_COLORS);		// Color usage
+		&bi,				/* Pointer to BITMAPINFOHEADER */
+		CBM_INIT,			/* Initialize bitmap bits */
+		NULL,				/* Pointer to actual bitmap bits (if any) */
+		&binfo,				/* Pointer to BITMAPINFO */
+		DIB_RGB_COLORS);		/* Color usage */
 #endif
 
     if (hbmBuffer == NULL) {
@@ -3305,11 +3315,11 @@ void resizeBuffer(int cx, int cy) {
     bi.biCompression = BI_RGB;
 
 	hbmNew = CreateDIBitmap(hdc, 
-		&bi,				// Pointer to BITMAPINFOHEADER
-		CBM_INIT,			// Initialize bitmap bits
-		NULL,				// Pointer to actual bitmap bits (if any)
-		&binfo,				// Pointer to BITMAPINFO
-		DIB_RGB_COLORS);	// Color usage
+		&bi,				/* Pointer to BITMAPINFOHEADER */
+		CBM_INIT,			/* Initialize bitmap bits */
+		NULL,				/* Pointer to actual bitmap bits (if any) */
+		&binfo,				/* Pointer to BITMAPINFO */
+		DIB_RGB_COLORS);	/* Color usage */
 #endif
 
     if (hbmNew == NULL) {
@@ -3927,10 +3937,11 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
     }
     /* Removed green frame for powered zones to improve visual appearance */
 
-    /* Commented out power indicator dots for cleaner display
+    /* Commented out power indicator dots for cleaner display */
+    /*
        else if ((tileValue & CONDBIT) && (tileValue & POWERBIT))
        {
-        // Power lines and other conductors with power get a cyan dot
+        * Power lines and other conductors with power get a cyan dot *
         int dotSize = 4;
         RECT dotRect;
 
@@ -3945,7 +3956,8 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
        }
      */
 
-    /* Commented out traffic visualization dots for cleaner display
+    /* Commented out traffic visualization dots for cleaner display */
+    /*
        {
         int tileBase = tileValue & LOMASK;
         Byte trafficLevel;
@@ -3953,28 +3965,28 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
         if ((tileBase >= ROADBASE && tileBase <= LASTROAD) ||
             (tileBase >= RAILBASE && tileBase <= LASTRAIL))
         {
-            // Get the traffic density for this location
+            Get the traffic density for this location
             trafficLevel = TrfDensity[y/2][x/2];
 
-            // Only display if there's significant traffic
+            Only display if there's significant traffic
             if (trafficLevel > 40) {
                 COLORREF trafficColor;
                 RECT trafficRect;
                 int trafficSize;
 
-                // Scale traffic visualization by density level
+                Scale traffic visualization by density level
                 if (trafficLevel < 100) {
-                    trafficColor = RGB(255, 255, 0); // Yellow for light traffic
+                    trafficColor = RGB(255, 255, 0); Yellow for light traffic
                     trafficSize = 2;
                 } else if (trafficLevel < 200) {
-                    trafficColor = RGB(255, 128, 0); // Orange for medium traffic
+                    trafficColor = RGB(255, 128, 0); Orange for medium traffic
                     trafficSize = 3;
                 } else {
-                    trafficColor = RGB(255, 0, 0);   // Red for heavy traffic
+                    trafficColor = RGB(255, 0, 0);   Red for heavy traffic
                     trafficSize = 4;
                 }
 
-                // Draw traffic indicator
+                Draw traffic indicator
                 trafficRect.left = rect.left + (TILE_SIZE - trafficSize) / 2;
                 trafficRect.top = rect.top + (TILE_SIZE - trafficSize) / 2;
                 trafficRect.right = trafficRect.left + trafficSize;

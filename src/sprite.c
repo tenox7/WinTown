@@ -1115,3 +1115,39 @@ void DoTornadoSprite(SimSprite *sprite) {
         }
     }
 }
+
+/* Helper function to get traffic density at sprite location */
+static int GetTrafficDensityAtSprite(SimSprite *sprite) {
+    int dx, dy;
+    
+    dx = sprite->x >> 5;  /* Divide by 32 for traffic map coordinates */
+    dy = sprite->y >> 5;
+    
+    if (dx >= 0 && dx < WORLD_X/2 && dy >= 0 && dy < WORLD_Y/2) {
+        return TrfDensity[dy][dx];
+    }
+    return 0;
+}
+
+/* Helper function for common sprite bounds checking */
+static int ValidateSpriteMovement(SimSprite *sprite, int newX, int newY) {
+    /* Check if new position is within reasonable bounds */
+    if (newX < -sprite->width || newX >= (WORLD_X << 4) + sprite->width ||
+        newY < -sprite->height || newY >= (WORLD_Y << 4) + sprite->height) {
+        return 0;  /* Out of bounds */
+    }
+    return 1;  /* Valid movement */
+}
+
+/* Helper function for common sprite generation pattern */
+static int ShouldGenerateSprite(int maxSprites, int randomChance) {
+    if (SpriteCount >= maxSprites) {
+        return 0;
+    }
+    
+    if (SimRandom(randomChance) != 0) {
+        return 0;
+    }
+    
+    return 1;
+}
