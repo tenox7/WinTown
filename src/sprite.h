@@ -34,6 +34,57 @@
 #define SOUND_HEAVY_TRAFFIC     2
 #define SOUND_EXPLOSION_HIGH    3
 
+/* Sprite behavior constants */
+#define DEFAULT_SPRITE_SPEED            100
+#define POLICE_DUTY_TIME                300     /* Police stay for 5 minutes */
+
+/* Random chance constants */
+#define TRAIN_START_CHANCE              8       /* 1 in 8 chance to start moving */
+#define TRAIN_STOP_CHANCE               4       /* 1 in 4 chance to stop at station */
+#define TRAIN_STOP_DURATION_BASE        30      /* Base stop time */
+#define TRAIN_STOP_DURATION_RANDOM      30      /* Additional random stop time */
+
+#define SHIP_TURN_CHANCE                7       /* 1 in 7 chance to turn */
+#define SHIP_DIRECTION_CHANGE_CHANCE    16      /* 1 in 16 chance to change direction */
+
+#define HELICOPTER_SOUND_TIMER          100     /* Helicopter sound check interval */
+#define HELICOPTER_TRAFFIC_THRESHOLD    170     /* Traffic level to trigger sound */
+#define HELICOPTER_TRAFFIC_SOUND_CHANCE 7       /* 1 in 7 chance for traffic sound */
+#define HELICOPTER_SOUND_DURATION       200     /* How long sound effect lasts */
+#define HELICOPTER_DIRECTION_CHANCE     5       /* 1 in 5 chance to change direction */
+
+#define POLICE_TRAFFIC_THRESHOLD        200     /* Traffic level for police report */
+#define POLICE_REPORT_CHANCE            5       /* 1 in 5 chance to report */
+
+/* Sprite generation thresholds */
+#define HIGH_TRAFFIC_THRESHOLD          80      /* Traffic level for helicopter spawn */
+#define TRAFFIC_HELICOPTER_CHANCE       50      /* 1 in 50 chance */
+#define HIGH_CRIME_THRESHOLD            50      /* Crime level for helicopter spawn */
+#define CRIME_HELICOPTER_CHANCE         80      /* 1 in 80 chance */
+#define LARGE_POPULATION_THRESHOLD      10000   /* Population for airplane spawn */
+#define AIRPLANE_SPAWN_CHANCE           100     /* 1 in 100 chance */
+#define MIN_ROADS_FOR_BUS               10      /* Minimum roads before bus spawn */
+#define BUS_SPAWN_CHANCE                25      /* 1 in 25 chance */
+
+/* Sprite generation frequency */
+#define TRAIN_SPAWN_FREQUENCY           25      /* 1 in 25 simulation cycles */
+#define SHIP_SPAWN_FREQUENCY            100     /* 1 in 100 simulation cycles */
+#define AIRCRAFT_SPAWN_FREQUENCY        50      /* 1 in 50 simulation cycles */
+
+/* Disaster sprite constants */
+#define FIRE_START_CHANCE               1000    /* 1 in 1000 chance for fire */
+#define MELTDOWN_CHANCE                 500     /* 1 in 500 chance for meltdown */
+#define MONSTER_SPAWN_CHANCE            300     /* 1 in 300 chance for monster */
+#define MONSTER_LIFESPAN                1000    /* Monster lives 1000 cycles */
+#define TORNADO_LIFESPAN                200     /* Tornado lives 200 cycles */
+#define TORNADO_EARLY_END_CHANCE        500     /* 1 in 500 chance early end */
+
+/* Collision and bounds constants */
+#define SPRITE_BOUNDS_MARGIN            100     /* Margin before sprite removal */
+#define HELICOPTER_SPAWN_MARGIN         20      /* Margin from map edge */
+#define HELICOPTER_WANDER_RANGE         60      /* Random movement range */
+#define HELICOPTER_WANDER_OFFSET        30      /* Center offset for wander */
+
 /* Sprite structure */
 typedef struct SimSprite {
     int type;           /* Sprite type (train, ship, etc.) */

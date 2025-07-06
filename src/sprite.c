@@ -82,7 +82,7 @@ void InitSprites(void) {
         GlobalSprites[i].control = -1;
         GlobalSprites[i].turn = 0;
         GlobalSprites[i].accel = 0;
-        GlobalSprites[i].speed = 100;
+        GlobalSprites[i].speed = DEFAULT_SPRITE_SPEED;
     }
     
     SpriteCount = 0;
@@ -124,7 +124,7 @@ SimSprite* NewSprite(int type, int x, int y) {
     sprite->control = -1;
     sprite->turn = 0;
     sprite->accel = 0;
-    sprite->speed = 100;
+    sprite->speed = DEFAULT_SPRITE_SPEED;
     
     /* Set sprite-specific properties */
     switch (type) {
@@ -186,7 +186,7 @@ SimSprite* NewSprite(int type, int x, int y) {
             sprite->x_hot = 40;
             sprite->y_hot = -8;
             sprite->frame = 1;
-            sprite->count = 300; /* Police stay for 5 minutes */
+            sprite->count = POLICE_DUTY_TIME; /* Police stay for 5 minutes */
             break;
             
         case SPRITE_MONSTER:
@@ -306,8 +306,8 @@ void DoTrainSprite(SimSprite *sprite) {
         sprite->count = 0;
         
         if (sprite->dir == 4) { /* Stopped */
-            if (SimRandom(8) == 0) {
-                dir = SimRandom(4);
+            if (SimRandom(TRAIN_START_CHANCE) == 0) {
+                dir = SimRandom(TRAIN_STOP_CHANCE);
                 sprite->new_dir = dir;
                 sprite->frame = TrainPic2[dir];
             }
@@ -316,20 +316,20 @@ void DoTrainSprite(SimSprite *sprite) {
             
             if (tile == HRAIL || (tile >= LHRAIL && tile <= LVRAIL10)) {
                 if (sprite->dir == 1 || sprite->dir == 3) { /* North-South movement */
-                    if (SimRandom(4) == 0) {
+                    if (SimRandom(TRAIN_STOP_CHANCE) == 0) {
                         sprite->dir = 4; /* Stop */
                         sprite->frame = 5;
-                        sprite->count = 30 + SimRandom(30);
+                        sprite->count = TRAIN_STOP_DURATION_BASE + SimRandom(TRAIN_STOP_DURATION_RANDOM);
                     }
                 } else { /* East-West movement */
                     sprite->new_dir = sprite->dir;
                 }
             } else if (tile == VRAIL || (tile >= LHRAIL && tile <= LVRAIL10)) {
                 if (sprite->dir == 0 || sprite->dir == 2) { /* East-West movement */
-                    if (SimRandom(4) == 0) {
+                    if (SimRandom(TRAIN_STOP_CHANCE) == 0) {
                         sprite->dir = 4; /* Stop */
                         sprite->frame = 5;
-                        sprite->count = 30 + SimRandom(30);
+                        sprite->count = TRAIN_STOP_DURATION_BASE + SimRandom(TRAIN_STOP_DURATION_RANDOM);
                     }
                 } else { /* North-South movement */
                     sprite->new_dir = sprite->dir;
@@ -376,13 +376,13 @@ void DoShipSprite(SimSprite *sprite) {
     
     if (sprite->count == 0) {
         /* Random movement and horn sounds */
-        if (SimRandom(7) == 0) {
+        if (SimRandom(SHIP_TURN_CHANCE) == 0) {
             MakeSound(SOUND_HONKHONK_LOW, sprite->x, sprite->y);
             sprite->sound_count = 40;
         }
         
         if (sprite->dir == 8) { /* Stopped */
-            if (SimRandom(16) == 0) {
+            if (SimRandom(SHIP_DIRECTION_CHANGE_CHANCE) == 0) {
                 dir = SimRandom(8);
                 sprite->new_dir = dir;
             }
@@ -439,8 +439,8 @@ void DoAirplaneSprite(SimSprite *sprite) {
                 sprite->control++;
             } else {
                 /* Pick random destination */
-                sprite->dest_x = sprite->orig_x - 30 + SimRandom(60);
-                sprite->dest_y = sprite->orig_y - 30 + SimRandom(60);
+                sprite->dest_x = sprite->orig_x - HELICOPTER_WANDER_OFFSET + SimRandom(HELICOPTER_WANDER_RANGE);
+                sprite->dest_y = sprite->orig_y - HELICOPTER_WANDER_OFFSET + SimRandom(HELICOPTER_WANDER_RANGE);
                 
                 if (sprite->dest_x < 0) sprite->dest_x = 30;
                 if (sprite->dest_y < 0) sprite->dest_y = 30;
@@ -509,7 +509,7 @@ void DoCopterSprite(SimSprite *sprite) {
         if (sprite->count > 0) {
             sprite->count--;
         } else {
-            sprite->count = 100;
+            sprite->count = HELICOPTER_SOUND_TIMER;
             
             /* Report traffic */
             dx = sprite->x >> 4;
@@ -517,10 +517,10 @@ void DoCopterSprite(SimSprite *sprite) {
             
             if (dx >= 0 && dx < WORLD_X/2 && dy >= 0 && dy < WORLD_Y/2) {
                 z = TrfDensity[dy][dx];
-                if (z > 170 && SimRandom(7) == 0) {
+                if (z > HELICOPTER_TRAFFIC_THRESHOLD && SimRandom(HELICOPTER_TRAFFIC_SOUND_CHANCE) == 0) {
                     /* Report heavy traffic */
                     MakeSound(SOUND_HEAVY_TRAFFIC, sprite->x, sprite->y);
-                    sprite->sound_count = 200;
+                    sprite->sound_count = HELICOPTER_SOUND_DURATION;
                 }
             }
             
@@ -528,7 +528,7 @@ void DoCopterSprite(SimSprite *sprite) {
             /* This would scan for monster sprites and navigate toward them */
             
             /* Random movement if no target */
-            if (SimRandom(5) == 0) {
+            if (SimRandom(HELICOPTER_DIRECTION_CHANCE) == 0) {
                 sprite->dir = SimRandom(8);
             }
         }
@@ -623,7 +623,7 @@ void DoPoliceSprite(SimSprite *sprite) {
             
             if (dx >= 0 && dx < WORLD_X/2 && dy >= 0 && dy < WORLD_Y/2) {
                 z = TrfDensity[dy][dx];
-                if (z > 200 && SimRandom(5) == 0) {
+                if (z > POLICE_TRAFFIC_THRESHOLD && SimRandom(POLICE_REPORT_CHANCE) == 0) {
                     /* Report heavy traffic */
                     MakeSound(SOUND_HEAVY_TRAFFIC, sprite->x, sprite->y);
                 }
@@ -782,8 +782,8 @@ static int CheckSpriteCollision(SimSprite *s1, SimSprite *s2) {
 
 /* Check if sprite is out of bounds */
 static int SpriteNotInBounds(SimSprite *sprite) {
-    return (sprite->x < -100 || sprite->x > (WORLD_X << 4) + 100 ||
-            sprite->y < -100 || sprite->y > (WORLD_Y << 4) + 100);
+    return (sprite->x < -SPRITE_BOUNDS_MARGIN || sprite->x > (WORLD_X << 4) + SPRITE_BOUNDS_MARGIN ||
+            sprite->y < -SPRITE_BOUNDS_MARGIN || sprite->y > (WORLD_Y << 4) + SPRITE_BOUNDS_MARGIN);
 }
 
 /* Create explosion at sprite location */
@@ -850,7 +850,7 @@ void GenerateTrains(void) {
         return; /* Too many sprites */
     }
     
-    if (SimRandom(25) != 0) {
+    if (SimRandom(TRAIN_SPAWN_FREQUENCY) != 0) {
         return; /* Random generation */
     }
     
@@ -860,7 +860,7 @@ void GenerateTrains(void) {
             tile = Map[y][x] & LOMASK;
             
             if (tile >= RAILBASE && tile <= LASTRAIL) {
-                if (SimRandom(1000) == 0) {
+                if (SimRandom(FIRE_START_CHANCE) == 0) {
                     /* Generate train here */
                     NewSprite(SPRITE_TRAIN, x << 4, y << 4);
                     return;
@@ -879,7 +879,7 @@ void GenerateShips(void) {
         return;
     }
     
-    if (SimRandom(100) != 0) {
+    if (SimRandom(SHIP_SPAWN_FREQUENCY) != 0) {
         return;
     }
     
@@ -889,7 +889,7 @@ void GenerateShips(void) {
             tile = Map[y][x] & LOMASK;
             
             if (tile >= PORTBASE && tile <= LASTPORT) {
-                if (SimRandom(500) == 0) {
+                if (SimRandom(MELTDOWN_CHANCE) == 0) {
                     /* Generate ship at port */
                     NewSprite(SPRITE_SHIP, x << 4, y << 4);
                     return;
@@ -908,7 +908,7 @@ void GenerateAircraft(void) {
         return;
     }
     
-    if (SimRandom(50) != 0) {
+    if (SimRandom(AIRCRAFT_SPAWN_FREQUENCY) != 0) {
         return;
     }
     
@@ -918,9 +918,9 @@ void GenerateAircraft(void) {
             tile = Map[y][x] & LOMASK;
             
             if (tile >= AIRPORTBASE && tile <= AIRPORT) {
-                if (SimRandom(300) == 0) {
+                if (SimRandom(MONSTER_SPAWN_CHANCE) == 0) {
                     /* Generate aircraft - favor airplanes at airports */
-                    if (SimRandom(4) < 3) {
+                    if (SimRandom(TRAIN_STOP_CHANCE) < 3) {
                         NewSprite(SPRITE_AIRPLANE, x << 4, y << 4);
                     } else {
                         NewSprite(SPRITE_HELICOPTER, x << 4, y << 4);
@@ -944,10 +944,10 @@ void GenerateHelicopters(void) {
     /* Much more frequent helicopter spawning for better gameplay */
     
     /* 1. Traffic monitoring helicopters */
-    if (TrafficAverage > 80 && SimRandom(50) == 0) {
+    if (TrafficAverage > HIGH_TRAFFIC_THRESHOLD && SimRandom(TRAFFIC_HELICOPTER_CHANCE) == 0) {
         /* Spawn near high traffic areas */
-        x = (SimRandom(WORLD_X - 20) + 10) << 4;
-        y = (SimRandom(WORLD_Y - 20) + 10) << 4;
+        x = (SimRandom(WORLD_X - HELICOPTER_SPAWN_MARGIN) + (HELICOPTER_SPAWN_MARGIN / 2)) << 4;
+        y = (SimRandom(WORLD_Y - HELICOPTER_SPAWN_MARGIN) + (HELICOPTER_SPAWN_MARGIN / 2)) << 4;
         
         copter = NewSprite(SPRITE_HELICOPTER, x, y);
         if (copter) {
@@ -957,10 +957,10 @@ void GenerateHelicopters(void) {
     }
     
     /* 2. Crime monitoring helicopters */
-    if (CrimeAverage > 50 && SimRandom(80) == 0) {
+    if (CrimeAverage > HIGH_CRIME_THRESHOLD && SimRandom(CRIME_HELICOPTER_CHANCE) == 0) {
         /* Spawn near center of city */
-        x = (WORLD_X / 2 + SimRandom(20) - 10) << 4;
-        y = (WORLD_Y / 2 + SimRandom(20) - 10) << 4;
+        x = (WORLD_X / 2 + SimRandom(HELICOPTER_SPAWN_MARGIN) - (HELICOPTER_SPAWN_MARGIN / 2)) << 4;
+        y = (WORLD_Y / 2 + SimRandom(HELICOPTER_SPAWN_MARGIN) - (HELICOPTER_SPAWN_MARGIN / 2)) << 4;
         
         copter = NewSprite(SPRITE_HELICOPTER, x, y);
         if (copter) {
@@ -970,7 +970,7 @@ void GenerateHelicopters(void) {
     }
     
     /* 3. Random patrol helicopters in medium cities */
-    if (TotalPop > 10000 && SimRandom(100) == 0) {
+    if (TotalPop > LARGE_POPULATION_THRESHOLD && SimRandom(AIRPLANE_SPAWN_CHANCE) == 0) {
         /* Spawn anywhere in the city */
         x = SimRandom(WORLD_X) << 4;
         y = SimRandom(WORLD_Y) << 4;
@@ -983,7 +983,7 @@ void GenerateHelicopters(void) {
     }
     
     /* 4. Guaranteed periodic helicopter for any city with roads */
-    if (RoadTotal > 10 && SimRandom(25) == 0) {
+    if (RoadTotal > MIN_ROADS_FOR_BUS && SimRandom(BUS_SPAWN_CHANCE) == 0) {
         /* Spawn a helicopter somewhere over the city */
         x = (SimRandom(WORLD_X - 10) + 5) << 4;
         y = (SimRandom(WORLD_Y - 10) + 5) << 4;
@@ -1028,7 +1028,7 @@ void DoMonsterSprite(SimSprite *sprite) {
     /* Initialize sprite on first run */
     if (sprite->frame == 0) {
         sprite->frame = 1;
-        sprite->count = 1000; /* Lifespan */
+        sprite->count = MONSTER_LIFESPAN; /* Lifespan */
         sprite->dest_x = (WORLD_X / 2) << 4; /* Target city center initially */
         sprite->dest_y = (WORLD_Y / 2) << 4;
         sprite->dir = 0;
@@ -1108,7 +1108,7 @@ void DoTornadoSprite(SimSprite *sprite) {
     /* Initialize sprite on first run */
     if (sprite->frame == 0) {
         sprite->frame = 1;
-        sprite->count = 200; /* Lifespan */
+        sprite->count = TORNADO_LIFESPAN; /* Lifespan */
         sprite->dir = SimRandom(8);
         sprite->flag = 0;
     }
@@ -1122,7 +1122,7 @@ void DoTornadoSprite(SimSprite *sprite) {
     }
     
     /* Random early termination */
-    if (SimRandom(500) == 0) {
+    if (SimRandom(TORNADO_EARLY_END_CHANCE) == 0) {
         DestroySprite(sprite);
         return;
     }
