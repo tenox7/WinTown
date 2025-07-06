@@ -297,8 +297,7 @@ void DoTrainSprite(SimSprite *sprite) {
         sprite->frame = TrainPic2[sprite->dir];
     }
     
-    sprite->x += Dx[sprite->dir];
-    sprite->y += Dy[sprite->dir];
+    MoveSprite(sprite, MOVEMENT_TYPE_GROUND);
     
     if (sprite->count > 0) {
         sprite->count--;
@@ -420,8 +419,7 @@ void DoShipSprite(SimSprite *sprite) {
             sprite->frame = sprite->dir;
         }
     } else {
-        sprite->x += BPx[sprite->dir];
-        sprite->y += BPy[sprite->dir];
+        MoveSprite(sprite, MOVEMENT_TYPE_BOAT);
     }
 }
 
@@ -432,8 +430,7 @@ void DoAirplaneSprite(SimSprite *sprite) {
     if (sprite->control < 0) {
         /* Taking off */
         if (sprite->frame > 8) {
-            sprite->x += CDx[sprite->dir];
-            sprite->y += CDy[sprite->dir];
+            MoveSprite(sprite, MOVEMENT_TYPE_AIRPLANE);
             
             if (sprite->control < -1) {
                 sprite->control++;
@@ -488,8 +485,7 @@ void DoAirplaneSprite(SimSprite *sprite) {
             sprite->frame = sprite->dir;
         }
         
-        sprite->x += CDx[sprite->dir];
-        sprite->y += CDy[sprite->dir];
+        MoveSprite(sprite, MOVEMENT_TYPE_AIRPLANE);
     }
     
     /* Check for collisions with helicopters */
@@ -537,8 +533,7 @@ void DoCopterSprite(SimSprite *sprite) {
         /* Navigation controlled by player input */
     }
     
-    sprite->x += BDx[sprite->dir];
-    sprite->y += BDy[sprite->dir];
+    MoveSprite(sprite, MOVEMENT_TYPE_HELICOPTER);
     
     /* Update animation frame */
     sprite->frame = sprite->dir;
@@ -584,8 +579,7 @@ void DoBusSprite(SimSprite *sprite) {
     }
     
     /* Move bus */
-    sprite->x += Dx[sprite->dir];
-    sprite->y += Dy[sprite->dir];
+    MoveSprite(sprite, MOVEMENT_TYPE_GROUND);
     
     /* Check road surface */
     tile = GetChar(sprite->x + sprite->x_hot, sprite->y + sprite->y_hot);
@@ -1197,4 +1191,46 @@ static int ShouldGenerateSprite(int maxSprites, int randomChance) {
     }
     
     return 1;
+}
+
+/* Unified sprite movement function */
+void MoveSprite(SimSprite *sprite, int movementType) {
+    int newX, newY;
+    
+    /* Calculate new position based on movement type */
+    switch (movementType) {
+        case MOVEMENT_TYPE_GROUND:
+            /* Uses Dx/Dy arrays (trains, buses) */
+            newX = sprite->x + Dx[sprite->dir];
+            newY = sprite->y + Dy[sprite->dir];
+            break;
+            
+        case MOVEMENT_TYPE_HELICOPTER:
+            /* Uses BDx/BDy arrays */
+            newX = sprite->x + BDx[sprite->dir];
+            newY = sprite->y + BDy[sprite->dir];
+            break;
+            
+        case MOVEMENT_TYPE_BOAT:
+            /* Uses BPx/BPy arrays */
+            newX = sprite->x + BPx[sprite->dir];
+            newY = sprite->y + BPy[sprite->dir];
+            break;
+            
+        case MOVEMENT_TYPE_AIRPLANE:
+            /* Uses CDx/CDy arrays */
+            newX = sprite->x + CDx[sprite->dir];
+            newY = sprite->y + CDy[sprite->dir];
+            break;
+            
+        default:
+            /* Invalid movement type - no movement */
+            return;
+    }
+    
+    /* Validate movement bounds */
+    if (ValidateSpriteMovement(sprite, newX, newY)) {
+        sprite->x = newX;
+        sprite->y = newY;
+    }
 }

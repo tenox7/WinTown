@@ -39,24 +39,12 @@ extern short Map[WORLD_Y][WORLD_X];
  * Bit 2 (value 4): South connection
  * Bit 3 (value 8): West connection
  */
-/* MicropolisJS RoadTable exact mapping */
+/* Original Micropolis RoadTable - exact mapping from w_con.c */
 static short RoadTable[16] = {
-    ROADS,         /* 0000 - No connections */
-    ROADS2,        /* 0001 - North only */
-    ROADS,         /* 0010 - East only */
-    ROADS3,        /* 0011 - North, East */
-    ROADS2,        /* 0100 - South only */
-    ROADS2,        /* 0101 - North, South */
-    ROADS4,        /* 0110 - East, South */
-    ROADS8,        /* 0111 - North, East, South */
-    ROADS,         /* 1000 - West only */
-    ROADS6,        /* 1001 - North, West */
-    ROADS,         /* 1010 - East, West */
-    ROADS7,        /* 1011 - North, East, West */
-    ROADS5,        /* 1100 - South, West */
-    ROADS10,       /* 1101 - North, South, West */
-    ROADS9,        /* 1110 - East, South, West */
-    INTERSECTION   /* 1111 - All connections */
+    66, 67, 66, 68,    /* 0000, 0001, 0010, 0011 */
+    67, 67, 69, 73,    /* 0100, 0101, 0110, 0111 */
+    66, 71, 66, 72,    /* 1000, 1001, 1010, 1011 */
+    70, 75, 74, 76     /* 1100, 1101, 1110, 1111 */
 };
 
 /* MicropolisJS RailTable exact mapping */

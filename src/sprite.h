@@ -38,6 +38,12 @@
 #define DEFAULT_SPRITE_SPEED            100
 #define POLICE_DUTY_TIME                300     /* Police stay for 5 minutes */
 
+/* Movement type constants for unified movement function */
+#define MOVEMENT_TYPE_GROUND    0  /* Uses Dx/Dy arrays (trains, buses) */
+#define MOVEMENT_TYPE_HELICOPTER 1  /* Uses BDx/BDy arrays */
+#define MOVEMENT_TYPE_BOAT      2  /* Uses BPx/BPy arrays */
+#define MOVEMENT_TYPE_AIRPLANE  3  /* Uses CDx/CDy arrays */
+
 /* Random chance constants */
 #define TRAIN_START_CHANCE              8       /* 1 in 8 chance to start moving */
 #define TRAIN_STOP_CHANCE               4       /* 1 in 4 chance to stop at station */
@@ -135,6 +141,7 @@ void GenerateHelicopters(void);
 /* Utility functions */
 int GetSpriteCount(void);
 SimSprite* GetSprite(int index);
+void MoveSprite(SimSprite *sprite, int movementType);
 
 /* External variables that need to be defined elsewhere */
 extern short Map[100][120];          /* Main game map */
