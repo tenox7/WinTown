@@ -438,7 +438,7 @@ static void DoIndustrial(int x, int y) {
     TempIndPop += pop;
 
     /* Generate traffic from industrial zones at a certain rate */
-    if (pop > 0 && !(CityTime & 15)) {
+    if (pop > 0 && (CityTime & 7) == 0) {
         /* Industrial zones (2) try to generate traffic to residential zones */
         SMapX = x;
         SMapY = y;
@@ -505,7 +505,7 @@ static void DoCommercial(int x, int y) {
     TempComPop += pop;
 
     /* Generate traffic from commercial zones at a certain rate */
-    if (pop > 0 && !(CityTime & 15)) {
+    if (pop > 0 && (CityTime & 7) == 0) {
         /* Commercial zones (1) try to generate traffic to industrial zones */
         SMapX = x;
         SMapY = y;
@@ -572,7 +572,7 @@ static void DoResidential(int x, int y) {
     TempResPop += pop;
 
     /* Generate traffic from residential zones at a certain rate */
-    if (pop > 0 && !(CityTime & 15)) {
+    if (pop > 0 && (CityTime & 7) == 0) {
         /* Residential zones (0) try to generate traffic to commercial or industrial zones */
         SMapX = x;
         SMapY = y;
