@@ -56,21 +56,35 @@ static void DoIndIn(int pop, int value);
 /* Calculate population in a residential zone - matches original Micropolis */
 int calcResPop(int zone) {
     short CzDen;
+    int result;
     
     /* Sanity check the input */
     if (zone < RESBASE || zone > LASTZONE) {
         return 0;  /* Invalid zone tile */
     }
     
+    /* Additional overflow protection */
+    if (zone < RZB || zone - RZB > 32767) {
+        return 0;  /* Value too large for safe calculation */
+    }
+    
     /* Use original RZPop algorithm from s_zone.c */
     /* Note: calculation must use RZB (265) as base, not RESBASE (240) */
     CzDen = (((zone - RZB) / 9) % 4);
-    return ((CzDen * 8) + 16);
+    result = ((CzDen * 8) + 16);
+    
+    /* Ensure result is within reasonable bounds */
+    if (result < 0 || result > 1000) {
+        return 0;  /* Overflow detected */
+    }
+    
+    return result;
 }
 
 /* Calculate population in a commercial zone - matches original Micropolis */
 int calcComPop(int zone) {
     short CzDen;
+    int result;
     
     /* Sanity check the input */
     if (zone < COMBASE || zone > LASTZONE) {
@@ -79,14 +93,28 @@ int calcComPop(int zone) {
     
     /* Use original CZPop algorithm from s_zone.c */
     if (zone == COMCLR) return (0);
+    
+    /* Additional overflow protection */
+    if (zone - COMBASE > 32767) {
+        return 0;  /* Value too large for safe calculation */
+    }
+    
     /* Note: zones range from COMBASE to COMBASE+many, not from CZB */
     CzDen = (((zone - COMBASE) / 9) % 5) + 1;
-    return (CzDen);
+    result = CzDen;
+    
+    /* Ensure result is within reasonable bounds */
+    if (result < 0 || result > 100) {
+        return 0;  /* Overflow detected */
+    }
+    
+    return result;
 }
 
 /* Calculate population in an industrial zone - matches original Micropolis */
 int calcIndPop(int zone) {
     short CzDen;
+    int result;
     
     /* Sanity check the input */
     if (zone < INDBASE || zone > LASTZONE) {
@@ -95,9 +123,22 @@ int calcIndPop(int zone) {
     
     /* Use original IZPop algorithm from s_zone.c */
     if (zone == INDCLR) return (0);
+    
+    /* Additional overflow protection */
+    if (zone - INDBASE > 32767) {
+        return 0;  /* Value too large for safe calculation */
+    }
+    
     /* Note: zones range from INDBASE to INDBASE+many, not from IZB */
     CzDen = (((zone - INDBASE) / 9) % 4) + 1;
-    return (CzDen);
+    result = CzDen;
+    
+    /* Ensure result is within reasonable bounds */
+    if (result < 0 || result > 50) {
+        return 0;  /* Overflow detected */
+    }
+    
+    return result;
 }
 static void IncROG(int amount);
 static void DoResOut(int pop, int value, int x, int y);

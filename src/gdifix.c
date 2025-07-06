@@ -10,6 +10,8 @@
 #include <windows.h>
 #include "gdifix.h"
 
+/* Maximum bitmap size to prevent buffer overflow attacks */
+#define MAX_BITMAP_SIZE (16 * 1024 * 1024)  /* 16MB limit */
 
 HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
     BITMAPFILEHEADER bmfHeader;
@@ -89,7 +91,26 @@ HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
     if (!bmiHeader.biSizeImage) {
         fseek(file, 0, SEEK_END);
         fsize = ftell(file);
+        
+        /* Validate calculated size to prevent buffer overflow */
+        if (fsize <= bmfHeader.bfOffBits || fsize > MAX_BITMAP_SIZE) {
+            free(colorTable);
+            free(bmi);
+            fclose(file);
+            ReleaseDC(NULL, hdc);
+            return NULL;
+        }
+        
         bmiHeader.biSizeImage = fsize - bmfHeader.bfOffBits;
+    }
+    
+    /* Additional validation for biSizeImage */
+    if (bmiHeader.biSizeImage > MAX_BITMAP_SIZE || bmiHeader.biSizeImage == 0) {
+        free(colorTable);
+        free(bmi);
+        fclose(file);
+        ReleaseDC(NULL, hdc);
+        return NULL;
     }
 
     bitmapBits = (BYTE *)malloc(bmiHeader.biSizeImage);

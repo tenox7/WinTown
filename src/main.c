@@ -469,7 +469,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wsprintf(debugLogPath, "%s\\debug.log", progPathName);
     debugFile = fopen(debugLogPath, "w");
     if (debugFile) {
-        fclose(debugFile);
+        /* Write initial header to verify file is working */
+        fprintf(debugFile, "=== MicropolisNT Debug Log Started ===\n");
+        fflush(debugFile);
+        if (fclose(debugFile) != 0) {
+            /* File close failed - handle error */
+            MessageBox(NULL, "Warning: Could not properly close debug log file", "File Warning", MB_OK | MB_ICONWARNING);
+        }
+        debugFile = NULL;  /* Reset pointer after closing */
+    } else {
+        /* Could not create debug log file - warn user */
+        MessageBox(NULL, "Warning: Could not create debug.log file", "File Warning", MB_OK | MB_ICONWARNING);
     }
 
     /* Register main window class */

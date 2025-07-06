@@ -72,6 +72,12 @@ static int GetFromMap(int x) {
 
 /* Push current position onto stack */
 static void PushPos(void) {
+    /* Bounds check to prevent stack overflow */
+    if (PosStackN >= MAXDIS) {
+        addDebugLog("Traffic stack overflow prevented at depth %d\n", PosStackN);
+        return;
+    }
+    
     PosStackN++;
     SMapXStack[PosStackN] = SMapX;
     SMapYStack[PosStackN] = SMapY;
@@ -79,6 +85,12 @@ static void PushPos(void) {
 
 /* Pull position from stack */
 static void PullPos(void) {
+    /* Bounds check to prevent stack underflow */
+    if (PosStackN <= 0) {
+        addDebugLog("Traffic stack underflow prevented at depth %d\n", PosStackN);
+        return;
+    }
+    
     SMapX = SMapXStack[PosStackN];
     SMapY = SMapYStack[PosStackN];
     PosStackN--;
@@ -108,6 +120,12 @@ static int DriveDone(void) {
     static short TARGL[3] = {COMBASE, LHTHR, LHTHR};     /* R>C C>I I>R */
     static short TARGH[3] = {NUCLEAR, PORT, COMBASE};    /* for destinations */
     int z, l, h;
+    
+    /* Bounds check for Zsource to prevent array overflow */
+    if (Zsource < 0 || Zsource >= 3) {
+        addDebugLog("Invalid Zsource value %d in DriveDone\n", Zsource);
+        return 0;
+    }
 
     l = TARGL[Zsource];
     h = TARGH[Zsource];
