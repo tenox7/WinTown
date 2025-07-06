@@ -196,7 +196,7 @@ void DoBudget(void) {
                 } else {
                     /* Partial police funding */
                     PoliceSpend = yumDuckets;
-                    if (yumDuckets > 0) {
+                    if (yumDuckets > 0 && PoliceFund > 0) {
                         PolicePercent = ((float)yumDuckets) / ((float)PoliceFund);
                     } else {
                         PolicePercent = 0.0f;
@@ -207,7 +207,7 @@ void DoBudget(void) {
                 FireSpend = yumDuckets;
                 PoliceSpend = 0;
                 PolicePercent = 0.0f;
-                if (yumDuckets > 0) {
+                if (yumDuckets > 0 && FireFund > 0) {
                     FirePercent = ((float)yumDuckets) / ((float)FireFund);
                 } else {
                     FirePercent = 0.0f;
@@ -216,7 +216,7 @@ void DoBudget(void) {
         } else {
             /* Partial road funding */
             RoadSpend = yumDuckets;
-            if (yumDuckets > 0) {
+            if (yumDuckets > 0 && RoadFund > 0) {
                 RoadPercent = ((float)yumDuckets) / ((float)RoadFund);
             } else {
                 RoadPercent = 0.0f;

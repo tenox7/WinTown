@@ -208,23 +208,34 @@ void UpdateChartData(void) {
 
 /* Add a data point to a chart series */
 void AddChartDataPoint(int seriesType, short value) {
+    int yearlyStartIndex;
+    
     if (!g_chartData || seriesType < 0 || seriesType >= CHART_SERIES_COUNT) {
         return;
     }
     
-    
     /* Update monthly data (shift and add new value at index 0) */
-    memmove(&g_chartData->series[seriesType].monthlyData[1],
-            &g_chartData->series[seriesType].monthlyData[0],
-            (CHART_SHORT_RANGE - 1) * sizeof(short));
+    if (CHART_SHORT_RANGE > 1) {
+        memmove(&g_chartData->series[seriesType].monthlyData[1],
+                &g_chartData->series[seriesType].monthlyData[0],
+                (CHART_SHORT_RANGE - 1) * sizeof(short));
+    }
     g_chartData->series[seriesType].monthlyData[0] = value;
     
     /* Update yearly data every 12 months */
     if (CityMonth == 12) {  /* End of year */
-        memmove(&g_chartData->series[seriesType].yearlyData[CHART_HISTLEN - CHART_LONG_RANGE + 1],
-                &g_chartData->series[seriesType].yearlyData[CHART_HISTLEN - CHART_LONG_RANGE],
-                (CHART_LONG_RANGE - 1) * sizeof(short));
-        g_chartData->series[seriesType].yearlyData[CHART_HISTLEN - CHART_LONG_RANGE] = value;
+        yearlyStartIndex = CHART_HISTLEN - CHART_LONG_RANGE;
+        
+        /* Verify array bounds before memmove */
+        if (yearlyStartIndex >= 0 && 
+            yearlyStartIndex + CHART_LONG_RANGE <= CHART_HISTLEN &&
+            CHART_LONG_RANGE > 1) {
+            
+            memmove(&g_chartData->series[seriesType].yearlyData[yearlyStartIndex + 1],
+                    &g_chartData->series[seriesType].yearlyData[yearlyStartIndex],
+                    (CHART_LONG_RANGE - 1) * sizeof(short));
+            g_chartData->series[seriesType].yearlyData[yearlyStartIndex] = value;
+        }
     }
     
     /* Update min/max values for scaling */
