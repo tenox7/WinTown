@@ -452,6 +452,15 @@ int TestBounds(int x, int y);
 QUAD CalculateCityPopulation(int resPop, int comPop, int indPop);
 int CalculateTotalPopulation(int resPop, int comPop, int indPop);
 
+/* Zone type constants for population management */
+#define ZONE_TYPE_RESIDENTIAL   0
+#define ZONE_TYPE_COMMERCIAL    1  
+#define ZONE_TYPE_INDUSTRIAL    2
+
+/* Unified population management functions */
+void AddToZonePopulation(int zoneType, int amount);
+void ResetCensusCounters(void);
+
 /* Unified power management functions */
 void SetPowerStatusOnly(int x, int y, int powered);  /* Set power without updating zone counts */
 void UpdatePowerStatus(int x, int y, int powered);   /* Set power and update zone counts */

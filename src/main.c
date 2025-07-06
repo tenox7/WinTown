@@ -3507,23 +3507,8 @@ void ForceFullCensus(void) {
             if (tile & ZONEBIT) {
                 zoneTile = tile & LOMASK;
 
-                /* Check zone type and add population accordingly */
-                if (zoneTile >= RESBASE && zoneTile <= LASTRES) {
-                    /* Residential zone */
-                    ResPop += calcResPop(zoneTile);
-                } else if (zoneTile >= COMBASE && zoneTile <= LASTCOM) {
-                    /* Commercial zone */
-                    ComPop += calcComPop(zoneTile);
-                } else if (zoneTile >= INDBASE && zoneTile <= LASTIND) {
-                    /* Industrial zone */
-                    IndPop += calcIndPop(zoneTile);
-                } else if (zoneTile == HOSPITAL) {
-                    /* Hospital contributes to residential population */
-                    ResPop += 30;
-                } else if (zoneTile == CHURCH) {
-                    /* Church contributes to residential population */
-                    ResPop += 10;
-                }
+                /* Population counting is handled exclusively by zone processing system */
+                /* Do not count population here to avoid conflicts with zone.c system */
 
                 /* Count other special zones */
                 if (zoneTile == FIRESTATION) {
@@ -3532,16 +3517,13 @@ void ForceFullCensus(void) {
                     PolicePop++;
                 } else if (zoneTile == STADIUM) {
                     StadiumPop++;
-                    /* Stadium contributes to commercial population */
-                    ComPop += 50;
+                    /* Stadium population counted by zone processing */
                 } else if (zoneTile == PORT) {
                     PortPop++;
-                    /* Port contributes to industrial population */
-                    IndPop += 40;
+                    /* Port population counted by zone processing */
                 } else if (zoneTile == AIRPORT) {
                     APortPop++;
-                    /* Airport contributes to industrial population */
-                    IndPop += 40;
+                    /* Airport population counted by zone processing */
                 } else if (zoneTile == NUCLEAR) {
                     NuclearPop++;
                 }

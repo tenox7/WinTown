@@ -390,6 +390,9 @@ void Simulate(int mod16) {
         ResPop = TempResPop;
         ComPop = TempComPop;
         IndPop = TempIndPop;
+        
+        /* Update CityPop only when population counters change */
+        CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
 
         /* Update police coverage display map immediately after stations are scanned */
         /* This ensures the minimap shows current coverage without waiting for CrimeScan */
@@ -453,8 +456,7 @@ void Simulate(int mod16) {
             }
         }
 
-        /* Update city population more frequently than just at census time */
-        CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
+        /* CityPop is updated in case 9 when population counters change - no need to recalculate */
 
         /* Run animations for smoother motion */
         AnimateTiles();
@@ -832,11 +834,9 @@ void ClearCensus(void) {
 
     /* Fire and police maps are now cleared in case 1 before map scanning */
 
-    /* Reset TEMPORARY census variables, not display variables */
+    /* Reset temporary census variables using unified function */
     /* This prevents display flicker during census calculation */
-    TempResPop = 0;
-    TempComPop = 0;
-    TempIndPop = 0;
+    ResetCensusCounters();
 
     /* DEBUG: Increment counter to track census resets */
     DebugCensusReset++;
@@ -1058,6 +1058,31 @@ int CalculateTotalPopulation(int resPop, int comPop, int indPop) {
     if (result < 0) result = 0;
     
     return (int)result;
+}
+
+/* Add population to the appropriate temporary counter */
+void AddToZonePopulation(int zoneType, int amount) {
+    switch (zoneType) {
+        case ZONE_TYPE_RESIDENTIAL:
+            TempResPop += amount;
+            break;
+        case ZONE_TYPE_COMMERCIAL:
+            TempComPop += amount;
+            break;
+        case ZONE_TYPE_INDUSTRIAL:
+            TempIndPop += amount;
+            break;
+        default:
+            /* Invalid zone type - do nothing */
+            break;
+    }
+}
+
+/* Reset temporary census counters */
+void ResetCensusCounters(void) {
+    TempResPop = 0;
+    TempComPop = 0;
+    TempIndPop = 0;
 }
 
 /* Unified power status management function */

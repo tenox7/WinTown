@@ -122,9 +122,7 @@ static void DoPopNum(void) {
     /* Save old population */
     OldCityPop = CityPop;
 
-    /* CityPop is already calculated in TakeCensus since we need it
-       updated more frequently, but calculate it here too for consistency */
-    CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
+    /* CityPop is calculated when population counters change in sim.c - use cached value */
     if (CityPop == 0 && (ResPop > 0 || ComPop > 0 || IndPop > 0)) {
         CityPop = 100; /* Minimum population display */
     }
