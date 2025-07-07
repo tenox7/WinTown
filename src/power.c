@@ -131,19 +131,21 @@ static void PullPowerStack(void) {
     }
 }
 
-/* Count power plants */
+/* Count power plants - cache-optimized version */
 void CountPowerPlants(void) {
     int x, y;
-    short tile;
+    short fullTile, tile;
 
     CoalPop = 0;
     NuclearPop = 0;
 
+    /* Sequential row-by-row access for better cache performance */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            tile = Map[y][x] & LOMASK;
+            fullTile = Map[y][x]; /* Single memory access */
+            tile = fullTile & LOMASK;
 
-            if ((Map[y][x] & ZONEBIT) != 0) {
+            if ((fullTile & ZONEBIT) != 0) {
                 if (tile == POWERPLANT) {
                     CoalPop++;
                 } else if (tile == NUCLEAR) {
@@ -163,18 +165,20 @@ void QueuePowerPlant(int x, int y) {
     }
 }
 
-/* Find all power plants and add them to the queue */
+/* Find all power plants and add them to the queue - cache-optimized */
 void FindPowerPlants(void) {
     int x, y;
-    short tile;
+    short fullTile, tile;
 
     PowerStackNum = 0;
 
+    /* Sequential row-by-row access for better cache performance */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            tile = Map[y][x] & LOMASK;
+            fullTile = Map[y][x]; /* Single memory access */
+            tile = fullTile & LOMASK;
 
-            if ((Map[y][x] & ZONEBIT) != 0) {
+            if ((fullTile & ZONEBIT) != 0) {
                 if (tile == POWERPLANT || tile == NUCLEAR) {
                     QueuePowerPlant(x, y);
                 }
@@ -183,19 +187,22 @@ void FindPowerPlants(void) {
     }
 }
 
-/* Count powered and unpowered zones - unified helper function */
+/* Count powered and unpowered zones - cache-optimized version */
 static void CountPowerZones(void) {
     int x, y;
+    short fullTile;
     int oldPwrd = PwrdZCnt;
     int oldUnpwrd = UnpwrdZCnt;
     
     PwrdZCnt = 0;
     UnpwrdZCnt = 0;
     
+    /* Sequential row-by-row access for better cache performance */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
-            if (Map[y][x] & ZONEBIT) {
-                if (Map[y][x] & POWERBIT) {
+            fullTile = Map[y][x]; /* Single memory access */
+            if (fullTile & ZONEBIT) {
+                if (fullTile & POWERBIT) {
                     PwrdZCnt++;
                 } else {
                     UnpwrdZCnt++;
@@ -205,10 +212,12 @@ static void CountPowerZones(void) {
     }
     
     /* Debug logging to track changes */
+#ifdef DEBUG
     if (PwrdZCnt != oldPwrd || UnpwrdZCnt != oldUnpwrd) {
         addDebugLog("PowerZones: %d->%d powered, %d->%d unpowered", 
                    oldPwrd, PwrdZCnt, oldUnpwrd, UnpwrdZCnt);
     }
+#endif
 }
 
 /* Do a full power distribution scan - ORIGINAL ALGORITHM
@@ -218,7 +227,9 @@ void DoPowerScan(void) {
     int x, y;
     short ADir, ConNum, Dir;
 
+#ifdef DEBUG
     addDebugLog("DoPowerScan: Starting power distribution scan");
+#endif
 
     /* Count power plants */
     CountPowerPlants();
@@ -227,7 +238,7 @@ void DoPowerScan(void) {
     MaxPower = (CoalPop * 700L) + (NuclearPop * 2000L);
     NumPower = 0;
 
-    /* Clear the power map first using unified system */
+    /* Clear the power map first using unified system - cache-friendly row-by-row */
     for (y = 0; y < WORLD_Y; y++) {
         for (x = 0; x < WORLD_X; x++) {
             SetPowerStatusOnly(x, y, 0); /* Clear power status without updating counts */

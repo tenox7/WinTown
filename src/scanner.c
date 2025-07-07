@@ -14,11 +14,11 @@ static short CCx2, CCy2;           /* City center coordinates, divided by 2 */
 static short PolMaxX, PolMaxY;     /* Coordinates of highest pollution */
 static short CrimeMaxX, CrimeMaxY; /* Coordinates of highest crime */
 
-/* Temporary arrays for smoothing operations */
-static Byte tem[WORLD_X / 2][WORLD_Y / 2];  /* Temp array 1 for smoothing */
-static Byte tem2[WORLD_X / 2][WORLD_Y / 2]; /* Temp array 2 for smoothing */
-static Byte STem[WORLD_X / 4][WORLD_Y / 4]; /* Small temp array for fire/police map */
-static Byte Qtem[WORLD_X / 4][WORLD_Y / 4]; /* Quarter-size temp array */
+/* Temporary arrays for smoothing operations - reorganized for cache efficiency */
+static Byte tem[WORLD_Y / 2][WORLD_X / 2];  /* Temp array 1 for smoothing - row-major */
+static Byte tem2[WORLD_Y / 2][WORLD_X / 2]; /* Temp array 2 for smoothing - row-major */
+static Byte STem[WORLD_Y / 4][WORLD_X / 4]; /* Small temp array for fire/police map - row-major */
+static Byte Qtem[WORLD_Y / 4][WORLD_X / 4]; /* Quarter-size temp array - row-major */
 
 /* Function prototypes */
 static void ClrTemArray(void);
@@ -32,77 +32,78 @@ static int GetPValueLocal(int loc);
 static int GetPDen(int zone);
 static void DistIntMarket(void);
 
-/* Clear temporary array (tem) */
+/* Clear temporary array (tem) - cache-optimized row-major order */
 static void ClrTemArray(void) {
-    int x, y;
-
-    for (x = 0; x < WORLD_X / 2; x++) {
-        for (y = 0; y < WORLD_Y / 2; y++) {
-            tem[x][y] = 0;
-        }
+    int y;
+    
+    /* Clear entire array using memset for better performance */
+    for (y = 0; y < WORLD_Y / 2; y++) {
+        memset(tem[y], 0, WORLD_X / 2);
     }
 }
 
-/* Smoothing algorithm - smooths tem into tem2 */
+/* Smoothing algorithm - cache-optimized row-major access */
 static void DoSmooth(void) {
     int x, y, z;
 
-    for (x = 0; x < WORLD_X / 2; x++) {
-        for (y = 0; y < WORLD_Y / 2; y++) {
+    /* Process row by row for better cache locality */
+    for (y = 0; y < WORLD_Y / 2; y++) {
+        for (x = 0; x < WORLD_X / 2; x++) {
             z = 0;
 
-            /* Get average of nearby cells */
+            /* Get average of nearby cells - row-major access */
             if (x > 0) {
-                z += tem[x - 1][y];
+                z += tem[y][x - 1];
             }
             if (x < (WORLD_X / 2 - 1)) {
-                z += tem[x + 1][y];
+                z += tem[y][x + 1];
             }
             if (y > 0) {
-                z += tem[x][y - 1];
+                z += tem[y - 1][x];
             }
             if (y < (WORLD_Y / 2 - 1)) {
-                z += tem[x][y + 1];
+                z += tem[y + 1][x];
             }
 
             /* Average with central cell */
-            z = (z + tem[x][y]) >> 2;
+            z = (z + tem[y][x]) >> 2;
             if (z > 255) {
                 z = 255;
             }
-            tem2[x][y] = (Byte)z;
+            tem2[y][x] = (Byte)z;
         }
     }
 }
 
-/* Second smoothing algorithm - smooths tem2 into tem */
+/* Second smoothing algorithm - cache-optimized row-major access */
 static void DoSmooth2(void) {
     int x, y, z;
 
-    for (x = 0; x < WORLD_X / 2; x++) {
-        for (y = 0; y < WORLD_Y / 2; y++) {
+    /* Process row by row for better cache locality */
+    for (y = 0; y < WORLD_Y / 2; y++) {
+        for (x = 0; x < WORLD_X / 2; x++) {
             z = 0;
 
-            /* Get average of nearby cells */
+            /* Get average of nearby cells - row-major access */
             if (x > 0) {
-                z += tem2[x - 1][y];
+                z += tem2[y][x - 1];
             }
             if (x < (WORLD_X / 2 - 1)) {
-                z += tem2[x + 1][y];
+                z += tem2[y][x + 1];
             }
             if (y > 0) {
-                z += tem2[x][y - 1];
+                z += tem2[y - 1][x];
             }
             if (y < (WORLD_Y / 2 - 1)) {
-                z += tem2[x][y + 1];
+                z += tem2[y + 1][x];
             }
 
             /* Average with central cell */
-            z = (z + tem2[x][y]) >> 2;
+            z = (z + tem2[y][x]) >> 2;
             if (z > 255) {
                 z = 255;
             }
-            tem[x][y] = (Byte)z;
+            tem[y][x] = (Byte)z;
         }
     }
 }
