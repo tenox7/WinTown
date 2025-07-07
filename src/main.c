@@ -195,7 +195,9 @@ static BOOL minimapDragging = FALSE; /* Is user dragging on minimap */
 static BOOL tilesWindowVisible = FALSE; /* Track tiles window visibility */
 static int selectedTileX = -1; /* Selected tile X coordinate (-1 = no selection) */
 static int selectedTileY = -1; /* Selected tile Y coordinate (-1 = no selection) */
+#ifdef TILE_DEBUG
 static BOOL tileDebugEnabled = FALSE; /* Track tile debug mode for mouse cursor info */
+#endif
 static int minimapDragX = 0; /* Drag start position */
 static int minimapDragY = 0; /* Drag start position */
 
@@ -780,6 +782,7 @@ void addGameLog(const char *format, ...) {
  * Adds a debug entry to the debug log file
  */
 void addDebugLog(const char *format, ...) {
+#ifdef DEBUG
     va_list args;
     char buffer[512];
     char timeBuffer[64];
@@ -811,6 +814,7 @@ void addDebugLog(const char *format, ...) {
             fclose(logFile);
         }
     }
+#endif
 }
 
 LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -2136,20 +2140,28 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 HMENU hMenu = GetMenu(hwnd);
                 HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
 
+#ifdef TILE_DEBUG
+#ifdef DEBUG
                 addDebugLog("Tile debug menu clicked, current state: %d", tileDebugEnabled);
+#endif
                 if (tileDebugEnabled) {
                     /* Disable tile debug */
+#ifdef DEBUG
                     addDebugLog("Disabling tile debug");
+#endif
                     tileDebugEnabled = FALSE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_UNCHECKED);
                     /* Reset window title to remove tile info */
                     SetWindowText(hwnd, "Micropolis NT");
                 } else {
                     /* Enable tile debug */
+#ifdef DEBUG
                     addDebugLog("Enabling tile debug");
+#endif
                     tileDebugEnabled = TRUE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_CHECKED);
                 }
+#endif
             }
             return 0;
 
@@ -2667,6 +2679,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
 
         /* Tile debug functionality - show tile info under cursor */
+#ifdef TILE_DEBUG
         if (tileDebugEnabled) {
             ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
             if (mapX >= 0 && mapX < WORLD_X && mapY >= 0 && mapY < WORLD_Y) {
@@ -2692,6 +2705,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 SetWindowText(hwnd, titleBuffer);
             }
         }
+#endif
 
         if (isMouseDown) {
             int dx = lastMouseX - xPos;

@@ -176,7 +176,9 @@ void DoSimInit(void) {
     oldCityClass = CityClass;
     
     /* Reset tile logging to overwrite the log file */
+#ifdef TILE_DEBUG
     resetTileLogging();
+#endif
 
     /* Clear all the density maps */
     memset(PopDensity, 0, sizeof(PopDensity));

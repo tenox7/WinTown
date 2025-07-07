@@ -20,9 +20,10 @@ int validateTileCoords(int x, int y);
 int validateTileValue(int tile);
 
 /* Debug logging control */
-extern int tileDebugEnabled;
 int enableTileDebug(int enable);
+#ifdef TILE_DEBUG
 void resetTileLogging();
+#endif
 
 /* Tile change statistics */
 extern long tileChangeCount;

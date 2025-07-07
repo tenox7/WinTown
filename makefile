@@ -1,6 +1,6 @@
 CC = cl
 RC = rc
-CFLAGS = /nologo /W3 /O2 /D "_X86_" /D "NDEBUG" /D "_WINDOWS" /ML
+CFLAGS = /nologo /W3 /O2 /D "_X86_" /D "_WINDOWS" /ML
 LIBS = gdi32.lib user32.lib kernel32.lib COMDLG32.lib
 
 all: ntpolis.exe

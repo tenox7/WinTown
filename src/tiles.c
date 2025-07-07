@@ -8,22 +8,22 @@
 #include <string.h>
 
 /* Debug and statistics globals */
-int tileDebugEnabled = 0;
 long tileChangeCount = 0;
 long tileErrorCount = 0;
 
+#ifdef TILE_DEBUG
 /* Tile change log file */
 static FILE* tileLogFile = (FILE*)0;
 
 /* Initialize tile logging */
 static int initTileLogging() {
-    if (!tileLogFile && tileDebugEnabled) {
+    if (!tileLogFile) {
         tileLogFile = fopen("tiles.log", "w");
         if (tileLogFile) {
             fprintf(tileLogFile, "=== Tile logging started ===\n");
             fflush(tileLogFile);
         } else {
-            addDebugLog("ERROR: Failed to open tiles.log for writing\n");
+            /* Could not open log file - silent fail in release */
             return 0;
         }
     }
@@ -71,7 +71,7 @@ static int logTileChange(int x, int y, int oldTile, int newTile, char* caller) {
     int oldFlags, newFlags;
     char oldFlagStr[64], newFlagStr[64];
     
-    if (!tileDebugEnabled || !initTileLogging()) {
+    if (!initTileLogging()) {
         return 0;
     }
     
@@ -88,6 +88,12 @@ static int logTileChange(int x, int y, int oldTile, int newTile, char* caller) {
     fflush(tileLogFile);
     return 1;
 }
+#else
+/* Debug functions empty in release builds */
+static int logTileChange(int x, int y, int oldTile, int newTile, char* caller) {
+    return 0;
+}
+#endif
 
 /* Validate coordinates are within map bounds */
 int validateTileCoords(int x, int y) {
@@ -123,9 +129,9 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
     
     /* Validate coordinates */
     if (!validateTileCoords(x, y)) {
-        if (tileDebugEnabled) {
-            logTileChange(x, y, -1, -1, caller);
-        }
+#ifdef TILE_DEBUG
+        logTileChange(x, y, -1, -1, caller);
+#endif
         tileErrorCount++;
         return 0;
     }
@@ -168,19 +174,21 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
     
     /* Validate new tile value */
     if (!validateTileValue(newTile)) {
-        if (tileDebugEnabled) {
-            fprintf(tileLogFile, "ERROR: Invalid tile base %d (full value %d) at [%d,%d] by %s\n",
-                    newTile & LOMASK, newTile, x, y, caller ? caller : "unknown");
-            fflush(tileLogFile);
-        }
+#ifdef TILE_DEBUG
+        fprintf(tileLogFile, "ERROR: Invalid tile base %d (full value %d) at [%d,%d] by %s\n",
+                newTile & LOMASK, newTile, x, y, caller ? caller : "unknown");
+        fflush(tileLogFile);
+#endif
         tileErrorCount++;
         return 0;
     }
     
     /* Log the change if debugging enabled */
-    if (tileDebugEnabled && oldTile != newTile) {
+#ifdef TILE_DEBUG
+    if (oldTile != newTile) {
         logTileChange(x, y, oldTile, newTile, caller);
     }
+#endif
     
     /* Make the change */
     Map[y][x] = newTile;
@@ -189,16 +197,22 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
     return 1;
 }
 
+#ifdef TILE_DEBUG
 /* Enable/disable debug logging */
 int enableTileDebug(int enable) {
-    tileDebugEnabled = enable;
     if (!enable && tileLogFile) {
         fprintf(tileLogFile, "=== Tile logging stopped ===\n");
         fclose(tileLogFile);
         tileLogFile = (FILE*)0;
     }
-    return tileDebugEnabled;
+    return 1;
 }
+#else
+/* Enable/disable debug logging */
+int enableTileDebug(int enable) {
+    return 0;
+}
+#endif
 
 /* Reset statistics */
 int resetTileStats() {
@@ -209,11 +223,15 @@ int resetTileStats() {
 
 /* Print statistics */
 int printTileStats() {
+#ifdef DEBUG
     addDebugLog("Tile Statistics:\n");
     addDebugLog("  Changes: %ld\n", tileChangeCount);
     addDebugLog("  Errors: %ld\n", tileErrorCount);
+#ifdef TILE_DEBUG
     if (tileLogFile) {
         addDebugLog("  Debug log: tiles.log\n");
     }
+#endif
+#endif
     return 1;
 }
