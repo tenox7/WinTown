@@ -32,6 +32,13 @@ static int CZPop; /* Commercial zone population */
 static int IZPop; /* Industrial zone population */
 /* ComRate is declared in simulation.h as quarter size */
 
+/* Population calculation cache - simple optimization */
+#define POP_CACHE_SIZE 512
+static short resPopCache[POP_CACHE_SIZE];
+static short comPopCache[POP_CACHE_SIZE];
+static short indPopCache[POP_CACHE_SIZE];
+static int cacheInitialized = 0;
+
 /* Forward declarations */
 static void DoResidential(int x, int y);
 static void DoCommercial(int x, int y);
@@ -50,14 +57,23 @@ static void DoResIn(int pop, int value);
 static void DoComIn(int pop, int value);
 static void DoIndIn(int pop, int value);
 
-/* Calculate population in a residential zone - matches original Micropolis */
+/* Calculate population in a residential zone - optimized */
 int calcResPop(int zone) {
+    int index;
     short CzDen;
     int result;
     
     /* Sanity check the input */
     if (zone < RESBASE || zone > LASTZONE) {
         return 0;  /* Invalid zone tile */
+    }
+    
+    /* Use simple cache for common cases */
+    index = zone - RESBASE;
+    if (index >= 0 && index < POP_CACHE_SIZE && cacheInitialized) {
+        if (resPopCache[index] != 0) {
+            return resPopCache[index];
+        }
     }
     
     /* Additional overflow protection */
@@ -68,18 +84,25 @@ int calcResPop(int zone) {
     /* Use original RZPop algorithm from s_zone.c */
     /* Note: calculation must use RZB (265) as base, not RESBASE (240) */
     CzDen = (((zone - RZB) / 9) % 4);
-    result = ((CzDen * 8) + 16);
+    result = ((CzDen << 3) + 16);  /* Optimize: CzDen * 8 = CzDen << 3 */
     
     /* Ensure result is within reasonable bounds */
     if (result < 0 || result > 1000) {
         return 0;  /* Overflow detected */
     }
     
+    /* Cache the result if valid index */
+    if (index >= 0 && index < POP_CACHE_SIZE) {
+        resPopCache[index] = (short)result;
+        cacheInitialized = 1;
+    }
+    
     return result;
 }
 
-/* Calculate population in a commercial zone - matches original Micropolis */
+/* Calculate population in a commercial zone - optimized */
 int calcComPop(int zone) {
+    int index;
     short CzDen;
     int result;
     
@@ -90,6 +113,14 @@ int calcComPop(int zone) {
     
     /* Use original CZPop algorithm from s_zone.c */
     if (zone == COMCLR) return (0);
+    
+    /* Use simple cache for common cases */
+    index = zone - RESBASE;
+    if (index >= 0 && index < POP_CACHE_SIZE && cacheInitialized) {
+        if (comPopCache[index] != 0) {
+            return comPopCache[index];
+        }
+    }
     
     /* Additional overflow protection */
     if (zone - COMBASE > 32767) {
@@ -105,11 +136,17 @@ int calcComPop(int zone) {
         return 0;  /* Overflow detected */
     }
     
+    /* Cache the result if valid index */
+    if (index >= 0 && index < POP_CACHE_SIZE) {
+        comPopCache[index] = (short)result;
+    }
+    
     return result;
 }
 
-/* Calculate population in an industrial zone - matches original Micropolis */
+/* Calculate population in an industrial zone - optimized */
 int calcIndPop(int zone) {
+    int index;
     short CzDen;
     int result;
     
@@ -120,6 +157,14 @@ int calcIndPop(int zone) {
     
     /* Use original IZPop algorithm from s_zone.c */
     if (zone == INDCLR) return (0);
+    
+    /* Use simple cache for common cases */
+    index = zone - RESBASE;
+    if (index >= 0 && index < POP_CACHE_SIZE && cacheInitialized) {
+        if (indPopCache[index] != 0) {
+            return indPopCache[index];
+        }
+    }
     
     /* Additional overflow protection */
     if (zone - INDBASE > 32767) {
@@ -133,6 +178,11 @@ int calcIndPop(int zone) {
     /* Ensure result is within reasonable bounds */
     if (result < 0 || result > 50) {
         return 0;  /* Overflow detected */
+    }
+    
+    /* Cache the result if valid index */
+    if (index >= 0 && index < POP_CACHE_SIZE) {
+        indPopCache[index] = (short)result;
     }
     
     return result;
