@@ -23,9 +23,15 @@ void AnimateTiles(void) {
     unsigned short tilevalue, tileflags;
     int x, y;
     static int debugCount = 0;
+    static int animCounter = 0;
 
     /* Skip animation if disabled */
     if (!AnimationEnabled) {
+        return;
+    }
+
+    /* Only animate every 3rd frame to reduce CPU usage */
+    if ((animCounter++ % 3) != 0) {
         return;
     }
 
