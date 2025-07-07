@@ -43,7 +43,7 @@
 typedef struct {
     int id;
     char name[64];
-    char description[256];
+    char description[512];
     char filename[32];
     int year;
     int funds;

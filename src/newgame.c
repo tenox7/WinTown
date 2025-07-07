@@ -34,14 +34,14 @@ extern int GameLevel;
 
 /* Scenario data based on original Micropolis */
 static ScenarioInfo scenarios[] = {
-    {1, "Dullsville", "Practice your city planning skills on this sleepy little town. Slow and simple.", "dullsville.scn", 1900, 5000},
-    {2, "San Francisco", "Can you rebuild after the great earthquake of 1906?", "sanfrancisco.scn", 1906, 20000},
-    {3, "Hamburg", "Rebuild this industrial city after the bombing of 1944.", "hamburg.scn", 1944, 20000},
-    {4, "Bern", "The capital of Switzerland needs a major update.", "bern.scn", 1965, 20000},
-    {5, "Tokyo", "A monster is attacking! Can you stop it and rebuild?", "tokyo.scn", 1957, 20000},
-    {6, "Detroit", "Fight crime and rebuild the Motor City.", "detroit.scn", 1972, 20000},
-    {7, "Boston", "Nuclear meltdown! Handle the crisis and rebuild.", "boston.scn", 2010, 20000},
-    {8, "Rio de Janeiro", "Coastal flooding threatens this Brazilian city.", "rio.scn", 2047, 20000}
+    {1, "DULLSVILLE", "DULLSVILLE, USA 1900\n\nThings haven't changed much around here in the last hundred years or so and the residents are beginning to get bored. They think Dullsville could be the next great city with the right leader.\n\nIt is your job to attract new growth and development, turning Dullsville into a Metropolis within 30 years.", "dullsville.scn", 1900, 5000},
+    {2, "EARTHQUAKE", "SAN FRANCISCO, CA. 1906\n\nDamage from the earthquake was minor compared to that of the ensuing fires, which took days to control. 1500 people died.\n\nControlling the fires should be your initial concern. Then clear the rubble and start rebuilding. You have 5 years.", "sanfrancisco.scn", 1906, 20000},
+    {3, "FIRE", "HAMBURG, GERMANY 1944\n\nAllied fire-bombing of German cities in WWII caused tremendous damage and loss of life. People living in the inner cities were at greatest risk.\n\nYou must control the firestorms during the bombing and then rebuild the city after the war. You have 5 years.", "hamburg.scn", 1944, 20000},
+    {4, "TRAFFIC", "BERN, SWITZERLAND 1965\n\nThe roads here are becoming more congested every day, and the residents are upset. They demand that you do something about it.\n\nSome have suggested a mass transit system as the answer, but this would require major rezoning in the downtown area. You have 10 years.", "bern.scn", 1965, 20000},
+    {5, "MONSTER", "TOKYO, JAPAN 1957\n\nA large reptilian creature has been spotted heading for Tokyo bay. It seems to be attracted to the heavy levels of industrial pollution there.\n\nTry to control the fires, then rebuild the industrial center. You have 5 years.", "tokyo.scn", 1957, 20000},
+    {6, "CRIME", "DETROIT, MI. 1972\n\nBy 1970, competition from overseas and other economic factors pushed the once \"automobile capital of the world\" into recession. Plummeting land values and unemployment then increased crime in the inner-city to chronic levels.\n\nYou have 10 years to reduce crime and rebuild the industrial base of the city.", "detroit.scn", 1972, 20000},
+    {7, "MELTDOWN", "BOSTON, MA. 2010\n\nA major meltdown is about to occur at one of the new downtown nuclear reactors. The area in the vicinity of the reactor will be severly contaminated by radiation, forcing you to restructure the city around it.\n\nYou have 5 years to get the situation under control.", "boston.scn", 2010, 20000},
+    {8, "FLOOD", "RIO DE JANEIRO, BRAZIL 2047\n\nIn the mid-21st century, the greenhouse effect raised global temperatures 6 degrees F. Polar icecaps melted and raised sea levels worldwide. Coastal areas were devastated by flood and erosion.\n\nYou have 10 years to turn this swamp back into a city again.", "rio.scn", 2047, 20000}
 };
 
 static int scenarioCount = 8;
