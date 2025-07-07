@@ -3916,62 +3916,92 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
 
         BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE, hdcTiles, srcX, srcY, SRCCOPY);
     } else {
+        /* Use pre-created brushes to avoid CreateSolidBrush overhead */
+        static HBRUSH hBrushRiver = NULL;
+        static HBRUSH hBrushTree = NULL;
+        static HBRUSH hBrushRoad = NULL;
+        static HBRUSH hBrushRail = NULL;
+        static HBRUSH hBrushPower = NULL;
+        static HBRUSH hBrushRes = NULL;
+        static HBRUSH hBrushCom = NULL;
+        static HBRUSH hBrushInd = NULL;
+        static HBRUSH hBrushFire = NULL;
+        static HBRUSH hBrushFlood = NULL;
+        static HBRUSH hBrushRubble = NULL;
+        static HBRUSH hBrushDirt = NULL;
+        
+        /* Initialize brushes on first call */
+        if (!hBrushRiver) {
+            hBrushRiver = CreateSolidBrush(RGB(0, 0, 128));        /* Dark blue */
+            hBrushTree = CreateSolidBrush(RGB(0, 128, 0));         /* Dark green */
+            hBrushRoad = CreateSolidBrush(RGB(128, 128, 128));     /* Gray */
+            hBrushRail = CreateSolidBrush(RGB(192, 192, 192));     /* Light gray */
+            hBrushPower = CreateSolidBrush(RGB(255, 255, 0));      /* Yellow */
+            hBrushRes = CreateSolidBrush(RGB(0, 255, 0));          /* Green */
+            hBrushCom = CreateSolidBrush(RGB(0, 0, 255));          /* Blue */
+            hBrushInd = CreateSolidBrush(RGB(255, 255, 0));        /* Yellow */
+            hBrushFire = CreateSolidBrush(RGB(255, 0, 0));         /* Red */
+            hBrushFlood = CreateSolidBrush(RGB(0, 128, 255));      /* Light blue */
+            hBrushRubble = CreateSolidBrush(RGB(128, 128, 0));     /* Olive */
+            hBrushDirt = CreateSolidBrush(RGB(204, 102, 0));       /* Orange-brown */
+        }
+        
         switch (getBaseFromTile(tileValue)) {
         case TILE_RIVER:
-            color = RGB(0, 0, 128); /* Dark blue */
+            hBrush = hBrushRiver;
             break;
         case TILE_TREEBASE:
-            color = RGB(0, 128, 0); /* Dark green */
+            hBrush = hBrushTree;
             break;
         case TILE_ROADBASE:
-            color = RGB(128, 128, 128); /* Gray */
+            hBrush = hBrushRoad;
             break;
         case TILE_RAILBASE:
-            color = RGB(192, 192, 192); /* Light gray */
+            hBrush = hBrushRail;
             break;
         case TILE_POWERBASE:
-            color = RGB(255, 255, 0); /* Yellow */
+            hBrush = hBrushPower;
             break;
         case TILE_RESBASE:
-            color = RGB(0, 255, 0); /* Green */
+            hBrush = hBrushRes;
             break;
         case TILE_COMBASE:
-            color = RGB(0, 0, 255); /* Blue */
+            hBrush = hBrushCom;
             break;
         case TILE_INDBASE:
-            color = RGB(255, 255, 0); /* Yellow */
+            hBrush = hBrushInd;
             break;
         case TILE_FIREBASE:
-            color = RGB(255, 0, 0); /* Red */
+            hBrush = hBrushFire;
             break;
         case TILE_FLOOD:
-            color = RGB(0, 128, 255); /* Light blue */
+            hBrush = hBrushFlood;
             break;
         case TILE_RUBBLE:
-            color = RGB(128, 128, 0); /* Olive */
+            hBrush = hBrushRubble;
             break;
         case TILE_DIRT:
         default:
-            color = RGB(204, 102, 0); /* Orange-brown */
+            hBrush = hBrushDirt;
             break;
         }
 
-        hBrush = CreateSolidBrush(color);
         hOldBrush = SelectObject(hdc, hBrush);
-
         FillRect(hdc, &rect, hBrush);
-
         SelectObject(hdc, hOldBrush);
-        DeleteObject(hBrush);
+        /* No DeleteObject needed - brushes are cached */
     }
 
     /* Removed white frame for all zones to improve visual appearance */
 
     if ((tileValue & ZONEBIT) && !(tileValue & POWERBIT)) {
-        /* Unpowered zones get a yellow frame */
-        hBrush = CreateSolidBrush(RGB(255, 255, 0));
-        FrameRect(hdc, &rect, hBrush);
-        DeleteObject(hBrush);
+        /* Unpowered zones get a yellow frame - use cached brush */
+        static HBRUSH hBrushUnpowered = NULL;
+        if (!hBrushUnpowered) {
+            hBrushUnpowered = CreateSolidBrush(RGB(255, 255, 0));
+        }
+        FrameRect(hdc, &rect, hBrushUnpowered);
+        /* No DeleteObject needed - brush is cached */
 
         /* Draw the lightning bolt power indicator in the center of the tile */
         if (hdcTiles && hbmTiles) {
@@ -4109,7 +4139,19 @@ void drawCity(HDC hdc) {
             /* If power overlay is enabled, show power status with a transparent color overlay */
             if (powerOverlayEnabled) {
                 RECT tileRect;
-                HBRUSH hOverlayBrush;
+                /* Use cached brushes and pens for power overlay to reduce GDI overhead */
+                static HBRUSH hBrushPoweredZone = NULL;
+                static HBRUSH hBrushUnpoweredZone = NULL;
+                static HBRUSH hBrushPoweredTile = NULL;
+                static HPEN hPenPoweredLine = NULL;
+                
+                /* Initialize cached GDI objects on first use */
+                if (!hBrushPoweredZone) {
+                    hBrushPoweredZone = CreateSolidBrush(RGB(0, 255, 0));    /* Bright green */
+                    hBrushUnpoweredZone = CreateSolidBrush(RGB(255, 0, 0));  /* Red */
+                    hBrushPoweredTile = CreateSolidBrush(RGB(0, 200, 0));    /* Green */
+                    hPenPoweredLine = CreatePen(PS_SOLID, 1, RGB(0, 255, 0)); /* Green pen */
+                }
 
                 tileRect.left = screenX;
                 tileRect.top = screenY;
@@ -4118,45 +4160,35 @@ void drawCity(HDC hdc) {
 
                 /* Skip power plants themselves */
                 if ((Map[y][x] & LOMASK) != POWERPLANT && (Map[y][x] & LOMASK) != NUCLEAR) {
-                    /* Create overlay effect - use red for unpowered zones and green for powered */
+                    /* Show power status - use cached brushes */
                     if (Map[y][x] & ZONEBIT) {
                         if (Map[y][x] & POWERBIT) {
                             /* Powered zones - bright green border */
-                            hOverlayBrush = CreateSolidBrush(RGB(0, 255, 0));
-                            /* Draw a thick green border for powered zones */
-                            FrameRect(hdc, &tileRect, hOverlayBrush);
+                            FrameRect(hdc, &tileRect, hBrushPoweredZone);
                             /* Add a small green power indicator in the corner */
                             Rectangle(hdc, tileRect.left + 2, tileRect.top + 2, tileRect.left + 6,
                                       tileRect.top + 6);
-                            DeleteObject(hOverlayBrush);
                         } else {
                             /* Unpowered zones - red overlay */
-                            hOverlayBrush = CreateSolidBrush(RGB(255, 0, 0));
-                            /* Draw a thick red border for unpowered zones */
-                            FrameRect(hdc, &tileRect, hOverlayBrush);
+                            FrameRect(hdc, &tileRect, hBrushUnpoweredZone);
                             /* Add an X in the corner to indicate no power */
                             MoveToEx(hdc, tileRect.left + 2, tileRect.top + 2, NULL);
                             LineTo(hdc, tileRect.left + 6, tileRect.top + 6);
                             MoveToEx(hdc, tileRect.left + 6, tileRect.top + 2, NULL);
                             LineTo(hdc, tileRect.left + 2, tileRect.top + 6);
-                            DeleteObject(hOverlayBrush);
                         }
                     } else if (Map[y][x] & POWERBIT) {
                         /* Show power conducting elements (power lines, roads, etc.) clearly */
-                        hOverlayBrush = CreateSolidBrush(RGB(0, 200, 0));
-                        /* Show the power path with an overlay */
                         if ((Map[y][x] & LOMASK) >= POWERBASE &&
                             (Map[y][x] & LOMASK) < POWERBASE + 12) {
                             /* Power lines - make them bright */
-                            HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
-                            HPEN hOldPen = SelectObject(hdc, hPen);
+                            HPEN hOldPen = SelectObject(hdc, hPenPoweredLine);
                             /* Draw a cross through the tile to indicate power flow */
                             MoveToEx(hdc, tileRect.left, tileRect.top, NULL);
                             LineTo(hdc, tileRect.right, tileRect.bottom);
                             MoveToEx(hdc, tileRect.right, tileRect.top, NULL);
                             LineTo(hdc, tileRect.left, tileRect.bottom);
                             SelectObject(hdc, hOldPen);
-                            DeleteObject(hPen);
                         } else {
                             /* Other conductive tiles - highlight them */
                             Rectangle(hdc, tileRect.left + (TILE_SIZE / 2) - 1,
@@ -4164,18 +4196,21 @@ void drawCity(HDC hdc) {
                                       tileRect.left + (TILE_SIZE / 2) + 2,
                                       tileRect.top + (TILE_SIZE / 2) + 2);
                         }
-                        DeleteObject(hOverlayBrush);
                     }
                 }
 
-                /* Mark power plants with a yellow circle */
+                /* Mark power plants with a yellow circle - use cached pen */
                 if ((Map[y][x] & LOMASK) == POWERPLANT || (Map[y][x] & LOMASK) == NUCLEAR) {
-                    HPEN hPen;
+                    static HPEN hPenPowerPlant = NULL;
                     HPEN hOldPen;
                     HBRUSH hOldBrush;
 
-                    hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
-                    hOldPen = SelectObject(hdc, hPen);
+                    /* Initialize cached pen on first use */
+                    if (!hPenPowerPlant) {
+                        hPenPowerPlant = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+                    }
+
+                    hOldPen = SelectObject(hdc, hPenPowerPlant);
                     hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
                     /* Draw a circle around the power plant */
@@ -4184,23 +4219,43 @@ void drawCity(HDC hdc) {
 
                     SelectObject(hdc, hOldPen);
                     SelectObject(hdc, hOldBrush);
-                    DeleteObject(hPen);
+                    /* No DeleteObject needed - pen is cached */
                 }
             }
         }
     }
 
-    /* Show legend for power overlay if enabled */
+    /* Show legend for power overlay if enabled - use cached brushes */
     if (powerOverlayEnabled) {
         RECT legendRect;
         RECT legendBackground;
         HBRUSH hLegendBrush;
-        HBRUSH hBackgroundBrush;
         COLORREF oldTextColor;
-        int legendX = (cxClient - toolbarWidth) - 300;
-        int legendY = 10;
-        int legendWidth = 150;
-        int legendHeight = 120;
+        int legendX;
+        int legendY;
+        int legendWidth;
+        int legendHeight;
+        
+        /* Cached brushes and pens for legend to reduce GDI overhead */
+        static HBRUSH hBackgroundBrush = NULL;
+        static HBRUSH hLegendBrushPowered = NULL;
+        static HBRUSH hLegendBrushUnpowered = NULL; 
+        static HBRUSH hLegendBrushPowerLine = NULL;
+        static HPEN hLegendPenPowerLine = NULL;
+
+        /* Initialize cached GDI objects on first use */
+        if (!hBackgroundBrush) {
+            hBackgroundBrush = CreateSolidBrush(RGB(50, 50, 50));
+            hLegendBrushPowered = CreateSolidBrush(RGB(0, 255, 0));
+            hLegendBrushUnpowered = CreateSolidBrush(RGB(255, 0, 0));
+            hLegendBrushPowerLine = CreateSolidBrush(RGB(0, 200, 0));
+            hLegendPenPowerLine = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+        }
+        
+        legendX = (cxClient - toolbarWidth) - 300;
+        legendY = 10;
+        legendWidth = 150;
+        legendHeight = 120;
 
         /* Create semi-transparent background for the legend */
         legendBackground.left = legendX - 5;
@@ -4208,9 +4263,8 @@ void drawCity(HDC hdc) {
         legendBackground.right = legendX + legendWidth;
         legendBackground.bottom = legendY + legendHeight;
 
-        hBackgroundBrush = CreateSolidBrush(RGB(50, 50, 50));
         FillRect(hdc, &legendBackground, hBackgroundBrush);
-        DeleteObject(hBackgroundBrush);
+        /* No DeleteObject needed - brush is cached */
 
         /* Set up text for legend */
         SetBkMode(hdc, TRANSPARENT);
@@ -4225,11 +4279,10 @@ void drawCity(HDC hdc) {
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
-        hLegendBrush = CreateSolidBrush(RGB(0, 255, 0));
-        FrameRect(hdc, &legendRect, hLegendBrush);
+        FrameRect(hdc, &legendRect, hLegendBrushPowered);
         /* Add the green power indicator in corner */
         Rectangle(hdc, legendX + 2, legendY + 2, legendX + 6, legendY + 6);
-        DeleteObject(hLegendBrush);
+        /* No DeleteObject needed - brush is cached */
         TextOut(hdc, legendX + 20, legendY, "Powered Zones", 13);
         legendY += 20;
 
@@ -4238,14 +4291,13 @@ void drawCity(HDC hdc) {
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
-        hLegendBrush = CreateSolidBrush(RGB(255, 0, 0));
-        FrameRect(hdc, &legendRect, hLegendBrush);
+        FrameRect(hdc, &legendRect, hLegendBrushUnpowered);
         /* Add an X to match visualization */
         MoveToEx(hdc, legendX + 2, legendY + 2, NULL);
         LineTo(hdc, legendX + 6, legendY + 6);
         MoveToEx(hdc, legendX + 6, legendY + 2, NULL);
         LineTo(hdc, legendX + 2, legendY + 6);
-        DeleteObject(hLegendBrush);
+        /* No DeleteObject needed - brush is cached */
         TextOut(hdc, legendX + 20, legendY, "Unpowered Zones", 15);
         legendY += 20;
 
@@ -4254,63 +4306,68 @@ void drawCity(HDC hdc) {
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
-        hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
-        FrameRect(hdc, &legendRect, hLegendBrush);
+        FrameRect(hdc, &legendRect, hLegendBrushPowerLine);
 
-        /* Draw a cross through the tile to indicate power flow */
+        /* Draw a cross through the tile to indicate power flow - use cached pen */
         {
-            HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
-            HPEN hOldPen = SelectObject(hdc, hPen);
+            HPEN hOldPen = SelectObject(hdc, hLegendPenPowerLine);
             MoveToEx(hdc, legendX, legendY, NULL);
             LineTo(hdc, legendX + 15, legendY + 15);
             MoveToEx(hdc, legendX + 15, legendY, NULL);
             LineTo(hdc, legendX, legendY + 15);
             SelectObject(hdc, hOldPen);
-            DeleteObject(hPen);
+            /* No DeleteObject needed - pen is cached */
         }
 
-        DeleteObject(hLegendBrush);
+        /* No DeleteObject needed - brush is cached */
         TextOut(hdc, legendX + 20, legendY, "Power Lines", 11);
         legendY += 20;
 
-        /* Other powered grid connections */
+        /* Other powered grid connections - use cached brush */
         legendRect.left = legendX;
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
-        hLegendBrush = CreateSolidBrush(RGB(0, 200, 0));
-        FrameRect(hdc, &legendRect, hLegendBrush);
+        FrameRect(hdc, &legendRect, hLegendBrushPowerLine);
         /* Draw a dot in the center */
         Rectangle(hdc, legendX + 6, legendY + 6, legendX + 10, legendY + 10);
-        DeleteObject(hLegendBrush);
+        /* No DeleteObject needed - brush is cached */
         TextOut(hdc, legendX + 20, legendY, "Power Grid", 10);
         legendY += 20;
 
-        /* Power plants */
+        /* Power plants - use cached brushes and pens */
         legendRect.left = legendX;
         legendRect.top = legendY;
         legendRect.right = legendX + 15;
         legendRect.bottom = legendY + 15;
-        /* Use black brush for frame (not NULL_BRUSH which was causing a type error) */
-        hLegendBrush = CreateSolidBrush(RGB(0, 0, 0));
-        FrameRect(hdc, &legendRect, hLegendBrush);
-        DeleteObject(hLegendBrush);
-
-        /* Draw a yellow circle for power plants */
+        /* Use cached black brush for frame */
         {
-            HPEN hPen;
+            static HBRUSH hLegendBrushBlack = NULL;
+            if (!hLegendBrushBlack) {
+                hLegendBrushBlack = CreateSolidBrush(RGB(0, 0, 0));
+            }
+            FrameRect(hdc, &legendRect, hLegendBrushBlack);
+            /* No DeleteObject needed - brush is cached */
+        }
+
+        /* Draw a yellow circle for power plants - use cached pen */
+        {
+            static HPEN hLegendPenYellow = NULL;
             HPEN hOldPen;
             HBRUSH hOldBrush;
 
-            hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
-            hOldPen = SelectObject(hdc, hPen);
+            if (!hLegendPenYellow) {
+                hLegendPenYellow = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+            }
+            
+            hOldPen = SelectObject(hdc, hLegendPenYellow);
             hOldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
             Ellipse(hdc, legendX + 2, legendY + 2, legendX + 13, legendY + 13);
 
             SelectObject(hdc, hOldPen);
             SelectObject(hdc, hOldBrush);
-            DeleteObject(hPen);
+            /* No DeleteObject needed - pen is cached */
         }
 
         TextOut(hdc, legendX + 20, legendY, "Power Plants", 12);
