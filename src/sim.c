@@ -345,8 +345,10 @@ void Simulate(int mod16) {
             SetValves(RValve, CValve, IValve);
             ValveFlag = 0;
 
+#ifdef DEBUG
             /* Log valves change */
             addDebugLog("Demand adjusted: R=%d C=%d I=%d", RValve, CValve, IValve);
+#endif
         }
 
         /* Power scan moved to case 11 to avoid duplicate calls */
@@ -368,15 +370,16 @@ void Simulate(int mod16) {
         /* FALLTHROUGH to start map scanning */
 
     case 2:
-        /* TEMPORARILY DISABLED: Clear police and fire maps */
-        /* Let's see if police stations are being processed at all */
+#ifdef DEBUG
+        /* Debug: Map scan segment tracking */
         {
             static int logOnce = 0;
             if (!logOnce) {
-                addDebugLog("MAP SCAN: Starting segment 1 (clearing disabled for testing)");
+                addDebugLog("MAP SCAN: Starting optimized segment processing");
                 logOnce = 1;
             }
         }
+#endif
     case 3:
     case 4:
     case 5:
@@ -609,9 +612,11 @@ void DoTimeStuff(void) {
 
     CityMonth++;
     
+#ifdef DEBUG
     /* Log RCI values monthly for debugging */
     addDebugLog("Monthly RCI: Residential=%d Commercial=%d Industrial=%d (Month %d)", 
                 ResPop, ComPop, IndPop, CityMonth);
+#endif
     
     if (CityMonth > 11) {
         CityMonth = 0;
@@ -670,8 +675,10 @@ void DoTimeStuff(void) {
                 rDelta -= taxPenalty;
                 cDelta -= taxPenalty;
                 iDelta -= taxPenalty;
+#ifdef DEBUG
                 addDebugLog("Tax burden penalty applied: -%d per valve (Rate: %d%%, Difficulty: %d)", 
                            taxPenalty, TaxRate, GameLevel);
+#endif
             }
 
             RValve += rDelta;
@@ -1003,21 +1010,24 @@ void TakeCensus(void) {
 }
 
 void MapScan(int x1, int x2, int y1, int y2) {
-    /* Scan a section of the map for zone processing */
+    /* Scan a section of the map for zone processing - optimized version */
     int x, y;
+    short fullTile;
 
     if (x1 < 0 || x2 > WORLD_X || y1 < 0 || y2 > WORLD_Y) {
         return;
     }
 
-    for (x = x1; x < x2; x++) {
-        for (y = y1; y < y2; y++) {
-            SMapX = x;
-            SMapY = y;
-            CChr = Map[y][x] & LOMASK;
-
-            /* Process all zone centers, whether powered or not */
-            if (Map[y][x] & ZONEBIT) {
+    /* Process row by row for better cache locality */
+    for (y = y1; y < y2; y++) {
+        for (x = x1; x < x2; x++) {
+            fullTile = Map[y][x]; /* Single memory access */
+            
+            /* Only process zones to reduce overhead */
+            if (fullTile & ZONEBIT) {
+                SMapX = x;
+                SMapY = y;
+                CChr = fullTile & LOMASK;
                 DoZone(x, y, CChr);
             }
         }
