@@ -3,33 +3,30 @@
 
 ## Major Features Missing
 - Save game
-- New game / map generator
+- New game map generator with preview
 - Evaluation window
 - Sound System
 
 ## Bugs
-- Bridges, power over water
-- Power lines don't always work
+- Power line issues
 - Minimap stats not working: fire, police
 - Pink squares on roads due to incorrect ties
+- Wrong tiles, especially middle tile
+- Bridges, power over water
 
 
 ## Audit Code
-- Crime, fire, pollution, etc
 - Zone demand
 - Rating/approval, Impeachment
 - Zone to rubble
-- Performance
 
 
 ## Cosmetic
-- Main screen in .rc file
 - Some tilesets cause 100% CPU peg - may be num color related?
+- Buttons / sizing / layout / etc
 - Better RCI and mini chart indicators
-- Wrong tiles, especially middle tile
 - No power needs to flash
 - Helicopter / plane etc wrong colors / colormap
-- Buttons / sizing / layout / etc
 - Some overlays are not working, like crime, fire etc
 - Power DEBUG over tiles, roads and train tracks
 - Drawing, eg drawing road/powerlines as continuous line
