@@ -6,9 +6,9 @@ A port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka
 
 --------------
 
-**WIP: This game is mostly playable but not yet fully finished.**
+**WIP: This game is mostly feature complete and playable but not yet fully finished.**
 
-There are major features missing, see [TODO](TODO.md) for details. 
+There are major bugs see [TODO](TODO.md) for details. 
 
 The game is under active development. PRs welcome!
 
