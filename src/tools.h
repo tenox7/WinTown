@@ -10,6 +10,9 @@
 /* Tool active flag */
 extern int isToolActive;
 
+/* Tool drag state */
+extern BOOL isToolDragging;
+
 /* Tool result constants */
 #define TOOLRESULT_OK           0
 #define TOOLRESULT_FAILED       1

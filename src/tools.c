@@ -2004,6 +2004,9 @@ void SelectTool(int toolType) {
 
     /* Set tool active state based on tool type */
     isToolActive = (toolType != noToolState);
+    
+    /* Reset tool dragging state when changing tools */
+    isToolDragging = FALSE;
 
     /* Only redraw the toolbar - the main window doesn't need to be redrawn completely */
     if (hwndToolbar) {

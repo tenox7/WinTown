@@ -33,5 +33,6 @@
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Assets as resources
 - Helicopter too slow
+- Smooth tile drawin (road, train, power)
 
 

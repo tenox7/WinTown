@@ -231,6 +231,11 @@ static BOOL isMouseDown = FALSE; /* Used for map dragging */
 static int lastMouseX = 0;
 static int lastMouseY = 0;
 
+/* Tool drag state for continuous drawing */
+BOOL isToolDragging = FALSE;  /* Made non-static so tools.c can access it */
+static int lastToolX = 0;
+static int lastToolY = 0;
+
 char progPathName[MAX_PATH];
 char cityFileName[MAX_PATH]; /* Current city filename - used by other modules */
 static HMENU hMenu = NULL;
@@ -1891,6 +1896,108 @@ void UpdateSimulationMenu(HWND hwnd, int speed) {
     CHECK_MENU_RADIO_ITEM(hSettingsMenu, IDM_SIM_PAUSE, IDM_SIM_FAST, IDM_SIM_PAUSE + speed, MF_BYCOMMAND);
 }
 
+/* Check if current tool supports drag drawing */
+int IsToolDragSupported(void) {
+    int currentTool = GetCurrentTool();
+    
+    /* Only single-tile linear tools support drag drawing */
+    switch (currentTool) {
+        case roadState:       /* Road */
+        case railState:       /* Rail */
+        case wireState:       /* Wire/Power */
+        case bulldozerState:  /* Bulldozer */
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+/* Continuous tool drawing during mouse drag */
+void ToolDrag(int screenX, int screenY) {
+    int mapX, mapY, lastMapX, lastMapY;
+    int dx, dy, adx, ady;
+    int i, step, tx, ty, dtx, dty, rx, ry;
+    int lx, ly;
+    
+    /* Convert screen coordinates to map coordinates */
+    ScreenToMap(screenX, screenY, &mapX, &mapY, xOffset, yOffset);
+    ScreenToMap(lastToolX, lastToolY, &lastMapX, &lastMapY, xOffset, yOffset);
+    
+    /* Bounds check */
+    if (mapX < 0 || mapX >= WORLD_X || mapY < 0 || mapY >= WORLD_Y) {
+        return;
+    }
+    if (lastMapX < 0 || lastMapX >= WORLD_X || lastMapY < 0 || lastMapY >= WORLD_Y) {
+        return;
+    }
+    
+    /* Calculate distance to move */
+    dx = mapX - lastMapX;
+    dy = mapY - lastMapY;
+    
+    /* No movement - avoid redundant placement */
+    if (dx == 0 && dy == 0) {
+        return;
+    }
+    
+    adx = (dx < 0) ? -dx : dx;  /* abs(dx) */
+    ady = (dy < 0) ? -dy : dy;  /* abs(dy) */
+    
+    /* Calculate step size using fixed-point arithmetic */
+    if (adx > ady) {
+        step = (adx > 0) ? (300 / adx) : 300;
+    } else {
+        step = (ady > 0) ? (300 / ady) : 300;
+    }
+    
+    rx = (dx < 0) ? 1 : 0;
+    ry = (dy < 0) ? 1 : 0;
+    
+    lx = lastMapX;
+    ly = lastMapY;
+    
+    /* Interpolate between last position and current position */
+    for (i = 0; i <= 1000 + step; i += step) {
+        /* Fixed-point arithmetic: multiply by 1000 for precision */
+        tx = (lastMapX * 1000) + (i * dx);
+        ty = (lastMapY * 1000) + (i * dy);
+        
+        /* Convert back to integer coordinates */
+        tx = (tx / 1000) + rx;
+        ty = (ty / 1000) + ry;
+        
+        /* Check if we've moved to a new tile */
+        dtx = (tx - lx) >= 0 ? (tx - lx) : (lx - tx);  /* abs(tx - lx) */
+        dty = (ty - ly) >= 0 ? (ty - ly) : (ly - ty);  /* abs(ty - ly) */
+        
+        if (dtx >= 1 || dty >= 1) {
+            /* For single-tile tools, fill diagonal gaps to ensure continuity */
+            if ((dtx >= 1) && (dty >= 1)) {
+                if (dtx > dty) {
+                    /* Fill horizontal first */
+                    HandleToolMouse(tx * TILE_SIZE + (TILE_SIZE/2), 
+                                   ly * TILE_SIZE + (TILE_SIZE/2), xOffset, yOffset);
+                } else {
+                    /* Fill vertical first */
+                    HandleToolMouse(lx * TILE_SIZE + (TILE_SIZE/2), 
+                                   ty * TILE_SIZE + (TILE_SIZE/2), xOffset, yOffset);
+                }
+            }
+            
+            /* Apply tool at interpolated position */
+            HandleToolMouse(tx * TILE_SIZE + (TILE_SIZE/2), 
+                           ty * TILE_SIZE + (TILE_SIZE/2), xOffset, yOffset);
+            
+            lx = tx;
+            ly = ty;
+        }
+    }
+    
+    /* Update last position for next drag operation */
+    lastToolX = screenX;
+    lastToolY = screenY;
+}
+
 LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_CREATE:
@@ -2656,6 +2763,14 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             /* Apply the tool at this position */
             int result = HandleToolMouse(xPos, yPos, xOffset, yOffset);
 
+            /* Initialize tool dragging for supported tools */
+            if (IsToolDragSupported()) {
+                isToolDragging = TRUE;
+                lastToolX = xPos;
+                lastToolY = yPos;
+                SetCapture(hwnd);
+            }
+
             /* Display result if needed */
             if (result == TOOLRESULT_NO_MONEY) {
                 addGameLog("TOOL ERROR: Not enough money!");
@@ -2728,6 +2843,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
 
             SetCursor(LoadCursor(NULL, IDC_SIZEALL));
+        } else if (isToolDragging) {
+            /* Continuous tool drawing during drag */
+            ToolDrag(xPos, yPos);
+            SetCursor(LoadCursor(NULL, IDC_ARROW));
         } else if (isToolActive) {
             /* Convert mouse position to map coordinates for tool hover */
             ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
@@ -2752,6 +2871,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_LBUTTONUP: {
         isMouseDown = FALSE;
+        
+        /* Stop tool dragging if it was active */
+        if (isToolDragging) {
+            isToolDragging = FALSE;
+        }
+        
         ReleaseCapture();
 
         /* Always use arrow cursor */
