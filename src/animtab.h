@@ -1,5 +1,5 @@
-/* animtab.h - Animation tables for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* animtab.h - Animation tables for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #ifndef _ANIMTAB_H

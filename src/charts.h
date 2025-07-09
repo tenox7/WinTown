@@ -1,4 +1,4 @@
-/* charts.h - Chart system for MicropolisNT
+/* charts.h - Chart system for WiNTown
  * Comprehensive charting system with multiple data series and time ranges
  */
 
@@ -147,6 +147,6 @@ short GetChartDataValue(int seriesType, int index);
 int GetChartDataCount(void);
 
 /* Chart window class name */
-#define CHART_WINDOW_CLASS "MicropolisChart"
+#define CHART_WINDOW_CLASS "WiNTownChart"
 
 #endif /* _CHARTS_H */

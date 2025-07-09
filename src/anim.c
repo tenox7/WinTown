@@ -1,5 +1,5 @@
-/* animation.c - Tile animation implementation for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* animation.c - Tile animation implementation for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "animtab.h"

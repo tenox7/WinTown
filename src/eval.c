@@ -1,5 +1,5 @@
-/* evaluation.c - City evaluation system for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* evaluation.c - City evaluation system for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -494,7 +494,7 @@ void CityEvaluation(void) {
             ShowNotification(NOTIF_TAX_TOO_HIGH);
         }
 
-        /* Check for infrastructure needs based on original Micropolis logic */
+        /* Check for infrastructure needs based on original WiNTown logic */
         /* Need more residential zones */
         if (TotalPop > 0 && ((TotalPop >> 2) >= ResPop)) {
             ShowNotification(NOTIF_RESIDENTIAL_NEEDED);

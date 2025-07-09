@@ -1,5 +1,5 @@
-/* scenarios.c - Scenario implementation for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* scenarios.c - Scenario implementation for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -44,7 +44,7 @@ extern void ForceFullCensus(void); /* Census calculation function */
 extern HWND hwndMain;
 extern char cityFileName[MAX_PATH];
 
-/* Disaster timing arrays - matches original Micropolis */
+/* Disaster timing arrays - matches original WiNTown */
 static short DisTab[9] = {0, 2, 10, 5, 20, 3, 5, 5, 2 * 48};
 static short ScoreWaitTab[9] = {0,      30 * 48, 5 * 48, 5 * 48, 10 * 48,
                                 5 * 48, 10 * 48, 5 * 48, 10 * 48};
@@ -173,7 +173,7 @@ int loadScenario(int scenarioId) {
     /* Update window title with scenario name */
     {
         char winTitle[256];
-        wsprintf(winTitle, "MicropolisNT - Scenario: %s", name);
+        wsprintf(winTitle, "WiNTown - Scenario: %s", name);
         SetWindowText(hwndMain, winTitle);
 
         /* Log the scenario load */

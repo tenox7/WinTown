@@ -1,5 +1,5 @@
-/* tools.c - Tool handling code for MicropolisNT (Windows NT version)
- * Based on original Micropolis code from MicropolisLegacy project
+/* tools.c - Tool handling code for WiNTown (Windows NT version)
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "tools.h"
@@ -39,7 +39,7 @@ extern short Map[WORLD_Y][WORLD_X];
  * Bit 2 (value 4): South connection
  * Bit 3 (value 8): West connection
  */
-/* Original Micropolis RoadTable - exact mapping from w_con.c */
+/* Original WiNTown RoadTable - exact mapping from w_con.c */
 static short RoadTable[16] = {
     66, 67, 66, 68,    /* 0000, 0001, 0010, 0011 */
     67, 67, 69, 73,    /* 0100, 0101, 0110, 0111 */
@@ -47,7 +47,7 @@ static short RoadTable[16] = {
     70, 75, 74, 76     /* 1100, 1101, 1110, 1111 */
 };
 
-/* MicropolisJS RailTable exact mapping */
+/* WiNTownJS RailTable exact mapping */
 static short RailTable[16] = {
     LHRAIL,       /* 0000 - No connections */
     LVRAIL,       /* 0001 - North only */
@@ -67,7 +67,7 @@ static short RailTable[16] = {
     LVRAIL10      /* 1111 - All connections */
 };
 
-/* MicropolisJS WireTable exact mapping */
+/* WiNTownJS WireTable exact mapping */
 static short WireTable[16] = {
     LHPOWER,      /* 0000 - No connections */
     LVPOWER,      /* 0001 - North only */
@@ -1048,7 +1048,7 @@ void FixZone(int x, int y, short *tilePtr) {
 }
 
 /* NormalizeRoad function - standardizes road tile values for comparison 
- * This is equivalent to MicropolisJS's normalizeRoad function
+ * This is equivalent to WiNTownJS's normalizeRoad function
  */
 short NormalizeRoad(short tile) {
     /* For roads, convert them to a standard set of tiles */
@@ -1059,7 +1059,7 @@ short NormalizeRoad(short tile) {
 }
 
 /* Fix a single tile - update its connections 
- * Closely follows MicropolisJS's fixSingle implementation
+ * Closely follows WiNTownJS's fixSingle implementation
  */
 void FixSingle(int x, int y) {
     short tile;
@@ -1961,7 +1961,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
     LoadToolbarBitmaps();
 
     /* Register the toolbar window class if not already done */
-    if (!GetClassInfo(NULL, "MicropolisToolbar", &wc)) {
+    if (!GetClassInfo(NULL, "WiNTownToolbar", &wc)) {
         /*wc.cbSize = sizeof(WNDCLASS); */
         wc.style = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc = ToolbarProc;
@@ -1972,7 +1972,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
         wc.hCursor = LoadCursor(NULL, IDC_ARROW);
         wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
         wc.lpszMenuName = NULL;
-        wc.lpszClassName = "MicropolisToolbar";
+        wc.lpszClassName = "WiNTownToolbar";
         /*wc.hIconSm = NULL; */
 
         RegisterClass(&wc);
@@ -1983,7 +1983,7 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
 
     hwndToolbar = CreateWindowEx(
         WS_EX_DLGMODALFRAME, /* Using dialog frame style for a raised appearance */
-        "MicropolisToolbar", NULL,
+        "WiNTownToolbar", NULL,
         WS_CHILD | WS_VISIBLE, /* Removed WS_BORDER as DLGMODALFRAME provides its own border */
         0, 0,                  /* x, y - will be adjusted below */
         toolbarWidth, clientRect.bottom, hwndParent, NULL, GetModuleHandle(NULL), NULL);

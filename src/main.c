@@ -1,5 +1,5 @@
-/* Main entry point for MicropolisNT (Windows NT version)
- * Based on original Micropolis code from MicropolisLegacy project
+/* Main entry point for WiNTown (Windows NT version)
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -80,7 +80,7 @@
 #define IDM_VIEW_BUDGET 8001
 
 /* Minimap window definitions */
-#define MINIMAP_WINDOW_CLASS "MicropolisMinimapWindow"
+#define MINIMAP_WINDOW_CLASS "WiNTownMinimapWindow"
 #define MINIMAP_WINDOW_WIDTH 360  /* WORLD_X * MINIMAP_SCALE = 120 * 3 */
 #define MINIMAP_WINDOW_HEIGHT 320  /* WORLD_Y * MINIMAP_SCALE + space for mode label = 100 * 3 + 20 */
 #define MINIMAP_TIMER_ID 3
@@ -107,20 +107,20 @@
 #define MINIMAP_MODE_COUNT 13
 
 /* Info window definitions */
-#define INFO_WINDOW_CLASS "MicropolisInfoWindow"
+#define INFO_WINDOW_CLASS "WiNTownInfoWindow"
 #define INFO_WINDOW_WIDTH 300
 #define INFO_WINDOW_HEIGHT 320
 #define INFO_TIMER_ID 2
 #define INFO_TIMER_INTERVAL 500 /* Update info window every 500ms */
 
 /* Log window definitions */
-#define LOG_WINDOW_CLASS "MicropolisLogWindow"
+#define LOG_WINDOW_CLASS "WiNTownLogWindow"
 #define LOG_WINDOW_WIDTH 500
 #define LOG_WINDOW_HEIGHT 400
 #define MAX_LOG_LINES 100
 
 /* Tiles debug window definitions */
-#define TILES_WINDOW_CLASS "MicropolisTilesWindow"
+#define TILES_WINDOW_CLASS "WiNTownTilesWindow"
 #define TILES_WINDOW_WIDTH 560  /* 32 tiles * 16 pixels + scrollbar + border */
 #define TILES_WINDOW_HEIGHT 520 /* 30 tiles * 16 pixels + title bar + border */
 
@@ -268,7 +268,7 @@ extern short DisasterWait;  /* Countdown to next disaster */
 extern short ScoreType;     /* Score type for scenario */
 extern short ScoreWait;     /* Score wait for scenario */
 
-/* Micropolis tile flags - These must match simulation.h */
+/* WiNTown tile flags - These must match simulation.h */
 /* Using LOMASK from simulation.h */
 /* Use the constants from simulation.h for consistency */
 
@@ -478,7 +478,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     debugFile = fopen(debugLogPath, "w");
     if (debugFile) {
         /* Write initial header to verify file is working */
-        fprintf(debugFile, "=== MicropolisNT Debug Log Started ===\n");
+        fprintf(debugFile, "=== WiNTown Debug Log Started ===\n");
         fflush(debugFile);
         if (fclose(debugFile) != 0) {
             /* File close failed - handle error */
@@ -501,7 +501,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszMenuName = NULL;
-    wc.lpszClassName = "MicropolisNT";
+    wc.lpszClassName = "WiNTown";
     /*wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);*/
 
     if (!RegisterClass(&wc)) {
@@ -567,7 +567,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     hMenu = createMainMenu();
 
     /* Create main window */
-    hwndMain = CreateWindowEx(WS_EX_CLIENTEDGE, "MicropolisNT", "MicropolisNT - Tileset: classic",
+    hwndMain = CreateWindowEx(WS_EX_CLIENTEDGE, "WiNTown", "WiNTown - Tileset: classic",
                               WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT,
                               908, 600, /* Additional 108px width for the 3-column toolbar */
                               NULL, hMenu, hInstance, NULL);
@@ -583,7 +583,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     mainWindowY = rect.top;
 
     /* Create info window */
-    hwndInfo = CreateWindowEx(WS_EX_TOOLWINDOW, INFO_WINDOW_CLASS, "Micropolis Info",
+    hwndInfo = CreateWindowEx(WS_EX_TOOLWINDOW, INFO_WINDOW_CLASS, "WiNTown Info",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE,
         mainWindowX + rect.right - rect.left + 10, mainWindowY, /* Position to right of main window */
         INFO_WINDOW_WIDTH, INFO_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
@@ -597,7 +597,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Create log window */
-    hwndLog = CreateWindowEx(WS_EX_TOOLWINDOW, LOG_WINDOW_CLASS, "Micropolis Message Log",
+    hwndLog = CreateWindowEx(WS_EX_TOOLWINDOW, LOG_WINDOW_CLASS, "WiNTown Message Log",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE | WS_VSCROLL,
         mainWindowX + rect.right - rect.left + 10, mainWindowY + INFO_WINDOW_HEIGHT + 30, /* Position below info window */
         LOG_WINDOW_WIDTH, LOG_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
@@ -628,7 +628,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         windowWidth = windowRect.right - windowRect.left;
         windowHeight = windowRect.bottom - windowRect.top;
         
-        hwndMinimap = CreateWindowEx(WS_EX_TOOLWINDOW, MINIMAP_WINDOW_CLASS, "Micropolis Minimap - Right-click for options",
+        hwndMinimap = CreateWindowEx(WS_EX_TOOLWINDOW, MINIMAP_WINDOW_CLASS, "WiNTown Minimap - Right-click for options",
             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE,
             mainWindowX + rect.right - rect.left + 10, mainWindowY + INFO_WINDOW_HEIGHT + 10, /* Position underneath info window */
             windowWidth, windowHeight, NULL, NULL, hInstance, NULL);
@@ -643,7 +643,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Create tiles debug window (hidden by default) */
-    hwndTiles = CreateWindowEx(WS_EX_TOOLWINDOW, TILES_WINDOW_CLASS, "Micropolis Tile Viewer",
+    hwndTiles = CreateWindowEx(WS_EX_TOOLWINDOW, TILES_WINDOW_CLASS, "WiNTown Tile Viewer",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
         100, 100, /* Simple fixed position for testing */
         TILES_WINDOW_WIDTH, TILES_WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
@@ -657,7 +657,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /* Create charts window (auto-opens below main window) */
-    hwndCharts = CreateWindowEx(WS_EX_TOOLWINDOW, CHART_WINDOW_CLASS, "Micropolis Charts - Right-click for options",
+    hwndCharts = CreateWindowEx(WS_EX_TOOLWINDOW, CHART_WINDOW_CLASS, "WiNTown Charts - Right-click for options",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
         mainWindowX, mainWindowY + (rect.bottom - rect.top) + 10, /* Position below main window */
         rect.right - rect.left, (rect.bottom - rect.top) * 2 / 5, NULL, NULL, hInstance, NULL);
@@ -1823,19 +1823,19 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             /* Update window title with tile coordinates and selection info */
             if (tileX >= 0 && tileX < TILES_IN_ROW && tileY >= 0 && tileY < 30) {
                 if (selectedTileX >= 0 && selectedTileY >= 0) {
-                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Hover: %d (X:%d, Y:%d) | Selected: %d (X:%d, Y:%d)", 
+                    wsprintf(titleBuffer, "WiNTown Tile Viewer - Hover: %d (X:%d, Y:%d) | Selected: %d (X:%d, Y:%d)", 
                              tileIndex, tileX, tileY, 
                              selectedTileY * TILES_IN_ROW + selectedTileX, selectedTileX, selectedTileY);
                 } else {
-                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Hover: %d (X:%d, Y:%d) | Click to select", 
+                    wsprintf(titleBuffer, "WiNTown Tile Viewer - Hover: %d (X:%d, Y:%d) | Click to select", 
                              tileIndex, tileX, tileY);
                 }
             } else {
                 if (selectedTileX >= 0 && selectedTileY >= 0) {
-                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Selected: %d (X:%d, Y:%d)", 
+                    wsprintf(titleBuffer, "WiNTown Tile Viewer - Selected: %d (X:%d, Y:%d)", 
                              selectedTileY * TILES_IN_ROW + selectedTileX, selectedTileX, selectedTileY);
                 } else {
-                    wsprintf(titleBuffer, "Micropolis Tile Viewer - Click to select a tile");
+                    wsprintf(titleBuffer, "WiNTown Tile Viewer - Click to select a tile");
                 }
             }
             SetWindowText(hwnd, titleBuffer);
@@ -2259,7 +2259,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     tileDebugEnabled = FALSE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_UNCHECKED);
                     /* Reset window title to remove tile info */
-                    SetWindowText(hwnd, "Micropolis NT");
+                    SetWindowText(hwnd, "WiNTown NT");
                 } else {
                     /* Enable tile debug */
 #ifdef DEBUG
@@ -2824,7 +2824,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (flagStr[0] == '\0') strcpy(flagStr, "NONE");
                 
                 /* Update window title with tile information */
-                wsprintf(titleBuffer, "Micropolis NT - Tile Debug: [%d,%d] = %d (0x%04X) base=%d flags=[%s]", 
+                wsprintf(titleBuffer, "WiNTown NT - Tile Debug: [%d,%d] = %d (0x%04X) base=%d flags=[%s]", 
                          mapX, mapY, tileValue, tileValue, baseTile, flagStr);
                 SetWindowText(hwnd, titleBuffer);
             }
@@ -2934,7 +2934,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         cyClient = HIWORD(lParam);
 
         /* Get the toolbar window handle */
-        hwndToolbarWnd = FindWindow("MicropolisToolbar", NULL);
+        hwndToolbarWnd = FindWindow("WiNTownToolbar", NULL);
 
         /* If the toolbar exists, adjust its position */
         if (hwndToolbarWnd) {
@@ -3026,8 +3026,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         cleanupGraphics();
 
         /* Clean up toolbar */
-        if (FindWindow("MicropolisToolbar", NULL)) {
-            DestroyWindow(FindWindow("MicropolisToolbar", NULL));
+        if (FindWindow("WiNTownToolbar", NULL)) {
+            DestroyWindow(FindWindow("WiNTownToolbar", NULL));
         }
 
         /* Clean up toolbar bitmaps */
@@ -3425,7 +3425,7 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
         strcpy(currentTileset, tilesetName);
     }
 
-    wsprintf(windowTitle, "MicropolisNT - Tileset: %s", currentTileset);
+    wsprintf(windowTitle, "WiNTown - Tileset: %s", currentTileset);
     SetWindowText(hwnd, windowTitle);
 
     /* Force a full redraw */
@@ -3601,7 +3601,7 @@ int loadFile(char *filename) {
     size = ftell(f);
     fseek(f, 0L, SEEK_SET);
 
-    /* The original Micropolis city files are 27120 bytes */
+    /* The original WiNTown city files are 27120 bytes */
     if (size != 27120) {
         fclose(f);
         return 0;
@@ -3649,7 +3649,7 @@ int loadFile(char *filename) {
     }
     swapShorts(MiscHis, MISCHISTLEN / 2);
 
-    /* Original Micropolis stores map transposed compared to our array convention */
+    /* Original WiNTown stores map transposed compared to our array convention */
     {
         short tmpMap[WORLD_X][WORLD_Y];
         int x, y;
@@ -3860,7 +3860,7 @@ int loadCity(char *filename) {
             baseName = strrchr(baseName, '/') + 1;
         }
 
-        lstrcpy(windowTitle, "MicropolisNT - ");
+        lstrcpy(windowTitle, "WiNTown - ");
         lstrcat(windowTitle, baseName);
 
         /* Remove the extension if present */
@@ -5046,7 +5046,7 @@ void createNewMap(HWND hwnd) {
     changeTileset(hwnd, "default");
     
     /* Update window title (override the tileset title) */
-    SetWindowText(hwnd, "MicropolisNT - New City");
+    SetWindowText(hwnd, "WiNTown - New City");
     
     /* Fill map with dirt */
     for (y = 0; y < WORLD_Y; y++) {
@@ -5345,7 +5345,7 @@ int ShowBudgetWindowAndWait(HWND parent) {
 
 /* Enhanced speed control functions */
 void SetGameSpeed(int speed) {
-    /* Speed delays in milliseconds based on original Micropolis timings */
+    /* Speed delays in milliseconds based on original WiNTown timings */
     static int speedDelays[] = { 0, 500, 200, 100 }; /* pause, slow, medium, fast */
     
     if (speed < 0) speed = 0;

@@ -1,5 +1,5 @@
-/* newgame.c - New Game Dialog Implementation for MicropolisNT
- * Based on original Micropolis scenarios and new game functionality
+/* newgame.c - New Game Dialog Implementation for WiNTown
+ * Based on original WiNTown scenarios and new game functionality
  */
 
 #include "newgame.h"
@@ -32,7 +32,7 @@ extern int CityClass;
 extern int LastTotalPop;
 extern int GameLevel;
 
-/* Scenario data based on original Micropolis */
+/* Scenario data based on original WiNTown */
 static ScenarioInfo scenarios[] = {
     {1, "DULLSVILLE", "DULLSVILLE, USA 1900\n\nThings haven't changed much around here in the last hundred years or so and the residents are beginning to get bored. They think Dullsville could be the next great city with the right leader.\n\nIt is your job to attract new growth and development, turning Dullsville into a Metropolis within 30 years.", "dullsville.scn", 1900, 5000},
     {2, "EARTHQUAKE", "SAN FRANCISCO, CA. 1906\n\nDamage from the earthquake was minor compared to that of the ensuing fires, which took days to control. 1500 people died.\n\nControlling the fires should be your initial concern. Then clear the rubble and start rebuilding. You have 5 years.", "sanfrancisco.scn", 1906, 20000},

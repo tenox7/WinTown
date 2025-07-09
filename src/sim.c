@@ -1,5 +1,5 @@
-/* simulation.c - Core simulation implementation for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* simulation.c - Core simulation implementation for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -136,7 +136,7 @@ int DisastersEnabled = 1;  /* Enable/disable disasters (0=disabled, 1=enabled) *
 int AutoBulldoze = 1;      /* Auto-bulldoze enabled flag */
 int SimTimerDelay = 200;   /* Timer delay in milliseconds based on speed */
 
-/* Difficulty level multiplier tables - based on original Micropolis */
+/* Difficulty level multiplier tables - based on original WiNTown */
 float DifficultyTaxEfficiency[3] = { 1.4f, 1.2f, 0.8f };      /* Easy, Medium, Hard */
 float DifficultyMaintenanceCost[3] = { 0.7f, 0.9f, 1.2f };    /* Easy, Medium, Hard */
 float DifficultyIndustrialGrowth[3] = { 1.2f, 1.1f, 0.98f };  /* Easy, Medium, Hard */
@@ -359,7 +359,7 @@ void Simulate(int mod16) {
         /* Move transportation sprites */
         MoveSprites();
         
-        /* Original Micropolis message system */
+        /* Original WiNTown message system */
         SendMessages();
         doMessage();
         break;
@@ -1036,7 +1036,7 @@ void MapScan(int x1, int x2, int y1, int y2) {
 
 /* Unified population calculation functions */
 
-/* Calculate city population using standard Micropolis formula */
+/* Calculate city population using standard WiNTown formula */
 QUAD CalculateCityPopulation(int resPop, int comPop, int indPop) {
     QUAD result;
     
@@ -1045,7 +1045,7 @@ QUAD CalculateCityPopulation(int resPop, int comPop, int indPop) {
     if (comPop < 0) comPop = 0;
     if (indPop < 0) indPop = 0;
     
-    /* Use standard Micropolis formula: CityPop = (Res + Com*8 + Ind*8) * 20 */
+    /* Use standard WiNTown formula: CityPop = (Res + Com*8 + Ind*8) * 20 */
     result = ((QUAD)resPop + ((QUAD)comPop * 8L) + ((QUAD)indPop * 8L)) * 20L;
     
     /* Ensure non-negative result */

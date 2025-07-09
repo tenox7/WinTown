@@ -1,4 +1,4 @@
-/* tiles.h - Centralized tile management for MicropolisNT
+/* tiles.h - Centralized tile management for WiNTown
  * Provides unified interface for all map tile changes
  */
 

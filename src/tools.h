@@ -1,5 +1,5 @@
-/* tools.h - Tool handling definitions for MicropolisNT (Windows NT version)
- * Based on original Micropolis code from MicropolisLegacy project
+/* tools.h - Tool handling definitions for WiNTown (Windows NT version)
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #ifndef _TOOLS_H

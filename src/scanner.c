@@ -1,5 +1,5 @@
-/* scanner.c - Map scanning and effects spreading for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* scanner.c - Map scanning and effects spreading for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -131,7 +131,7 @@ static void SmoothPSMap(void) {
                 edge += PoliceMap[y + 1][x];
             }
 
-            /* Original Micropolis smoothing algorithm */
+            /* Original WiNTown smoothing algorithm */
             edge = (edge >> 2) + PoliceMap[y][x];  /* (neighbors/4) + current */
             STem[x][y] = (short)(edge >> 1);        /* divide by 2 - back to short for debugging */
         }
@@ -168,7 +168,7 @@ static void SmoothFSMap(void) {
                 edge += FireStMap[y + 1][x];
             }
 
-            /* Original Micropolis smoothing algorithm */
+            /* Original WiNTown smoothing algorithm */
             edge = (edge >> 2) + FireStMap[y][x];  /* (neighbors/4) + current */
             STem[x][y] = (short)(edge >> 1);        /* divide by 2 - back to short for debugging */
         }

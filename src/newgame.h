@@ -1,5 +1,5 @@
-/* newgame.h - New Game Dialog Interface for MicropolisNT
- * Based on original Micropolis scenarios and new game functionality
+/* newgame.h - New Game Dialog Interface for WiNTown
+ * Based on original WiNTown scenarios and new game functionality
  */
 
 #ifndef NEWGAME_H
@@ -39,7 +39,7 @@
 #define DIFFICULTY_MEDIUM 1
 #define DIFFICULTY_HARD 2
 
-/* Scenario definitions based on original Micropolis */
+/* Scenario definitions based on original WiNTown */
 typedef struct {
     int id;
     char name[64];

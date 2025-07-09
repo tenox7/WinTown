@@ -1,4 +1,4 @@
-/* charts.c - Chart system implementation for MicropolisNT
+/* charts.c - Chart system implementation for WiNTown
  * Comprehensive charting system with multiple data series and time ranges
  */
 

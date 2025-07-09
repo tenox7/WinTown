@@ -1,5 +1,5 @@
-/* sprite.c - Transportation sprite system for MicropolisNT
- * Based on original Micropolis w_sprite.c
+/* sprite.c - Transportation sprite system for WiNTown
+ * Based on original WiNTown w_sprite.c
  * Implements trains, ships, ferries, airplanes, and helicopters
  */
 

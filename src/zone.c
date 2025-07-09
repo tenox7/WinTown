@@ -1,5 +1,5 @@
-/* zone.c - Zone processing for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* zone.c - Zone processing for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -203,7 +203,7 @@ static int ZoneRandom(int range) {
     return rand() % range;
 }
 
-/* Main zone processing function - based on original Micropolis code */
+/* Main zone processing function - based on original WiNTown code */
 void DoZone(int Xloc, int Yloc, int pos) {
     /* First check if this is a zone center */
     if (!(Map[Yloc][Xloc] & ZONEBIT)) {
@@ -695,7 +695,7 @@ static void DoResidential(int x, int y) {
     }
 }
 
-/* Calculate land value for a location - matches original Micropolis */
+/* Calculate land value for a location - matches original WiNTown */
 static int GetCRVal(int x, int y) {
     register short LVal;
     
@@ -707,7 +707,7 @@ static int GetCRVal(int x, int y) {
     return (3);
 }
 
-/* Handle residential zone growth - matches original Micropolis */
+/* Handle residential zone growth - matches original WiNTown */
 static void DoResIn(int pop, int value) {
     short z;
     short currentTile;
@@ -746,7 +746,7 @@ static void DoResIn(int pop, int value) {
     }
 }
 
-/* Handle commercial zone growth - matches original Micropolis */
+/* Handle commercial zone growth - matches original WiNTown */
 static void DoComIn(int pop, int value) {
     register short z;
     
@@ -760,7 +760,7 @@ static void DoComIn(int pop, int value) {
     }
 }
 
-/* Handle industrial zone growth - matches original Micropolis */
+/* Handle industrial zone growth - matches original WiNTown */
 static void DoIndIn(int pop, int value) {
     if (pop < 4) {
         IndPlop(SMapX, SMapY, pop);
@@ -768,7 +768,7 @@ static void DoIndIn(int pop, int value) {
     }
 }
 
-/* Increment Rate of Growth map - matches original Micropolis */
+/* Increment Rate of Growth map - matches original WiNTown */
 static void IncROG(int amount) {
     /* RateOGMem[SMapX>>3][SMapY>>3] += amount<<2; */
     /* Rate of Growth tracking not implemented yet */
@@ -917,7 +917,7 @@ static void ResPlop(int x, int y, int den, int value) {
         return;
     }
     
-    /* Use original Micropolis formula */
+    /* Use original WiNTown formula */
     /* base = (((Value * 4) + Den) * 9) + RZB - 4 */
     /* Note: RZB is 265, and we subtract 4 to get the base for ZonePlop */
     if (value < 0) value = 0;
@@ -960,7 +960,7 @@ static void ComPlop(int x, int y, int den) {
     /* Debug logging to track parameters */
     addDebugLog("ComPlop: x=%d y=%d den=%d", x, y, den);
     
-    /* Use original Micropolis formula */
+    /* Use original WiNTown formula */
     /* base = (((Value * 5) + Den) * 9) + CZB - 4 */
     targetTile = (((0 * 5) + den) * 9) + CZB - 4;
     
@@ -978,7 +978,7 @@ static void IndPlop(int x, int y, int den) {
     /* Debug logging to track parameters */
     addDebugLog("IndPlop: x=%d y=%d den=%d", x, y, den);
     
-    /* Use original Micropolis formula */
+    /* Use original WiNTown formula */
     /* base = (((Value * 4) + Den) * 9) + IZB - 4 */
     targetTile = (((0 * 4) + den) * 9) + IZB - 4;
     
@@ -1080,7 +1080,7 @@ static int ZonePlop(int xpos, int ypos, int base) {
     return 1;
 }
 
-/* Evaluate residential zone desirability - matches original Micropolis */
+/* Evaluate residential zone desirability - matches original WiNTown */
 static int EvalRes(int traf) {
     register short Value;
     
@@ -1098,7 +1098,7 @@ static int EvalRes(int traf) {
     return (Value);
 }
 
-/* Evaluate commercial zone desirability - matches original Micropolis */
+/* Evaluate commercial zone desirability - matches original WiNTown */
 static int EvalCom(int traf) {
     short Value;
     
@@ -1107,7 +1107,7 @@ static int EvalCom(int traf) {
     return (Value);
 }
 
-/* Evaluate industrial zone desirability - matches original Micropolis */
+/* Evaluate industrial zone desirability - matches original WiNTown */
 static int EvalInd(int traf) {
     if (traf < 0) return (-1000);
     return (0);

@@ -1,5 +1,5 @@
-/* notifications.h - Enhanced notification system for MicropolisNT
- * Based on original Micropolis notification analysis
+/* notifications.h - Enhanced notification system for WiNTown
+ * Based on original WiNTown notification analysis
  */
 
 #ifndef _NOTIFICATIONS_H

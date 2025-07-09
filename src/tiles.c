@@ -1,4 +1,4 @@
-/* tiles.c - Centralized tile management for MicropolisNT
+/* tiles.c - Centralized tile management for WiNTown
  * All map tile changes go through this module for debugging and validation
  */
 

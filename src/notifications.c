@@ -1,5 +1,5 @@
-/* notifications.c - Original Micropolis message system for MicropolisNT
- * Based on s_msg.c from original Micropolis
+/* notifications.c - Original WiNTown message system for WiNTown
+ * Based on s_msg.c from original WiNTown
  */
 
 #include "notifications.h"
@@ -13,7 +13,7 @@ extern HWND hwndMain;
 extern void addGameLog(const char *format, ...);
 extern void addDebugLog(const char *format, ...);
 
-/* Message system variables - like original Micropolis */
+/* Message system variables - like original WiNTown */
 int MessagePort = 0;
 int MesX = 0, MesY = 0;
 int MesNum = 0;
@@ -488,5 +488,5 @@ void CenterMapOnLocation(int x, int y) {
 /* Initialize notification system */
 void InitNotificationSystem(void) {
     ClearMes();
-    addDebugLog("Notification system initialized with original Micropolis logic");
+    addDebugLog("Notification system initialized with original WiNTown logic");
 }

@@ -1,5 +1,5 @@
-/* disasters.c - Disaster implementation for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* disasters.c - Disaster implementation for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"

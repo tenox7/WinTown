@@ -1,5 +1,5 @@
-/* power.c - Power distribution implementation for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* power.c - Power distribution implementation for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -221,7 +221,7 @@ static void CountPowerZones(void) {
 }
 
 /* Do a full power distribution scan - ORIGINAL ALGORITHM
-   This uses the original Micropolis power transmission method that traces along
+   This uses the original WiNTown power transmission method that traces along
    power lines and conductive terrain rather than using a simple radius */
 void DoPowerScan(void) {
     int x, y;

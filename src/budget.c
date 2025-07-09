@@ -1,5 +1,5 @@
-/* budget.c - Budget management system for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* budget.c - Budget management system for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"

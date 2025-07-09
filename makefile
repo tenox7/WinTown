@@ -3,7 +3,7 @@ RC = rc
 CFLAGS = /nologo /W3 /Ox /Ot /Oi /Ob2 /Oy /G5 /D "_X86_" /D "_WINDOWS" /ML
 LIBS = gdi32.lib user32.lib kernel32.lib COMDLG32.lib
 
-all: ntpolis.exe
+all: wintown.exe
 
 # Compile all source files
 src\anim.obj: src\anim.c
@@ -63,16 +63,16 @@ src\animtab.obj: src\animtab.c
 src\newgame.obj: src\newgame.c
 	$(CC) $(CFLAGS) /c src\newgame.c /Fosrc\newgame.obj
 
-micropolis.res: micropolis.rc
-	$(RC) micropolis.rc
+wintown.res: wintown.rc
+	$(RC) wintown.rc
 
-ntpolis.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj src\animtab.obj src\newgame.obj micropolis.res
-	link /NOLOGO /OUT:ntpolis.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj src\animtab.obj src\newgame.obj micropolis.res $(LIBS)
+wintown.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj src\animtab.obj src\newgame.obj wintown.res
+	link /NOLOGO /OUT:wintown.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj src\animtab.obj src\newgame.obj wintown.res $(LIBS)
 
 clean:
 	del /q src\*.obj
-	del /q ntpolis.exe
+	del /q wintown.exe
 	del /q *.res
 
 debug: clean
-	nmake CFLAGS="$(DEBUGFLAGS)" ntpolis.exe
+	nmake CFLAGS="$(DEBUGFLAGS)" wintown.exe

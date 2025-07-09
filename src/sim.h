@@ -1,5 +1,5 @@
-/* sim.h - Core simulation structures and functions for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* sim.h - Core simulation structures and functions for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #ifndef _SIM_H
@@ -10,7 +10,7 @@
 /* External declaration for UpdateToolbar function */
 extern void UpdateToolbar(void);
 
-/* Message system variables - like original Micropolis */
+/* Message system variables - like original WiNTown */
 extern int MessagePort;
 extern int MesX, MesY;
 extern int MesNum;
@@ -420,7 +420,7 @@ extern short DisasterWait;  /* Countdown to next disaster - defined in scenarios
 extern int DisasterLevel;   /* Disaster level */
 extern int DisastersEnabled; /* Enable/disable disasters (0=disabled, 1=enabled) */
 
-/* Difficulty level multiplier tables - based on original Micropolis */
+/* Difficulty level multiplier tables - based on original WiNTown */
 extern float DifficultyTaxEfficiency[3];     /* Tax revenue multipliers [Easy, Medium, Hard] */
 extern float DifficultyMaintenanceCost[3];   /* Road/rail maintenance cost multipliers */
 extern float DifficultyIndustrialGrowth[3];  /* Industrial growth rate multipliers */

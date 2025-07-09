@@ -1,5 +1,5 @@
-/* traffic.c - Traffic simulation implementation for MicropolisNT
- * Based on original Micropolis code from MicropolisLegacy project
+/* traffic.c - Traffic simulation implementation for WiNTown
+ * Based on original WiNTown code from WiNTownLegacy project
  */
 
 #include "sim.h"
@@ -117,7 +117,7 @@ int FindPRoad(void) {
 
 /* Check if we've reached the destination */
 static int DriveDone(void) {
-    /* Match original Micropolis traffic destinations from s_traf.c */
+    /* Match original WiNTown traffic destinations from s_traf.c */
     static short TARGL[3] = {COMBASE, LHTHR, LHTHR};     /* R>C C>I I>R */
     static short TARGH[3] = {NUCLEAR, PORT, COMBASE};    /* for destinations */
     int z, l, h;

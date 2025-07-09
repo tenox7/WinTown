@@ -1,5 +1,5 @@
-/* sprite.h - Transportation sprite system header for MicropolisNT
- * Based on original Micropolis sprite system
+/* sprite.h - Transportation sprite system header for WiNTown
+ * Based on original WiNTown sprite system
  */
 
 #ifndef _SPRITE_H
