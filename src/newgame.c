@@ -3,6 +3,7 @@
  */
 
 #include "newgame.h"
+#include "mapgen.h"
 #include "sim.h"
 #include "tiles.h"
 #include <windows.h>
@@ -46,6 +47,7 @@ static ScenarioInfo scenarios[] = {
 
 static int scenarioCount = 8;
 static NewGameConfig *currentConfig = NULL;
+static HBITMAP currentPreviewBitmap = NULL;
 
 /* Show the main new game dialog */
 int showNewGameDialog(HWND parent, NewGameConfig *config) {
@@ -63,6 +65,9 @@ int showNewGameDialog(HWND parent, NewGameConfig *config) {
     config->scenarioId = 0;
     strcpy(config->cityName, "New City");
     config->loadFile[0] = '\0';
+    config->mapType = MAPTYPE_RIVERS;
+    config->waterPercent = 25;
+    config->forestPercent = 30;
     
     currentConfig = config;
     
@@ -103,12 +108,26 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     case WM_INITDIALOG: {
         HWND listBox;
         int i;
+        char labelText[64];
         
         addGameLog("New game dialog WM_INITDIALOG - dialog is being created");
         /* Set default selections */
         CheckRadioButton(hwnd, IDC_NEW_CITY, IDC_SCENARIO, IDC_NEW_CITY);
         CheckRadioButton(hwnd, IDC_DIFFICULTY_EASY, IDC_DIFFICULTY_HARD, IDC_DIFFICULTY_MEDIUM);
         SetDlgItemText(hwnd, IDC_CITY_NAME, "New City");
+        
+        /* Initialize map generation controls */
+        CheckRadioButton(hwnd, IDC_MAP_RIVERS, IDC_MAP_ISLAND, IDC_MAP_RIVERS);
+        SetScrollRange(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL, 0, 100, FALSE);
+        SetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL, 25, TRUE);
+        SetScrollRange(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL, 0, 100, FALSE);
+        SetScrollPos(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL, 30, TRUE);
+        
+        /* Set initial labels */
+        sprintf(labelText, "Water: %d%%", 25);
+        SetDlgItemText(hwnd, IDC_WATER_LABEL, labelText);
+        sprintf(labelText, "Forest: %d%%", 30);
+        SetDlgItemText(hwnd, IDC_FOREST_LABEL, labelText);
         
         /* Populate scenario list */
         listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
@@ -130,6 +149,16 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
         ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
         
+        /* Show map generation controls since New City is selected */
+        ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_SHOW);
+        ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_SHOW);
+        
         /* Enable/disable controls based on selection */
         EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
         addGameLog("New game dialog initialized with defaults");
@@ -143,6 +172,15 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
+                /* Show map generation controls */
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_SHOW);
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_NEW_CITY;
                 }
@@ -154,6 +192,15 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), FALSE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
+                /* Hide map generation controls */
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_HIDE);
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_LOAD_CITY;
                 }
@@ -165,6 +212,15 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), FALSE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_SHOW);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_SHOW);
+                /* Hide map generation controls */
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_HIDE);
+                ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_HIDE);
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_SCENARIO;
                 }
@@ -186,6 +242,48 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         case IDC_DIFFICULTY_HARD:
             if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
                 currentConfig->difficulty = DIFFICULTY_HARD;
+            }
+            break;
+            
+        case IDC_MAP_RIVERS:
+            if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
+                currentConfig->mapType = MAPTYPE_RIVERS;
+            }
+            break;
+            
+        case IDC_MAP_ISLAND:
+            if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
+                currentConfig->mapType = MAPTYPE_ISLAND;
+            }
+            break;
+            
+        case IDC_GENERATE_PREVIEW:
+            if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
+                MapGenParams params;
+                
+                /* Get current slider values */
+                int waterPos = GetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL);
+                int forestPos = GetScrollPos(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL);
+                
+                /* Set up parameters */
+                params.mapType = currentConfig->mapType;
+                params.waterPercent = waterPos;
+                params.forestPercent = forestPos;
+                
+                /* Clean up previous bitmap */
+                if (currentPreviewBitmap) {
+                    DeleteObject(currentPreviewBitmap);
+                    currentPreviewBitmap = NULL;
+                }
+                
+                /* Generate new preview */
+                if (generateMapPreview(&params, &currentPreviewBitmap, 120, 90)) {
+                    SendMessage(GetDlgItem(hwnd, IDC_MAP_PREVIEW), STM_SETIMAGE, 
+                               IMAGE_BITMAP, (LPARAM)currentPreviewBitmap);
+                    addGameLog("Map preview generated successfully");
+                } else {
+                    addGameLog("ERROR: Failed to generate map preview");
+                }
             }
             break;
             
@@ -272,13 +370,67 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         
         case IDC_CANCEL:
             addGameLog("User clicked Cancel in new game dialog");
+            /* Clean up preview bitmap */
+            if (currentPreviewBitmap) {
+                DeleteObject(currentPreviewBitmap);
+                currentPreviewBitmap = NULL;
+            }
             EndDialog(hwnd, 0);
             return TRUE;
         }
         break;
     }
     
+    case WM_HSCROLL: {
+        int scrollId = GetDlgCtrlID((HWND)lParam);
+        int pos = GetScrollPos((HWND)lParam, SB_CTL);
+        char labelText[64];
+        
+        switch (LOWORD(wParam)) {
+        case SB_LINEUP:
+            pos = max(0, pos - 1);
+            break;
+        case SB_LINEDOWN:
+            pos = min(100, pos + 1);
+            break;
+        case SB_PAGEUP:
+            pos = max(0, pos - 10);
+            break;
+        case SB_PAGEDOWN:
+            pos = min(100, pos + 10);
+            break;
+        case SB_THUMBTRACK:
+        case SB_THUMBPOSITION:
+            pos = HIWORD(wParam);
+            break;
+        }
+        
+        SetScrollPos((HWND)lParam, SB_CTL, pos, TRUE);
+        
+        /* Update labels and config */
+        if (scrollId == IDC_WATER_PERCENT) {
+            sprintf(labelText, "Water: %d%%", pos);
+            SetDlgItemText(hwnd, IDC_WATER_LABEL, labelText);
+            if (currentConfig) {
+                currentConfig->waterPercent = pos;
+            }
+        } else if (scrollId == IDC_FOREST_PERCENT) {
+            sprintf(labelText, "Forest: %d%%", pos);
+            SetDlgItemText(hwnd, IDC_FOREST_LABEL, labelText);
+            if (currentConfig) {
+                currentConfig->forestPercent = pos;
+            }
+        }
+        
+        return TRUE;
+    }
+    
     case WM_CLOSE:
+        /* Clean up preview bitmap */
+        if (currentPreviewBitmap) {
+            DeleteObject(currentPreviewBitmap);
+            currentPreviewBitmap = NULL;
+        }
         EndDialog(hwnd, 0);
         return TRUE;
     }
@@ -367,7 +519,9 @@ int initNewGame(NewGameConfig *config) {
     
     switch (config->gameType) {
     case NEWGAME_NEW_CITY:
-        return generateNewCity(config->cityName, config->difficulty);
+        return generateNewCityWithTerrain(config->cityName, config->difficulty, 
+                                        config->mapType, config->waterPercent, 
+                                        config->forestPercent);
         
     case NEWGAME_LOAD_CITY:
         return loadCityFile(config->loadFile);
@@ -457,6 +611,79 @@ int generateNewCity(char *cityName, int difficulty) {
     SetValves(500, 300, 100);
     
     addGameLog("New city '%s' generated successfully. Difficulty: %s, Funds: $%ld", 
+              cityName, 
+              (difficulty == DIFFICULTY_EASY) ? "Easy" : 
+              (difficulty == DIFFICULTY_MEDIUM) ? "Medium" : "Hard",
+              TotalFunds);
+    
+    return 1;
+}
+
+/* Generate a new city with terrain */
+int generateNewCityWithTerrain(char *cityName, int difficulty, int mapType, int waterPercent, int forestPercent) {
+    MapGenParams params;
+    
+    if (!cityName) {
+        return 0;
+    }
+    
+    addGameLog("Generating new city with terrain: %s (Type: %s, Water: %d%%, Forest: %d%%)", 
+              cityName, (mapType == MAPTYPE_RIVERS) ? "Rivers" : "Island", 
+              waterPercent, forestPercent);
+    
+    /* Set difficulty level */
+    GameLevel = difficulty;
+    
+    /* Set starting funds based on difficulty */
+    switch (difficulty) {
+    case DIFFICULTY_EASY:
+        TotalFunds = 20000;
+        break;
+    case DIFFICULTY_MEDIUM:
+        TotalFunds = 10000;
+        break;
+    case DIFFICULTY_HARD:
+        TotalFunds = 5000;
+        break;
+    default:
+        TotalFunds = 10000;
+        break;
+    }
+    
+    /* Initialize simulation first */
+    DoSimInit();
+    
+    /* Generate terrain based on parameters */
+    params.mapType = mapType;
+    params.waterPercent = waterPercent;
+    params.forestPercent = forestPercent;
+    
+    if (!generateTerrainMap(&params)) {
+        addGameLog("ERROR: Failed to generate terrain map");
+        /* Fall back to blank map */
+        clearMapForNewCity();
+    }
+    
+    /* Restore the funds since DoSimInit overwrites them */
+    switch (difficulty) {
+    case DIFFICULTY_EASY:
+        TotalFunds = 20000;
+        break;
+    case DIFFICULTY_MEDIUM:
+        TotalFunds = 10000;
+        break;
+    case DIFFICULTY_HARD:
+        TotalFunds = 5000;
+        break;
+    default:
+        TotalFunds = 10000;
+        break;
+    }
+    
+    /* Set demand valves to initial values */
+    SetValves(500, 300, 100);
+    
+    addGameLog("New city '%s' with terrain generated successfully. Difficulty: %s, Funds: $%ld", 
               cityName, 
               (difficulty == DIFFICULTY_EASY) ? "Easy" : 
               (difficulty == DIFFICULTY_MEDIUM) ? "Medium" : "Hard",

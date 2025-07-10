@@ -45,6 +45,14 @@
 #define IDC_NOTIF_ADVICE                9105
 #define IDC_NOTIF_LOCATION              9106
 #define IDC_GOTO_LOCATION               9107
+#define IDC_MAP_RIVERS                  10001
+#define IDC_MAP_ISLAND                  10002
+#define IDC_WATER_PERCENT               10003
+#define IDC_WATER_LABEL                 10004
+#define IDC_FOREST_PERCENT              10005
+#define IDC_FOREST_LABEL                10006
+#define IDC_MAP_PREVIEW                 10007
+#define IDC_GENERATE_PREVIEW            10008
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

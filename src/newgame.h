@@ -29,6 +29,16 @@
 #define IDC_SCENARIO_OK 2004
 #define IDC_SCENARIO_CANCEL 2005
 
+/* Control IDs for Map Generation */
+#define IDC_MAP_RIVERS 10001
+#define IDC_MAP_ISLAND 10002
+#define IDC_WATER_PERCENT 10003
+#define IDC_WATER_LABEL 10004
+#define IDC_FOREST_PERCENT 10005
+#define IDC_FOREST_LABEL 10006
+#define IDC_MAP_PREVIEW 10007
+#define IDC_GENERATE_PREVIEW 10008
+
 /* New Game options */
 #define NEWGAME_NEW_CITY 0
 #define NEWGAME_LOAD_CITY 1
@@ -56,6 +66,9 @@ typedef struct {
     int scenarioId;      /* 1-8 for scenarios, 0 for new city */
     char cityName[64];   /* City name */
     char loadFile[MAX_PATH]; /* File to load (for NEWGAME_LOAD_CITY) */
+    int mapType;         /* Map generation type (rivers/island) */
+    int waterPercent;    /* Water coverage percentage (0-100) */
+    int forestPercent;   /* Forest coverage percentage (0-100) */
 } NewGameConfig;
 
 /* Function prototypes */
@@ -74,6 +87,7 @@ int loadScenarioById(int scenarioId);
 
 /* New city generation */
 int generateNewCity(char *cityName, int difficulty);
+int generateNewCityWithTerrain(char *cityName, int difficulty, int mapType, int waterPercent, int forestPercent);
 
 /* City loading */
 int loadCityFile(char *filename);
