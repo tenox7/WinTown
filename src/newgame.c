@@ -65,7 +65,7 @@ int showNewGameDialog(HWND parent, NewGameConfig *config) {
     config->scenarioId = 0;
     strcpy(config->cityName, "New City");
     config->loadFile[0] = '\0';
-    config->mapType = MAPTYPE_RIVERS;
+    config->mapType = MAPTYPE_RIVERS; /* Default: unchecked = rivers */
     config->waterPercent = 25;
     config->forestPercent = 30;
     
@@ -117,7 +117,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         SetDlgItemText(hwnd, IDC_CITY_NAME, "New City");
         
         /* Initialize map generation controls */
-        CheckRadioButton(hwnd, IDC_MAP_RIVERS, IDC_MAP_ISLAND, IDC_MAP_RIVERS);
+        CheckDlgButton(hwnd, IDC_MAP_ISLAND, BST_UNCHECKED);
         SetScrollRange(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL, 0, 100, FALSE);
         SetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL, 25, TRUE);
         SetScrollRange(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL, 0, 100, FALSE);
@@ -145,19 +145,10 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         SendMessage(listBox, LB_SETCURSEL, 0, 0);
         SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[0].description);
         
-        /* Hide scenario controls initially since New City is selected */
+        /* Show appropriate controls for New City (default selection) */
+        EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
         ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
         ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
-        
-        /* Show map generation controls since New City is selected */
-        ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_SHOW);
-        ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_SHOW);
         
         /* Enable/disable controls based on selection */
         EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
@@ -169,18 +160,18 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         switch (LOWORD(wParam)) {
         case IDC_NEW_CITY:
             if (HIWORD(wParam) == BN_CLICKED) {
+                /* Show new city controls */
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_EASY), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_MEDIUM), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_HARD), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), TRUE);
+                EnableWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), TRUE);
+                /* Hide scenario controls */
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
-                /* Show map generation controls */
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_SHOW);
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_SHOW);
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_NEW_CITY;
                 }
@@ -189,18 +180,18 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             
         case IDC_LOAD_CITY:
             if (HIWORD(wParam) == BN_CLICKED) {
+                /* Disable new city controls */
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_EASY), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_MEDIUM), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_HARD), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), FALSE);
+                /* Hide scenario controls */
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
-                /* Hide map generation controls */
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_HIDE);
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_LOAD_CITY;
                 }
@@ -209,18 +200,18 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             
         case IDC_SCENARIO:
             if (HIWORD(wParam) == BN_CLICKED) {
+                /* Disable new city controls */
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_EASY), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_MEDIUM), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_HARD), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), FALSE);
+                /* Show scenario controls */
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_SHOW);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_SHOW);
-                /* Hide map generation controls */
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_RIVERS), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_WATER_LABEL), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_FOREST_LABEL), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), SW_HIDE);
-                ShowWindow(GetDlgItem(hwnd, IDC_MAP_PREVIEW), SW_HIDE);
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_SCENARIO;
                 }
@@ -245,30 +236,38 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             }
             break;
             
-        case IDC_MAP_RIVERS:
-            if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
-                currentConfig->mapType = MAPTYPE_RIVERS;
-            }
-            break;
-            
         case IDC_MAP_ISLAND:
             if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
-                currentConfig->mapType = MAPTYPE_ISLAND;
+                int isChecked = (IsDlgButtonChecked(hwnd, IDC_MAP_ISLAND) == BST_CHECKED);
+                currentConfig->mapType = isChecked ? MAPTYPE_ISLAND : MAPTYPE_RIVERS;
             }
             break;
             
         case IDC_GENERATE_PREVIEW:
             if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
                 MapGenParams params;
+                HWND previewCtrl;
+                RECT previewRect;
+                int previewWidth, previewHeight;
+                int waterPos, forestPos;
+                int isIslandChecked;
                 
                 /* Get current slider values */
-                int waterPos = GetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL);
-                int forestPos = GetScrollPos(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL);
+                waterPos = GetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL);
+                forestPos = GetScrollPos(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL);
                 
-                /* Set up parameters */
-                params.mapType = currentConfig->mapType;
+                /* Get preview control dimensions */
+                previewCtrl = GetDlgItem(hwnd, IDC_MAP_PREVIEW);
+                GetClientRect(previewCtrl, &previewRect);
+                previewWidth = previewRect.right - previewRect.left;
+                previewHeight = previewRect.bottom - previewRect.top;
+                
+                /* Set up parameters - read checkbox state directly */
+                isIslandChecked = (IsDlgButtonChecked(hwnd, IDC_MAP_ISLAND) == BST_CHECKED);
+                params.mapType = isIslandChecked ? MAPTYPE_ISLAND : MAPTYPE_RIVERS;
                 params.waterPercent = waterPos;
                 params.forestPercent = forestPos;
+                
                 
                 /* Clean up previous bitmap */
                 if (currentPreviewBitmap) {
@@ -276,11 +275,10 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     currentPreviewBitmap = NULL;
                 }
                 
-                /* Generate new preview */
-                if (generateMapPreview(&params, &currentPreviewBitmap, 120, 90)) {
-                    SendMessage(GetDlgItem(hwnd, IDC_MAP_PREVIEW), STM_SETIMAGE, 
-                               IMAGE_BITMAP, (LPARAM)currentPreviewBitmap);
-                    addGameLog("Map preview generated successfully");
+                /* Generate new preview with dynamic sizing */
+                if (generateMapPreview(&params, &currentPreviewBitmap, previewWidth, previewHeight)) {
+                    SendMessage(previewCtrl, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)currentPreviewBitmap);
+                    addGameLog("Map preview generated successfully (%dx%d)", previewWidth, previewHeight);
                 } else {
                     addGameLog("ERROR: Failed to generate map preview");
                 }

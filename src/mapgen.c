@@ -106,13 +106,13 @@ static void placeRiverPattern(int x, int y, int isLarge) {
         {0,0,3,3,0,0}
     };
     
-    int px, py, tile;
+    int px, py, tile, worldX, worldY;
     int size = isLarge ? 9 : 6;
     
     for (py = 0; py < size; py++) {
         for (px = 0; px < size; px++) {
-            int worldX = x + px;
-            int worldY = y + py;
+            worldX = x + px;
+            worldY = y + py;
             
             if (worldX >= 0 && worldX < WORLD_X && worldY >= 0 && worldY < WORLD_Y) {
                 tile = isLarge ? largePattern[py][px] : smallPattern[py][px];
@@ -453,13 +453,31 @@ int generateMapPreview(MapGenParams *params, HBITMAP *previewBitmap, int width, 
     HDC hdc, memDC;
     HBITMAP oldBitmap;
     int x, y, mapX, mapY, tile;
+    int actualWidth, actualHeight, offsetX, offsetY;
+    float aspectRatio, widthRatio, heightRatio;
     COLORREF tileColor;
+    HBRUSH bgBrush;
     
     if (!params || !previewBitmap) {
         return 0;
     }
     
-    addGameLog("Generating map preview %dx%d", width, height);
+    /* Calculate proper aspect ratio (WORLD_X:WORLD_Y = 120:100 = 1.2:1) */
+    aspectRatio = (float)WORLD_X / (float)WORLD_Y;
+    widthRatio = (float)width / aspectRatio;
+    heightRatio = (float)height * aspectRatio;
+    
+    if (widthRatio <= height) {
+        /* Width constrains, center vertically */
+        actualWidth = width;
+        actualHeight = (int)widthRatio;
+    } else {
+        /* Height constrains, center horizontally */
+        actualWidth = (int)heightRatio;
+        actualHeight = height;
+    }
+    
+    addGameLog("Generating map preview %dx%d (actual: %dx%d)", width, height, actualWidth, actualHeight);
     
     /* Create temporary terrain map */
     if (!generateTerrainMap(params)) {
@@ -472,12 +490,22 @@ int generateMapPreview(MapGenParams *params, HBITMAP *previewBitmap, int width, 
     *previewBitmap = CreateCompatibleBitmap(hdc, width, height);
     oldBitmap = SelectObject(memDC, *previewBitmap);
     
-    /* Draw preview */
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
+    /* Fill background with gray */
+    bgBrush = CreateSolidBrush(RGB(192, 192, 192));
+    SelectObject(memDC, bgBrush);
+    PatBlt(memDC, 0, 0, width, height, PATCOPY);
+    DeleteObject(bgBrush);
+    
+    /* Calculate centering offsets */
+    offsetX = (width - actualWidth) / 2;
+    offsetY = (height - actualHeight) / 2;
+    
+    /* Draw preview centered with proper aspect ratio */
+    for (y = 0; y < actualHeight; y++) {
+        for (x = 0; x < actualWidth; x++) {
             /* Map preview coordinates to world coordinates */
-            mapX = (x * WORLD_X) / width;
-            mapY = (y * WORLD_Y) / height;
+            mapX = (x * WORLD_X) / actualWidth;
+            mapY = (y * WORLD_Y) / actualHeight;
             
             tile = getMapTile(mapX, mapY);
             
@@ -507,7 +535,7 @@ int generateMapPreview(MapGenParams *params, HBITMAP *previewBitmap, int width, 
                 break;
             }
             
-            SetPixel(memDC, x, y, tileColor);
+            SetPixel(memDC, x + offsetX, y + offsetY, tileColor);
         }
     }
     

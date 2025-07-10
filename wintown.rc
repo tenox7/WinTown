@@ -77,47 +77,42 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,345,240,40,20
 END
 
-IDD_NEWGAME DIALOG DISCARDABLE  0, 0, 550, 380
+IDD_NEWGAME DIALOG DISCARDABLE  0, 0, 420, 260
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "New Game - WiNTown"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Game Type",IDC_STATIC,10,10,120,80
+    GROUPBOX        "Game Type",IDC_STATIC,10,10,288,37
     CONTROL         "&New City",IDC_NEW_CITY,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP | WS_TABSTOP,20,25,60,12
+                    WS_GROUP | WS_TABSTOP,20,25,48,12
     CONTROL         "&Load City",IDC_LOAD_CITY,"Button",BS_AUTORADIOBUTTON,
-                    20,42,60,12
-    CONTROL         "&Scenario",IDC_SCENARIO,"Button",BS_AUTORADIOBUTTON,20,
-                    59,60,12
-    LTEXT           "City Name:",IDC_STATIC,140,27,40,12
-    EDITTEXT        IDC_CITY_NAME,185,25,110,12,ES_AUTOHSCROLL
-    GROUPBOX        "Difficulty",IDC_STATIC,10,100,400,40
+                    79,25,60,12
+    CONTROL         "&Scenario",IDC_SCENARIO,"Button",BS_AUTORADIOBUTTON,145,
+                    25,60,12
+    GROUPBOX        "New City Options",IDC_STATIC,9,52,124,192
+    LTEXT           "City Name:",IDC_STATIC,15,65,40,12
+    EDITTEXT        IDC_CITY_NAME,18,76,84,14,ES_AUTOHSCROLL
     CONTROL         "&Easy ($20,000)",IDC_DIFFICULTY_EASY,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,20,115,70,12
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,18,94,65,12
     CONTROL         "&Medium ($10,000)",IDC_DIFFICULTY_MEDIUM,"Button",
-                    BS_AUTORADIOBUTTON,110,115,80,12
+                    BS_AUTORADIOBUTTON,18,108,75,12
     CONTROL         "&Hard ($5,000)",IDC_DIFFICULTY_HARD,"Button",
-                    BS_AUTORADIOBUTTON,210,115,65,12
-    GROUPBOX        "Map Generation",IDC_STATIC,10,150,400,140
-    CONTROL         "&Rivers",IDC_MAP_RIVERS,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP | WS_TABSTOP,20,165,40,12
-    CONTROL         "&Island",IDC_MAP_ISLAND,"Button",BS_AUTORADIOBUTTON,
-                    70,165,40,12
-    LTEXT           "Water: 25%",IDC_WATER_LABEL,20,185,50,12
-    SCROLLBAR       IDC_WATER_PERCENT,75,183,100,12,WS_TABSTOP
-    LTEXT           "Forest: 30%",IDC_FOREST_LABEL,20,205,50,12
-    SCROLLBAR       IDC_FOREST_PERCENT,75,203,100,12,WS_TABSTOP
-    PUSHBUTTON      "Generate Preview",IDC_GENERATE_PREVIEW,20,225,80,15
+                    BS_AUTORADIOBUTTON,18,122,60,12
+    CONTROL         "&Island",IDC_MAP_ISLAND,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,18,137,40,12
+    LTEXT           "Water: 25%",IDC_WATER_LABEL,21,171,40,12
+    SCROLLBAR       IDC_WATER_PERCENT,63,169,59,12,WS_TABSTOP
+    LTEXT           "Forest: 30%",IDC_FOREST_LABEL,21,190,40,12
+    SCROLLBAR       IDC_FOREST_PERCENT,64,188,59,12,WS_TABSTOP
+    PUSHBUTTON      "Generate",IDC_GENERATE_PREVIEW,20,219,80,15
     CONTROL         "",IDC_MAP_PREVIEW,"Static",SS_BITMAP | SS_CENTERIMAGE,
-                    200,165,120,90
-    LTEXT           "Click 'Generate Preview' to see your terrain",IDC_STATIC,
-                    200,260,120,25
-    GROUPBOX        "Scenarios",IDC_STATIC,15,300,270,120
-    LISTBOX         IDC_SCENARIO_LIST,25,316,120,92,WS_VSCROLL | 
+                    316,7,91,81
+    GROUPBOX        "Scenarios",IDC_STATIC,146,98,263,138
+    LISTBOX         IDC_SCENARIO_LIST,151,112,112,118,WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "",IDC_SCENARIO_DESC,151,314,120,95
-    DEFPUSHBUTTON   "OK",IDC_OK,425,335,50,14
-    PUSHBUTTON      "Cancel",IDC_CANCEL,482,335,50,14
+    LTEXT           "",IDC_SCENARIO_DESC,279,113,116,113
+    DEFPUSHBUTTON   "OK",IDC_OK,311,241,50,14
+    PUSHBUTTON      "Cancel",IDC_CANCEL,365,241,50,14
 END
 
 IDD_SCENARIO_SELECT DIALOGEX 0, 0, 400, 300
@@ -126,8 +121,7 @@ CAPTION "Select Scenario - WiNTown"
 FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     LTEXT           "Choose a scenario:",IDC_STATIC,10,10,80,12
-    LISTBOX         IDC_SCENARIO_LIST,10,25,160,200,WS_VSCROLL | 
-                    WS_TABSTOP
+    LISTBOX         IDC_SCENARIO_LIST,10,25,160,200,WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "Description",IDC_STATIC,180,25,210,200
     LTEXT           "",IDC_SCENARIO_DESC,190,40,190,180
     DEFPUSHBUTTON   "OK",IDC_SCENARIO_OK,235,245,50,14
@@ -176,3 +170,4 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+
