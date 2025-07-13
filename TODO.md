@@ -20,7 +20,6 @@
 
 
 ## Cosmetic
-- Some tilesets cause 100% CPU peg - may be num color related?
 - Buttons / sizing / layout / etc
 - Better RCI and mini chart indicators
 - No power needs to flash

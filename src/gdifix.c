@@ -145,3 +145,85 @@ HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
 #endif
 }
 
+/* Convert any bitmap to 8-bit using the system palette */
+HBITMAP convertTo8Bit(HBITMAP hSrcBitmap, HDC hdc, HPALETTE hSystemPalette) {
+    BITMAP bm;
+    
+    /* Get source bitmap info */
+    if (!GetObject(hSrcBitmap, sizeof(BITMAP), &bm)) {
+        return NULL;
+    }
+    
+    /* For non-8-bit images, create a compatible bitmap and use StretchBlt with palette */
+    {
+        HDC hdcSrc, hdcDest;
+        HBITMAP hDestBitmap, hOldSrc, hOldDest;
+        
+        /* Create compatible DCs */
+        hdcSrc = CreateCompatibleDC(hdc);
+        hdcDest = CreateCompatibleDC(hdc);
+        
+        if (!hdcSrc || !hdcDest) {
+            if (hdcSrc) DeleteDC(hdcSrc);
+            if (hdcDest) DeleteDC(hdcDest);
+            return NULL;
+        }
+        
+        /* Apply system palette to both DCs */
+        if (hSystemPalette) {
+            SelectPalette(hdcSrc, hSystemPalette, FALSE);
+            RealizePalette(hdcSrc);
+            SelectPalette(hdcDest, hSystemPalette, FALSE);
+            RealizePalette(hdcDest);
+        }
+        
+        /* Create destination bitmap compatible with the display (8-bit) */
+        hDestBitmap = CreateCompatibleBitmap(hdc, bm.bmWidth, bm.bmHeight);
+        
+        if (hDestBitmap) {
+            /* Select bitmaps */
+            hOldSrc = SelectObject(hdcSrc, hSrcBitmap);
+            hOldDest = SelectObject(hdcDest, hDestBitmap);
+            
+            /* Set stretch mode for better quality */
+            SetStretchBltMode(hdcDest, COLORONCOLOR);
+            
+            /* Copy with palette conversion using StretchBlt */
+            if (!StretchBlt(hdcDest, 0, 0, bm.bmWidth, bm.bmHeight, 
+                           hdcSrc, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY)) {
+                DeleteObject(hDestBitmap);
+                hDestBitmap = NULL;
+            }
+            
+            /* Restore selections */
+            SelectObject(hdcSrc, hOldSrc);
+            SelectObject(hdcDest, hOldDest);
+        }
+        
+        DeleteDC(hdcSrc);
+        DeleteDC(hdcDest);
+        
+        return hDestBitmap;
+    }
+}
+
+/* Validate tileset meets game requirements */
+int validateTilesetFormat(HBITMAP hBitmap) {
+    BITMAP bm;
+    
+    if (!hBitmap) {
+        return 0;
+    }
+    
+    if (!GetObject(hBitmap, sizeof(BITMAP), &bm)) {
+        return 0;
+    }
+    
+    /* Check dimensions - tilesets must be 512x480 */
+    if (bm.bmWidth != 512 || bm.bmHeight != 480) {
+        return 0;
+    }
+    
+    return 1;
+}
+

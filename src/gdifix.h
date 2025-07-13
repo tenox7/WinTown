@@ -22,6 +22,10 @@
 
 HANDLE LoadImageFromFile (LPCSTR filename, UINT fuLoad);
 
+/* Tileset conversion and validation functions */
+HBITMAP convertTo8Bit(HBITMAP hSrcBitmap, HDC hdc, HPALETTE hSystemPalette);
+int validateTilesetFormat(HBITMAP hBitmap);
+
 /* CheckMenuRadioItem compatibility */
 #if(_MSC_VER < 1000)
     /* Simple fallback for older versions - uncheck all then check selected */

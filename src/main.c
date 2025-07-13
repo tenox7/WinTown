@@ -3328,19 +3328,30 @@ wsprintf(debugMsg, "Loading tileset %s\n",filename);
         return 0;
     }
 
-wsprintf(debugMsg, "Tileset Info: %dx%d, %d bits/pixel", bm.bmWidth, bm.bmHeight,bm.bmBitsPixel);
-
     /* Verify that the bitmap was loaded properly */
     if (GetObject(hbmTiles, sizeof(BITMAP), &bm)) {
         wsprintf(debugMsg, "Tileset Info: %dx%d, %d bits/pixel", bm.bmWidth, bm.bmHeight,
                  bm.bmBitsPixel);
         OutputDebugString(debugMsg);
 
-        /* Warn if the bitmap is not 8-bit */
-        if (bm.bmBitsPixel != 8) {
-            wsprintf(debugMsg, "WARNING: Tileset is not 8-bit color (%d bits)", bm.bmBitsPixel);
-            OutputDebugString(debugMsg);
+        /* Convert all images to uncompressed 8-bit format */
+        {
+            HBITMAP hConvertedBitmap;
+            HDC hdcTemp;
+            
+            hdcTemp = GetDC(hwndMain);
+            hConvertedBitmap = convertTo8Bit(hbmTiles, hdcTemp, hPalette);
+            ReleaseDC(hwndMain, hdcTemp);
+            
+            if (hConvertedBitmap) {
+                /* Always replace original with uncompressed bitmap */
+                DeleteObject(hbmTiles);
+                hbmTiles = hConvertedBitmap;
+            }
         }
+        
+        /* Validate final tileset format */
+        validateTilesetFormat(hbmTiles);
     }
 
     hdc = GetDC(hwndMain);
@@ -3421,6 +3432,25 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
         wsprintf(debugMsg, "Changed Tileset Info: %dx%d, %d bits/pixel", bm.bmWidth, bm.bmHeight,
                  bm.bmBitsPixel);
         OutputDebugString(debugMsg);
+
+        /* Convert all images to uncompressed 8-bit format */
+        {
+            HBITMAP hConvertedBitmap;
+            HDC hdcTemp;
+            
+            hdcTemp = GetDC(hwndMain);
+            hConvertedBitmap = convertTo8Bit(hbmTiles, hdcTemp, hPalette);
+            ReleaseDC(hwndMain, hdcTemp);
+            
+            if (hConvertedBitmap) {
+                /* Always replace original with uncompressed bitmap */
+                DeleteObject(hbmTiles);
+                hbmTiles = hConvertedBitmap;
+            }
+        }
+        
+        /* Validate final tileset format */
+        validateTilesetFormat(hbmTiles);
     }
 
     hdc = GetDC(hwndMain);
