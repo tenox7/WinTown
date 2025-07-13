@@ -6,7 +6,7 @@ A port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka
 
 --------------
 
-**WIP: The game is playable but buggy and not fully finished.**
+**WIP: The game is playable but not fully finished and has bugs.**
 
 There are major bugs see [TODO](TODO.md) for details. 
 
