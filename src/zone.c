@@ -9,6 +9,7 @@
 #include <windows.h>
 
 /* External log functions */
+extern void addGameLog(const char *format, ...);
 extern void addDebugLog(const char *format, ...);
 
 /* Population table values for different zone types */

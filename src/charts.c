@@ -491,8 +491,6 @@ void ShowChartContextMenu(HWND hwnd, int x, int y) {
 LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     HDC hdc;
     PAINTSTRUCT ps;
-    int i;
-    RECT buttonRect;
     POINT pt;
     
     switch (message) {
@@ -861,12 +859,11 @@ void DrawChartLegend(HDC hdc) {
     HFONT hOldFont;
     HPEN hPen;
     HPEN hOldPen;
-    char text[32];
     int i;
     int x, y;
     int legendCount;
     int itemsPerRow;
-    int row, col;
+    int col;
     int itemWidth;
     RECT clientRect;
     

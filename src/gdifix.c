@@ -14,6 +14,10 @@
 #define MAX_BITMAP_SIZE (16 * 1024 * 1024)  /* 16MB limit */
 
 HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
+#if(_MSC_VER > 900)
+    /* Use newer LoadImage API if available */
+    return LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, fuLoad);
+#else
     BITMAPFILEHEADER bmfHeader;
     BITMAPINFOHEADER bmiHeader;
     HBITMAP hBitmap = NULL;
@@ -23,11 +27,6 @@ HANDLE LoadImageFromFile(LPCSTR filename, UINT fuLoad) {
     BITMAPINFO *bmi;
     size_t bmiSize, fsize, colorTableSize;
     HDC hdc;
-
-#if(_MSC_VER > 900)
-    /* Use newer LoadImage API if available */
-    return LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, fuLoad);
-#else
     /* Manual bitmap loading for older compilers */
     
     hdc = GetDC(NULL);

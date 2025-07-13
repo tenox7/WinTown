@@ -10,6 +10,10 @@
 #include <string.h>
 #include <windows.h>
 
+/* Logging functions */
+extern void addGameLog(const char *format, ...);
+extern void addDebugLog(const char *format, ...);
+
 /* Maximum distance for a trip */
 #define MAXDIS 30
 

@@ -3199,7 +3199,6 @@ void initializeGraphics(HWND hwnd) {
     int width;
     int height;
     BITMAPINFOHEADER bi;
-    BITMAPINFO binfo;
     HBITMAP hbmOld;
     char errorMsg[256];
     DWORD error;
@@ -4366,7 +4365,6 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
     RECT rect;
     HBRUSH hBrush;
     HBRUSH hOldBrush;
-    COLORREF color;
     int tileIndex;
     int srcX;
     int srcY;
@@ -4765,7 +4763,6 @@ void drawCity(HDC hdc) {
     if (powerOverlayEnabled) {
         RECT legendRect;
         RECT legendBackground;
-        HBRUSH hLegendBrush;
         COLORREF oldTextColor;
         int legendX;
         int legendY;

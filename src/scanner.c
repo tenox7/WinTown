@@ -133,7 +133,7 @@ static void SmoothPSMap(void) {
 
             /* Original WiNTown smoothing algorithm */
             edge = (edge >> 2) + PoliceMap[y][x];  /* (neighbors/4) + current */
-            STem[x][y] = (short)(edge >> 1);        /* divide by 2 - back to short for debugging */
+            STem[x][y] = (Byte)(edge >> 1);        /* divide by 2 - cast to Byte */
         }
     }
 
@@ -170,7 +170,7 @@ static void SmoothFSMap(void) {
 
             /* Original WiNTown smoothing algorithm */
             edge = (edge >> 2) + FireStMap[y][x];  /* (neighbors/4) + current */
-            STem[x][y] = (short)(edge >> 1);        /* divide by 2 - back to short for debugging */
+            STem[x][y] = (Byte)(edge >> 1);        /* divide by 2 - cast to Byte */
         }
     }
 

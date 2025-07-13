@@ -17,6 +17,10 @@ extern int toolbarWidth;
 /* External reference to RCI values */
 extern short RValve, CValve, IValve;
 
+/* Logging functions */
+extern void addGameLog(const char *format, ...);
+extern void addDebugLog(const char *format, ...);
+
 /* Constants for boolean values */
 #ifndef TRUE
 #define TRUE 1
@@ -580,7 +584,6 @@ void put3x3Rubble(int x, int y) {
 void put4x4Rubble(int x, int y) {
     int xx, yy;
     short zz;
-    short mask;
 
     /* First pass - clear all zone bits to avoid confusion during bulldozing */
     for (yy = y - 1; yy <= y + 2; yy++) {
@@ -609,7 +612,6 @@ void put4x4Rubble(int x, int y) {
 void put6x6Rubble(int x, int y) {
     int xx, yy;
     short zz;
-    short mask;
 
     /* First pass - clear all zone bits to avoid confusion during bulldozing */
     for (yy = y - 2; yy <= y + 3; yy++) {

@@ -36,7 +36,7 @@ extern int ResCap, IndCap, ComCap;
 int SendMes(int Mnum);
 void SendMesAt(int Mnum, int x, int y);
 void CheckGrowth(void);
-void DoScenarioScore(int type);
+void DoScenarioScore(void);
 void ClearMes(void);
 
 /* Original SendMessages function - called every simulation cycle */
@@ -48,7 +48,7 @@ void SendMessages(void) {
     if (ScenarioID && ScoreType && ScoreWait) {
         ScoreWait--;
         if (!ScoreWait)
-            DoScenarioScore(ScoreType);
+            DoScenarioScore();
     }
 
     CheckGrowth();
@@ -107,7 +107,7 @@ void SendMessages(void) {
                 ComCap = 0;
             break;
         case 32:
-            TM = UnpwrdZCnt + PwrdZCnt;
+            TM = (float)(UnpwrdZCnt + PwrdZCnt);
             if (TM)
                 if ((PwrdZCnt / TM) < 0.7)
                     SendMes(15);

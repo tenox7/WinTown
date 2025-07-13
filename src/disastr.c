@@ -380,8 +380,8 @@ void makeTornado(void) {
     SimSprite *tornado;
 
     /* Log the tornado disaster */
-    addGameLog("DISASTER: Tornado warning issued\!");
-    addGameLog("Tornado touching down and moving across the city\!");
+    addGameLog("DISASTER: Tornado warning issued!");
+    addGameLog("Tornado touching down and moving across the city!");
     addDebugLog("Tornado disaster starting - creating animated sprite");
 
     /* Pick a random starting position */
