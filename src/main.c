@@ -19,7 +19,9 @@
 
 #define IDM_FILE_NEW 1001
 #define IDM_FILE_OPEN 1002
-#define IDM_FILE_EXIT 1003
+#define IDM_FILE_SAVE 1003
+#define IDM_FILE_SAVE_AS 1004
+#define IDM_FILE_EXIT 1005
 #define IDM_TILESET_BASE 2000
 #define IDM_TILESET_MAX 2100
 #define IDM_SIM_PAUSE 3001
@@ -47,6 +49,7 @@
 #define IDM_VIEW_TILESWINDOW 4105
 #define IDM_VIEW_CHARTSWINDOW 4106
 #define IDM_VIEW_TILE_DEBUG 4107
+#define IDM_VIEW_TEST_SAVELOAD 4108
 
 /* Spawn menu IDs */
 #define IDM_SPAWN_HELICOPTER 6001
@@ -406,6 +409,10 @@ void loadSpriteBitmaps(void);
 void DrawTransparentBitmap(HDC hdcDest, int xDest, int yDest, int width, int height,
                           HDC hdcSrc, int xSrc, int ySrc, COLORREF transparentColor);
 int loadFile(char *filename);
+int saveFile(char *filename);
+int saveCity(void);
+int saveCityAs(void);
+int testSaveLoad(void);
 void drawCity(HDC hdc);
 void drawTile(HDC hdc, int x, int y, short tileValue);
 int getBaseFromTile(short tile);
@@ -2038,6 +2045,14 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             openCityDialog(hwnd);
             return 0;
 
+        case IDM_FILE_SAVE:
+            saveCity();
+            return 0;
+
+        case IDM_FILE_SAVE_AS:
+            saveCityAs();
+            return 0;
+
         case IDM_FILE_EXIT:
             PostMessage(hwnd, WM_CLOSE, 0, 0);
             return 0;
@@ -2270,6 +2285,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
 #endif
             }
+            return 0;
+
+        case IDM_VIEW_TEST_SAVELOAD:
+            testSaveLoad();
             return 0;
 
         /* Tool menu items */
@@ -3649,6 +3668,59 @@ int loadFile(char *filename) {
     }
     swapShorts(MiscHis, MISCHISTLEN / 2);
 
+    /* Extract game state data from MiscHis array */
+    {
+        QUAD l;
+        
+        /* Extract TotalFunds from MiscHis[50-51] */
+        l = *(QUAD *)(MiscHis + 50);
+        /* Data is in big-endian format in file, but WiNTown uses little-endian */
+        /* swapShorts already converted to native format, so no additional swap needed */
+        TotalFunds = l;
+        
+        /* Extract CityTime from MiscHis[8-9] */
+        l = *(QUAD *)(MiscHis + 8);
+        CityTime = l;
+        
+        /* Extract game flags and settings - these were stored as shorts */
+        AutoBulldoze = MiscHis[52];
+        AutoBudget = MiscHis[53];
+        /* MiscHis[54] = AutoGo - not used in WiNTown */
+        /* MiscHis[55] = UserSoundOn - not used in WiNTown */
+        TaxRate = MiscHis[56];
+        SimSpeed = MiscHis[57];
+        
+        /* Extract funding percentages from fixed-point values */
+        l = *(QUAD *)(MiscHis + 58);
+        RoadPercent = l / 65536.0f;
+        
+        l = *(QUAD *)(MiscHis + 60);
+        PolicePercent = l / 65536.0f;
+        
+        l = *(QUAD *)(MiscHis + 62);
+        FirePercent = l / 65536.0f;
+        
+        /* Validate ranges */
+        if (CityTime < 0) {
+            CityTime = 0;
+        }
+        if (TaxRate < 0 || TaxRate > 20) {
+            TaxRate = 7;
+        }
+        if (SimSpeed < 0 || SimSpeed > 3) {
+            SimSpeed = 3;
+        }
+        if (RoadPercent < 0.0f || RoadPercent > 1.0f) {
+            RoadPercent = 1.0f;
+        }
+        if (PolicePercent < 0.0f || PolicePercent > 1.0f) {
+            PolicePercent = 1.0f;
+        }
+        if (FirePercent < 0.0f || FirePercent > 1.0f) {
+            FirePercent = 1.0f;
+        }
+    }
+
     /* Original WiNTown stores map transposed compared to our array convention */
     {
         short tmpMap[WORLD_X][WORLD_Y];
@@ -3674,6 +3746,315 @@ int loadFile(char *filename) {
 read_error:
     fclose(f);
     return 0;
+}
+
+int saveFile(char *filename) {
+    FILE *f;
+    size_t writeResult;
+    QUAD l;
+
+    f = fopen(filename, "wb");
+    if (f == NULL) {
+        return 0;
+    }
+
+    /* Prepare game state data in MiscHis array before saving */
+    /* Store TotalFunds as a QUAD in MiscHis[50-51] */
+    l = TotalFunds;
+    /* Note: WiNTown uses little-endian, but .cty format expects big-endian */
+    /* We'll swap bytes when writing, so store in native format here */
+    *(QUAD *)(MiscHis + 50) = l;
+
+    /* Store CityTime as a QUAD in MiscHis[8-9] */
+    l = CityTime;
+    *(QUAD *)(MiscHis + 8) = l;
+
+    /* Store game flags and settings */
+    MiscHis[52] = AutoBulldoze;
+    MiscHis[53] = AutoBudget;
+    MiscHis[54] = 0; /* AutoGo - not implemented in WiNTown */
+    MiscHis[55] = 1; /* UserSoundOn - not implemented in WiNTown, default to on */
+    MiscHis[56] = TaxRate;
+    MiscHis[57] = SimSpeed;
+
+    /* Store funding percentages as fixed-point values */
+    l = (int)(RoadPercent * 65536);
+    *(QUAD *)(MiscHis + 58) = l;
+
+    l = (int)(PolicePercent * 65536);
+    *(QUAD *)(MiscHis + 60) = l;
+
+    l = (int)(FirePercent * 65536);
+    *(QUAD *)(MiscHis + 62) = l;
+
+    /* Write history arrays - swap bytes to big-endian format */
+    swapShorts(ResHis, HISTLEN / 2);
+    writeResult = fwrite(ResHis, sizeof(short), HISTLEN / 2, f);
+    swapShorts(ResHis, HISTLEN / 2); /* swap back to native format */
+    if (writeResult != HISTLEN / 2) {
+        goto write_error;
+    }
+
+    swapShorts(ComHis, HISTLEN / 2);
+    writeResult = fwrite(ComHis, sizeof(short), HISTLEN / 2, f);
+    swapShorts(ComHis, HISTLEN / 2);
+    if (writeResult != HISTLEN / 2) {
+        goto write_error;
+    }
+
+    swapShorts(IndHis, HISTLEN / 2);
+    writeResult = fwrite(IndHis, sizeof(short), HISTLEN / 2, f);
+    swapShorts(IndHis, HISTLEN / 2);
+    if (writeResult != HISTLEN / 2) {
+        goto write_error;
+    }
+
+    swapShorts(CrimeHis, HISTLEN / 2);
+    writeResult = fwrite(CrimeHis, sizeof(short), HISTLEN / 2, f);
+    swapShorts(CrimeHis, HISTLEN / 2);
+    if (writeResult != HISTLEN / 2) {
+        goto write_error;
+    }
+
+    swapShorts(PollutionHis, HISTLEN / 2);
+    writeResult = fwrite(PollutionHis, sizeof(short), HISTLEN / 2, f);
+    swapShorts(PollutionHis, HISTLEN / 2);
+    if (writeResult != HISTLEN / 2) {
+        goto write_error;
+    }
+
+    swapShorts(MoneyHis, HISTLEN / 2);
+    writeResult = fwrite(MoneyHis, sizeof(short), HISTLEN / 2, f);
+    swapShorts(MoneyHis, HISTLEN / 2);
+    if (writeResult != HISTLEN / 2) {
+        goto write_error;
+    }
+
+    swapShorts(MiscHis, MISCHISTLEN / 2);
+    writeResult = fwrite(MiscHis, sizeof(short), MISCHISTLEN / 2, f);
+    swapShorts(MiscHis, MISCHISTLEN / 2);
+    if (writeResult != MISCHISTLEN / 2) {
+        goto write_error;
+    }
+
+    /* Write map data - transpose to match original format */
+    {
+        short tmpMap[WORLD_X][WORLD_Y];
+        int x, y;
+
+        /* Copy map data with transposition */
+        for (x = 0; x < WORLD_X; x++) {
+            for (y = 0; y < WORLD_Y; y++) {
+                tmpMap[x][y] = getMapTile(x, y);
+            }
+        }
+
+        swapShorts((short *)tmpMap, WORLD_X * WORLD_Y);
+        writeResult = fwrite(&tmpMap[0][0], sizeof(short), WORLD_X * WORLD_Y, f);
+        if (writeResult != WORLD_X * WORLD_Y) {
+            goto write_error;
+        }
+    }
+
+    fclose(f);
+    return 1;
+
+write_error:
+    fclose(f);
+    return 0;
+}
+
+int saveCity(void) {
+    if (cityFileName[0] == '\0') {
+        /* No filename set, call Save As dialog */
+        return saveCityAs();
+    } else {
+        if (saveFile(cityFileName)) {
+            addGameLog("City saved to: %s", cityFileName);
+            return 1;
+        } else {
+            addGameLog("ERROR: Failed to save city to: %s", cityFileName);
+            return 0;
+        }
+    }
+}
+
+int saveCityAs(void) {
+    OPENFILENAME ofn;
+    char szFileName[MAX_PATH];
+    char *dot;
+
+    ZeroMemory(&ofn, sizeof(ofn));
+    szFileName[0] = '\0';
+
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwndMain;
+    ofn.lpstrFilter = "City Files (*.cty)\0*.cty\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = szFileName;
+    ofn.nMaxFile = sizeof(szFileName);
+    ofn.lpstrTitle = "Save City As";
+    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.lpstrDefExt = "cty";
+
+    if (GetSaveFileName(&ofn)) {
+        if (saveFile(szFileName)) {
+            /* Update current filename */
+            lstrcpy(cityFileName, szFileName);
+            
+            /* Update window title with new city name */
+            {
+                char windowTitle[MAX_PATH];
+                char *baseName;
+
+                baseName = cityFileName;
+
+                if (strrchr(baseName, '\\')) {
+                    baseName = strrchr(baseName, '\\') + 1;
+                }
+                if (strrchr(baseName, '/')) {
+                    baseName = strrchr(baseName, '/') + 1;
+                }
+
+                lstrcpy(windowTitle, "WiNTown - ");
+                lstrcat(windowTitle, baseName);
+
+                /* Remove the extension if present */
+                dot = strrchr(windowTitle, '.');
+                if (dot) {
+                    *dot = '\0';
+                }
+
+                SetWindowText(hwndMain, windowTitle);
+            }
+
+            addGameLog("City saved as: %s", szFileName);
+            return 1;
+        } else {
+            addGameLog("ERROR: Failed to save city to: %s", szFileName);
+            return 0;
+        }
+    }
+    return 0; /* User cancelled */
+}
+
+int testSaveLoad(void) {
+    char testFileName[MAX_PATH];
+    char originalFileName[MAX_PATH];
+    short originalMap[WORLD_X][WORLD_Y];
+    short originalResHis[HISTLEN / 2];
+    short originalComHis[HISTLEN / 2];
+    short originalIndHis[HISTLEN / 2];
+    short originalCrimeHis[HISTLEN / 2];
+    short originalPollutionHis[HISTLEN / 2];
+    short originalMoneyHis[HISTLEN / 2];
+    short originalMiscHis[MISCHISTLEN / 2];
+    QUAD originalTotalFunds;
+    int originalCityTime;
+    int originalTaxRate;
+    int x, y, i;
+    int errorsFound;
+
+    /* Store original filename */
+    lstrcpy(originalFileName, cityFileName);
+    
+    /* Save original data for comparison */
+    originalTotalFunds = TotalFunds;
+    originalCityTime = CityTime;
+    originalTaxRate = TaxRate;
+    
+    for (x = 0; x < WORLD_X; x++) {
+        for (y = 0; y < WORLD_Y; y++) {
+            originalMap[x][y] = getMapTile(x, y);
+        }
+    }
+    
+    for (i = 0; i < HISTLEN / 2; i++) {
+        originalResHis[i] = ResHis[i];
+        originalComHis[i] = ComHis[i];
+        originalIndHis[i] = IndHis[i];
+        originalCrimeHis[i] = CrimeHis[i];
+        originalPollutionHis[i] = PollutionHis[i];
+        originalMoneyHis[i] = MoneyHis[i];
+    }
+    
+    for (i = 0; i < MISCHISTLEN / 2; i++) {
+        originalMiscHis[i] = MiscHis[i];
+    }
+
+    /* Create test filename */
+    lstrcpy(testFileName, "savetest.cty");
+
+    addGameLog("Starting save/load test...");
+    
+    /* Save current state to test file */
+    if (!saveFile(testFileName)) {
+        addGameLog("ERROR: Test failed - could not save test file");
+        return 0;
+    }
+    
+    /* Modify some data to ensure we're actually loading from file */
+    TotalFunds = 12345;
+    CityTime = 99999;
+    TaxRate = 15;
+    setMapTile(0, 0, 999, 0, TILE_SET_REPLACE, "test");
+    ResHis[0] = 888;
+    
+    /* Load the test file */
+    if (!loadFile(testFileName)) {
+        addGameLog("ERROR: Test failed - could not load test file");
+        return 0;
+    }
+    
+    /* Compare the data */
+    errorsFound = 0;
+    
+    if (TotalFunds != originalTotalFunds) {
+        addGameLog("ERROR: TotalFunds mismatch - expected %d, got %d", originalTotalFunds, TotalFunds);
+        errorsFound++;
+    }
+    
+    if (CityTime != originalCityTime) {
+        addGameLog("ERROR: CityTime mismatch - expected %d, got %d", originalCityTime, CityTime);
+        errorsFound++;
+    }
+    
+    if (TaxRate != originalTaxRate) {
+        addGameLog("ERROR: TaxRate mismatch - expected %d, got %d", originalTaxRate, TaxRate);
+        errorsFound++;
+    }
+    
+    /* Check map data */
+    for (x = 0; x < WORLD_X && errorsFound < 10; x++) {
+        for (y = 0; y < WORLD_Y && errorsFound < 10; y++) {
+            if (getMapTile(x, y) != originalMap[x][y]) {
+                addGameLog("ERROR: Map tile mismatch at (%d,%d) - expected %d, got %d", 
+                          x, y, originalMap[x][y], getMapTile(x, y));
+                errorsFound++;
+            }
+        }
+    }
+    
+    /* Check history arrays */
+    for (i = 0; i < HISTLEN / 2 && errorsFound < 10; i++) {
+        if (ResHis[i] != originalResHis[i]) {
+            addGameLog("ERROR: ResHis[%d] mismatch - expected %d, got %d", i, originalResHis[i], ResHis[i]);
+            errorsFound++;
+        }
+    }
+    
+    /* Clean up test file */
+    DeleteFile(testFileName);
+    
+    /* Restore original filename */
+    lstrcpy(cityFileName, originalFileName);
+    
+    if (errorsFound == 0) {
+        addGameLog("SUCCESS: Save/load test passed - all data matches");
+        return 1;
+    } else {
+        addGameLog("FAILED: Save/load test found %d errors", errorsFound);
+        return 0;
+    }
 }
 
 /* External function declarations */
@@ -4704,6 +5085,8 @@ HMENU createMainMenu(void) {
     hFileMenu = CreatePopupMenu();
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_NEW, "&New...");
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_OPEN, "&Open City...");
+    AppendMenu(hFileMenu, MF_STRING, IDM_FILE_SAVE, "&Save City");
+    AppendMenu(hFileMenu, MF_STRING, IDM_FILE_SAVE_AS, "Save City &As...");
     AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hFileMenu, MF_STRING, IDM_FILE_EXIT, "E&xit");
 
@@ -4788,6 +5171,7 @@ HMENU createMainMenu(void) {
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILE_DEBUG, "Tile &Debug");
     /* Leave unchecked by default since tile debug is disabled on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_UNCHECKED);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TEST_SAVELOAD, "Test Save/&Load");
 
     /* Spawn Menu */
     hSpawnMenu = CreatePopupMenu();
