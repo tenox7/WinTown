@@ -2,8 +2,6 @@
 
 
 ## Major Features Missing
-- Save game
-- New game map generator with preview
 - Evaluation window
 - Sound System
 
@@ -26,13 +24,11 @@
 - Buttons / sizing / layout / etc
 - Better RCI and mini chart indicators
 - No power needs to flash
-- Helicopter / plane etc wrong colors / colormap
+- Helicopter / plane etc wrong colors / colormap also slow
 - Some overlays are not working, like crime, fire etc
 - Power DEBUG over tiles, roads and train tracks
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
-- Assets as resources
-- Helicopter too slow
-- Smooth tile drawin (road, train, power)
+- Assets as resources (single .exec)
 
 

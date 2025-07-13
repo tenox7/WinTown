@@ -692,13 +692,16 @@ int generateNewCityWithTerrain(char *cityName, int difficulty, int mapType, int 
 
 /* Load city from file */
 int loadCityFile(char *filename) {
+    /* Use the same loading function as File->Open City to ensure consistency */
+    extern int loadCity(char *filename);
+    
     if (!filename || strlen(filename) == 0) {
         return 0;
     }
     
     addGameLog("Loading city from file: %s", filename);
     
-    if (loadFile(filename)) {
+    if (loadCity(filename)) {
         addGameLog("City loaded successfully from %s", filename);
         return 1;
     } else {
@@ -719,6 +722,7 @@ ScenarioInfo* getScenarioInfo(int index) {
     }
     return &scenarios[index];
 }
+
 
 /* Load scenario by ID */
 int loadScenarioById(int scenarioId) {
