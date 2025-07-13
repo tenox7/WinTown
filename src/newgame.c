@@ -49,6 +49,46 @@ static int scenarioCount = 8;
 static NewGameConfig *currentConfig = NULL;
 static HBITMAP currentPreviewBitmap = NULL;
 
+/* Helper function to generate preview map */
+static void generateDefaultPreview(HWND hwnd) {
+    MapGenParams params;
+    HWND previewCtrl;
+    RECT previewRect;
+    int previewWidth, previewHeight;
+    int waterPos, forestPos;
+    int isIslandChecked;
+    
+    /* Get current slider values */
+    waterPos = GetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL);
+    forestPos = GetScrollPos(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL);
+    
+    /* Get preview control dimensions */
+    previewCtrl = GetDlgItem(hwnd, IDC_MAP_PREVIEW);
+    GetClientRect(previewCtrl, &previewRect);
+    previewWidth = previewRect.right - previewRect.left;
+    previewHeight = previewRect.bottom - previewRect.top;
+    
+    /* Set up parameters - read checkbox state directly */
+    isIslandChecked = (IsDlgButtonChecked(hwnd, IDC_MAP_ISLAND) == BST_CHECKED);
+    params.mapType = isIslandChecked ? MAPTYPE_ISLAND : MAPTYPE_RIVERS;
+    params.waterPercent = waterPos;
+    params.forestPercent = forestPos;
+    
+    /* Clean up previous bitmap */
+    if (currentPreviewBitmap) {
+        DeleteObject(currentPreviewBitmap);
+        currentPreviewBitmap = NULL;
+    }
+    
+    /* Generate new preview with dynamic sizing */
+    if (generateMapPreview(&params, &currentPreviewBitmap, previewWidth, previewHeight)) {
+        SendMessage(previewCtrl, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)currentPreviewBitmap);
+        addGameLog("Default map preview generated successfully (%dx%d)", previewWidth, previewHeight);
+    } else {
+        addGameLog("ERROR: Failed to generate default map preview");
+    }
+}
+
 /* Show the main new game dialog */
 int showNewGameDialog(HWND parent, NewGameConfig *config) {
     int result;
@@ -152,6 +192,10 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         
         /* Enable/disable controls based on selection */
         EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
+        
+        /* Generate default preview for "New City" selection */
+        generateDefaultPreview(hwnd);
+        
         addGameLog("New game dialog initialized with defaults");
         return TRUE;
     }
