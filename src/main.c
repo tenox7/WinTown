@@ -5259,7 +5259,7 @@ HMENU createMainMenu(void) {
     return hMainMenu;
 }
 
-/* Load sprite bitmaps from images directory */
+/* Load sprite bitmaps from assets directory */
 void loadSpriteBitmaps(void) {
     char filename[MAX_PATH];
     int type, frame;
@@ -5283,15 +5283,15 @@ void loadSpriteBitmaps(void) {
     for (type = 0; type < 8; type++) {
         for (frame = 0; frame < maxFrames[type]; frame++) {
             /* Build filename */
-            wsprintf(filename, "%s\\images\\%s-%d.bmp", progPathName, prefix[type], frame);
+            wsprintf(filename, "%s\\assets\\%s-%d.bmp", progPathName, prefix[type], frame);
             
             /* Load bitmap with proper palette support */
             hbmSprites[type + 1][frame] = (HBITMAP)LoadImageFromFile(filename, 
                                                               LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
             
             if (!hbmSprites[type + 1][frame]) {
-                /* Try without path in case images are in current directory */
-                wsprintf(filename, "images\\%s-%d.bmp", prefix[type], frame);
+                /* Try without path in case assets are in current directory */
+                wsprintf(filename, "assets\\%s-%d.bmp", prefix[type], frame);
                 hbmSprites[type + 1][frame] = (HBITMAP)LoadImageFromFile(filename, 
                                                                   LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
                 

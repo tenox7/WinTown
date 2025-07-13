@@ -1799,10 +1799,10 @@ void LoadToolbarBitmaps(void) {
     int i;
     char filename[MAX_PATH];
 
-    /* Load the renamed bitmaps directly from the images folder */
+    /* Load the renamed bitmaps directly from the assets folder */
     for (i = 0; i < 17; i++) {
         /* Use only the new bitmap files with descriptive names */
-        wsprintf(filename, "images\\%s.bmp", toolBitmapFiles[i]);
+        wsprintf(filename, "assets\\%s.bmp", toolBitmapFiles[i]);
 
         /* Load the bitmap */
         hToolBitmaps[i] =
