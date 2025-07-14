@@ -1923,7 +1923,7 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 /* These constants should match those in simulation.c */
 #define SIM_TIMER_ID 1
-#define SIM_TIMER_INTERVAL 16
+#define SIM_TIMER_INTERVAL 100  /* Reasonable interval for city simulation */
 
 /* Update menu when simulation speed changes */
 void UpdateSimulationMenu(HWND hwnd, int speed) {
@@ -2697,21 +2697,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_TIMER:
         if (wParam == SIM_TIMER_ID) {
-            static DWORD lastFrameTime = 0;
-            DWORD currentTime;
             BOOL needRedraw;
-
-            /* Frame rate limiting - cap at 30 FPS (33ms per frame) */
-            currentTime = GetTickCount();
-            if (lastFrameTime != 0 && (currentTime - lastFrameTime) < 33) {
-                return 0; /* Skip this frame to maintain 30 FPS cap */
-            }
-            lastFrameTime = currentTime;
 
             /* Run the simulation frame */
             SimFrame();
 
-            /* Always redraw to handle animations, but skip if paused */
+            /* Always redraw to handle animations */
             needRedraw = TRUE;
 
             /* Update the display */
