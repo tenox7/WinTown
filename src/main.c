@@ -350,6 +350,29 @@ extern short ScoreWait;     /* Score wait for scenario */
 #define TILES_IN_ROW 32 /* Number of tiles per row in the tileset bitmap */
 #endif
 
+/* RISC CPU Optimization: Pre-calculated tile coordinate lookup tables
+ * Eliminates expensive division/modulo operations (100+ cycles on RISC CPUs)
+ * These replace: srcX = (tileIndex % TILES_IN_ROW) * TILE_SIZE
+ *               srcY = (tileIndex / TILES_IN_ROW) * TILE_SIZE
+ */
+static short tileSourceX[TILE_TOTAL_COUNT];  /* Pre-calculated X coordinates */
+static short tileSourceY[TILE_TOTAL_COUNT];  /* Pre-calculated Y coordinates */
+static int lookupTablesInitialized = 0;
+
+/* Initialize tile coordinate lookup tables */
+static void initTileCoordinateLookup(void) {
+    int i;
+    if (lookupTablesInitialized) {
+        return;
+    }
+    
+    for (i = 0; i < TILE_TOTAL_COUNT; i++) {
+        tileSourceX[i] = (i % TILES_IN_ROW) * TILE_SIZE;
+        tileSourceY[i] = (i / TILES_IN_ROW) * TILE_SIZE;
+    }
+    lookupTablesInitialized = 1;
+}
+
 #define TILE_INDBASE 612
 #define TILE_INDCLR 616
 #define TILE_LASTIND 692
@@ -4445,8 +4468,13 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
     rect.bottom = y + TILE_SIZE;
 
     if (hdcTiles && hbmTiles) {
-        srcX = (tileIndex % TILES_IN_ROW) * TILE_SIZE;
-        srcY = (tileIndex / TILES_IN_ROW) * TILE_SIZE;
+        /* RISC CPU Optimization: Use lookup tables instead of division/modulo */
+        if (!lookupTablesInitialized) {
+            initTileCoordinateLookup();
+        }
+        
+        srcX = tileSourceX[tileIndex];
+        srcY = tileSourceY[tileIndex];
 
         BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE, hdcTiles, srcX, srcY, SRCCOPY);
     } else {
@@ -4539,8 +4567,15 @@ void drawTile(HDC hdc, int x, int y, short tileValue) {
 
         /* Draw the lightning bolt power indicator in the center of the tile */
         if (hdcTiles && hbmTiles) {
-            int srcX = (LIGHTNINGBOLT % TILES_IN_ROW) * TILE_SIZE;
-            int srcY = (LIGHTNINGBOLT / TILES_IN_ROW) * TILE_SIZE;
+            int srcX, srcY;
+            
+            /* RISC CPU Optimization: Use lookup tables for LIGHTNINGBOLT coordinates */
+            if (!lookupTablesInitialized) {
+                initTileCoordinateLookup();
+            }
+            
+            srcX = tileSourceX[LIGHTNINGBOLT];
+            srcY = tileSourceY[LIGHTNINGBOLT];
 
             BitBlt(hdc, x, y, TILE_SIZE, TILE_SIZE, hdcTiles, srcX, srcY, SRCCOPY);
         }
