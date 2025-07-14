@@ -174,6 +174,10 @@
 #define TILE_SIZE 16
 
 /* Main map and history arrays - now defined in simulation.h/c */
+/* RISC CPU Optimization: Align critical data structures on 8-byte boundaries
+ * Prevents alignment traps on Alpha, MIPS, PowerPC processors
+ */
+#pragma pack(push, 8)
 short Map[WORLD_Y][WORLD_X];
 short ResHis[HISTLEN / 2];
 short ComHis[HISTLEN / 2];
@@ -182,6 +186,7 @@ short CrimeHis[HISTLEN / 2];
 short PollutionHis[HISTLEN / 2];
 short MoneyHis[HISTLEN / 2];
 short MiscHis[MISCHISTLEN / 2];
+#pragma pack(pop)
 
 HWND hwndMain = NULL; /* Main window handle - used by other modules */
 HWND hwndInfo = NULL; /* Info window handle for displaying city stats */

@@ -21,6 +21,8 @@ extern void addDebugLog(const char *format, ...);
 extern int disastersDisabled;
 
 /* Map data */
+/* RISC CPU Optimization: Align data structures on 8-byte boundaries */
+#pragma pack(push, 8)
 Byte PopDensity[WORLD_Y / 2][WORLD_X / 2];
 Byte TrfDensity[WORLD_Y / 2][WORLD_X / 2];
 Byte PollutionMem[WORLD_Y / 2][WORLD_X / 2];
@@ -36,6 +38,7 @@ Byte PoliceMapEffect[WORLD_Y / 4][WORLD_X / 4];
 
 /* Commercial development score */
 short ComRate[WORLD_Y / 4][WORLD_X / 4];
+#pragma pack(pop)
 
 /* Runtime simulation state */
 int SimSpeed = SPEED_MEDIUM;
