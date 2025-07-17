@@ -87,7 +87,7 @@
 #define MINIMAP_WINDOW_WIDTH 360  /* WORLD_X * MINIMAP_SCALE = 120 * 3 */
 #define MINIMAP_WINDOW_HEIGHT 320  /* WORLD_Y * MINIMAP_SCALE + space for mode label = 100 * 3 + 20 */
 #define MINIMAP_TIMER_ID 3
-#define MINIMAP_TIMER_INTERVAL 100 /* Update minimap every 100ms */
+#define MINIMAP_TIMER_INTERVAL 2000 /* Update minimap every 2 seconds for periodic refresh */
 #define CHART_TIMER_ID 4
 #define CHART_TIMER_INTERVAL 1000 /* Update charts every 1000ms */
 #define EARTHQUAKE_TIMER_ID 5
@@ -674,7 +674,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         MessageBox(NULL, "Minimap Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         /* Continue anyway, just without the minimap window */
     } else {
-        /* Start timer to update minimap window */
+        /* Start slower periodic timer for minimap updates */
         SetTimer(hwndMinimap, MINIMAP_TIMER_ID, MINIMAP_TIMER_INTERVAL, NULL);
     }
 
@@ -1717,7 +1717,7 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
     case WM_TIMER:
         if (wParam == MINIMAP_TIMER_ID) {
-            /* Repaint the window to update the minimap */
+            /* Periodic minimap refresh */
             InvalidateRect(hwnd, NULL, FALSE);
             return 0;
         }
@@ -2699,6 +2699,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_TIMER:
         if (wParam == SIM_TIMER_ID) {
             BOOL needRedraw;
+            static int minimapUpdateCounter = 0;
 
             /* Run the simulation frame */
             SimFrame();
@@ -2709,6 +2710,14 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             /* Update the display */
             if (needRedraw) {
                 InvalidateRect(hwnd, NULL, FALSE);
+                /* Update minimap only every 20 frames (2 seconds at 100ms intervals) */
+                minimapUpdateCounter++;
+                if (minimapUpdateCounter >= 20) {
+                    minimapUpdateCounter = 0;
+                    if (hwndMinimap) {
+                        InvalidateRect(hwndMinimap, NULL, FALSE);
+                    }
+                }
             }
             return 0;
         } else if (wParam == EARTHQUAKE_TIMER_ID) {
@@ -3656,6 +3665,11 @@ void scrollView(int dx, int dy) {
     /* Update only the map region, without erasing the background */
     InvalidateRgn(hwndMain, hRgn, FALSE);
     DeleteObject(hRgn);
+    
+    /* Update minimap to show new viewport position */
+    if (hwndMinimap) {
+        InvalidateRect(hwndMinimap, NULL, FALSE);
+    }
 }
 
 /* Internal function to load file data */
