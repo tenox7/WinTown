@@ -4,7 +4,7 @@
 
 #include "sim.h"
 #include "sprite.h"
-#include "notifications.h"
+#include "notify.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>

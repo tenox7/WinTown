@@ -1,4 +1,4 @@
-/* notifications.h - Enhanced notification system for WiNTown
+/* notify.h - Enhanced notification system for WiNTown
  * Based on original WiNTown notification analysis
  */
 

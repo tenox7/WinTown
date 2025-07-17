@@ -54,8 +54,8 @@ src\zone.obj: src\zone.c
 src\gdifix.obj: src\gdifix.c
 	$(CC) $(CFLAGS) /c src\gdifix.c /Fosrc\gdifix.obj
 
-src\notifications.obj: src\notifications.c
-	$(CC) $(CFLAGS) /c src\notifications.c /Fosrc\notifications.obj
+src\notify.obj: src\notify.c
+	$(CC) $(CFLAGS) /c src\notify.c /Fosrc\notify.obj
 
 src\animtab.obj: src\animtab.c
 	$(CC) $(CFLAGS) /c src\animtab.c /Fosrc\animtab.obj
@@ -69,8 +69,8 @@ src\mapgen.obj: src\mapgen.c
 wintown.res: wintown.rc
 	$(RC) wintown.rc
 
-wintown.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj src\animtab.obj src\newgame.obj src\mapgen.obj wintown.res
-	link /NOLOGO /OUT:wintown.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notifications.obj src\animtab.obj src\newgame.obj src\mapgen.obj wintown.res $(LIBS)
+wintown.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notify.obj src\animtab.obj src\newgame.obj src\mapgen.obj wintown.res
+	link /NOLOGO /OUT:wintown.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notify.obj src\animtab.obj src\newgame.obj src\mapgen.obj wintown.res $(LIBS)
 
 clean:
 	del /q src\*.obj

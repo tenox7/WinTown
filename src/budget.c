@@ -3,7 +3,7 @@
  */
 
 #include "sim.h"
-#include "notifications.h"
+#include "notify.h"
 
 /* External log functions */
 extern void addGameLog(const char *format, ...);

@@ -3,7 +3,7 @@
  */
 
 #include "sim.h"
-#include "notifications.h"
+#include "notify.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

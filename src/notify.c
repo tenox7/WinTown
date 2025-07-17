@@ -1,8 +1,8 @@
-/* notifications.c - Original WiNTown message system for WiNTown
+/* notify.c - Original WiNTown message system for WiNTown
  * Based on s_msg.c from original WiNTown
  */
 
-#include "notifications.h"
+#include "notify.h"
 #include "sim.h"
 #include <stdio.h>
 #include <string.h>

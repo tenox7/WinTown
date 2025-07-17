@@ -7,7 +7,7 @@
 #include "sprite.h"
 #include "tools.h"
 #include "charts.h"
-#include "notifications.h"
+#include "notify.h"
 #include "newgame.h"
 #include <commdlg.h>
 #include <stdarg.h>
