@@ -444,6 +444,7 @@ int testSaveLoad(void);
 void drawCity(HDC hdc);
 void drawTile(HDC hdc, int x, int y, short tileValue);
 int getBaseFromTile(short tile);
+void initTileBaseLookup();
 void swapShorts(short *buf, int len);
 void resizeBuffer(int cx, int cy);
 void scrollView(int dx, int dy);
@@ -3221,7 +3222,8 @@ void initializeGraphics(HWND hwnd) {
     HBITMAP hbmOld;
     char errorMsg[256];
     DWORD error;
-    LPVOID bits;
+    void* bits;
+    
 
     hdc = GetDC(hwnd);
 
@@ -4330,53 +4332,89 @@ int loadCity(char *filename) {
     return 1;
 }
 
+/* Lookup table for getBaseFromTile() - O(1) performance */
+static int tileBaseLookup[1024] = {0};
+static int tileBaseLookupInit = 0;
+
+void initTileBaseLookup() {
+    int i;
+    
+    if (tileBaseLookupInit) return;
+    
+    /* Initialize all to TILE_DIRT */
+    for (i = 0; i < 1024; i++) {
+        tileBaseLookup[i] = TILE_DIRT;
+    }
+    
+    /* Water tiles */
+    for (i = TILE_WATER_LOW; i <= TILE_WATER_HIGH; i++) {
+        tileBaseLookup[i] = TILE_RIVER;
+    }
+    
+    /* Woods tiles */
+    for (i = TILE_WOODS_LOW; i <= TILE_WOODS_HIGH; i++) {
+        tileBaseLookup[i] = TILE_TREEBASE;
+    }
+    
+    /* Road tiles */
+    for (i = TILE_ROADBASE; i <= TILE_LASTROAD; i++) {
+        tileBaseLookup[i] = TILE_ROADBASE;
+    }
+    
+    /* Power tiles */
+    for (i = TILE_POWERBASE; i <= TILE_LASTPOWER; i++) {
+        tileBaseLookup[i] = TILE_POWERBASE;
+    }
+    
+    /* Rail tiles */
+    for (i = TILE_RAILBASE; i <= TILE_LASTRAIL; i++) {
+        tileBaseLookup[i] = TILE_RAILBASE;
+    }
+    
+    /* Residential tiles */
+    for (i = TILE_RESBASE; i <= TILE_LASTRES; i++) {
+        tileBaseLookup[i] = TILE_RESBASE;
+    }
+    
+    /* Commercial tiles */
+    for (i = TILE_COMBASE; i <= TILE_LASTCOM; i++) {
+        tileBaseLookup[i] = TILE_COMBASE;
+    }
+    
+    /* Industrial tiles */
+    for (i = TILE_INDBASE; i <= TILE_LASTIND; i++) {
+        tileBaseLookup[i] = TILE_INDBASE;
+    }
+    
+    /* Fire tiles */
+    for (i = TILE_FIREBASE; i <= TILE_LASTFIRE; i++) {
+        tileBaseLookup[i] = TILE_FIREBASE;
+    }
+    
+    /* Flood tiles */
+    for (i = TILE_FLOOD; i <= TILE_LASTFLOOD; i++) {
+        tileBaseLookup[i] = TILE_FLOOD;
+    }
+    
+    /* Rubble tiles */
+    for (i = TILE_RUBBLE; i <= TILE_LASTRUBBLE; i++) {
+        tileBaseLookup[i] = TILE_RUBBLE;
+    }
+    
+    tileBaseLookupInit = 1;
+}
+
 int getBaseFromTile(short tile) {
     tile &= LOMASK;
-
-    if (tile >= TILE_WATER_LOW && tile <= TILE_WATER_HIGH) {
-        return TILE_RIVER;
+    
+    if (!tileBaseLookupInit) {
+        initTileBaseLookup();
     }
-
-    if (tile >= TILE_WOODS_LOW && tile <= TILE_WOODS_HIGH) {
-        return TILE_TREEBASE;
+    
+    if (tile >= 0 && tile < 1024) {
+        return tileBaseLookup[tile];
     }
-
-    if (tile >= TILE_ROADBASE && tile <= TILE_LASTROAD) {
-        return TILE_ROADBASE;
-    }
-
-    if (tile >= TILE_POWERBASE && tile <= TILE_LASTPOWER) {
-        return TILE_POWERBASE;
-    }
-
-    if (tile >= TILE_RAILBASE && tile <= TILE_LASTRAIL) {
-        return TILE_RAILBASE;
-    }
-
-    if (tile >= TILE_RESBASE && tile <= TILE_LASTRES) {
-        return TILE_RESBASE;
-    }
-
-    if (tile >= TILE_COMBASE && tile <= TILE_LASTCOM) {
-        return TILE_COMBASE;
-    }
-
-    if (tile >= TILE_INDBASE && tile <= TILE_LASTIND) {
-        return TILE_INDBASE;
-    }
-
-    if (tile >= TILE_FIREBASE && tile <= TILE_LASTFIRE) {
-        return TILE_FIREBASE;
-    }
-
-    if (tile >= TILE_FLOOD && tile <= TILE_LASTFLOOD) {
-        return TILE_FLOOD;
-    }
-
-    if (tile >= TILE_RUBBLE && tile <= TILE_LASTRUBBLE) {
-        return TILE_RUBBLE;
-    }
-
+    
     return TILE_DIRT;
 }
 
