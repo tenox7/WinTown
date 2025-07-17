@@ -6,6 +6,7 @@
 - Sound System
 
 ## Bugs
+- CPU pegged to 100% on RISC -> Minimap window!
 - Power line issues
 - Minimap stats not working: fire, police
 - Pink squares on roads due to incorrect ties
