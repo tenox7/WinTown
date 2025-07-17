@@ -1205,7 +1205,7 @@ int TestBounds(int x, int y) {
 #define SIM_TIMER_ID 1
 
 /* Timer interval in milliseconds - faster to match original game timing */
-#define SIM_TIMER_INTERVAL 16
+#define SIM_TIMER_INTERVAL 100
 
 /* External function declaration for the UI update */
 extern void UpdateSimulationMenu(HWND hwnd, int speed);

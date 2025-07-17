@@ -16,8 +16,6 @@
 int setMapTile(int x, int y, int tile, int flags, int operation, char* caller);
 int getMapTile(int x, int y);
 int getMapFlags(int x, int y);
-int validateTileCoords(int x, int y);
-int validateTileValue(int tile);
 
 /* Debug logging control */
 int enableTileDebug(int enable);

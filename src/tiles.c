@@ -95,21 +95,11 @@ static int logTileChange(int x, int y, int oldTile, int newTile, char* caller) {
 }
 #endif
 
-/* Validate coordinates are within map bounds */
-int validateTileCoords(int x, int y) {
-    return BOUNDS_CHECK(x, y);
-}
-
-/* Validate tile value is reasonable */
-int validateTileValue(int tile) {
-    int baseTile;
-    baseTile = tile & LOMASK;
-    return (baseTile >= 0 && baseTile < 1024);
-}
+/* validateTileCoords() and validateTileValue() functions removed - now using inline macros */
 
 /* Get tile value at coordinates */
 int getMapTile(int x, int y) {
-    if (!validateTileCoords(x, y)) {
+    if (!BOUNDS_CHECK(x, y)) {
         return -1;
     }
     return Map[y][x];
@@ -117,7 +107,7 @@ int getMapTile(int x, int y) {
 
 /* Get only flags from tile at coordinates */
 int getMapFlags(int x, int y) {
-    if (!validateTileCoords(x, y)) {
+    if (!BOUNDS_CHECK(x, y)) {
         return -1;
     }
     return Map[y][x] & ~LOMASK;
@@ -128,7 +118,7 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
     int oldTile, newTile;
     
     /* Validate coordinates */
-    if (!validateTileCoords(x, y)) {
+    if (!BOUNDS_CHECK(x, y)) {
 #ifdef TILE_DEBUG
         logTileChange(x, y, -1, -1, caller);
 #endif
@@ -173,7 +163,7 @@ int setMapTile(int x, int y, int tile, int flags, int operation, char* caller) {
     }
     
     /* Validate new tile value */
-    if (!validateTileValue(newTile)) {
+    if ((newTile & LOMASK) >= 1024) {
 #ifdef TILE_DEBUG
         fprintf(tileLogFile, "ERROR: Invalid tile base %d (full value %d) at [%d,%d] by %s\n",
                 newTile & LOMASK, newTile, x, y, caller ? caller : "unknown");
