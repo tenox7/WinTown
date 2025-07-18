@@ -11,6 +11,12 @@
 /* External debug logging function */
 extern void addDebugLog(const char* format, ...);
 
+/* External window handles and variables */
+extern HWND hwndMain;
+
+/* Menu IDs - matching definitions from main.c */
+#define IDM_VIEW_CHARTSWINDOW 4106
+
 /* External RCI demand variables */
 extern short RValve;
 extern short CValve;
@@ -600,6 +606,15 @@ LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
             /* Hide window instead of destroying and update menu checkmark */
             KillTimer(hwnd, CHART_TIMER_ID);
             ShowWindow(hwnd, SW_HIDE);
+            
+            /* Update menu checkmark */
+            if (hwndMain) {
+                HMENU hMenu = GetMenu(hwndMain);
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
+                if (hViewMenu) {
+                    CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                }
+            }
             return 0;
             
         case WM_DESTROY:

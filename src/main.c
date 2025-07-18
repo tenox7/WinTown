@@ -203,9 +203,7 @@ static BOOL minimapDragging = FALSE; /* Is user dragging on minimap */
 static BOOL tilesWindowVisible = FALSE; /* Track tiles window visibility */
 static int selectedTileX = -1; /* Selected tile X coordinate (-1 = no selection) */
 static int selectedTileY = -1; /* Selected tile Y coordinate (-1 = no selection) */
-#ifdef TILE_DEBUG
 static BOOL tileDebugEnabled = FALSE; /* Track tile debug mode for mouse cursor info */
-#endif
 static int minimapDragX = 0; /* Drag start position */
 static int minimapDragY = 0; /* Drag start position */
 
@@ -957,7 +955,7 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         logWindowVisible = FALSE;
         if (hwndMain) {
             HMENU hMenu = GetMenu(hwndMain);
-            HMENU hViewMenu = GetSubMenu(hMenu, 4);
+            HMENU hViewMenu = GetSubMenu(hMenu, 6);
             CheckMenuItem(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
         }
         return 0;
@@ -1160,7 +1158,7 @@ LRESULT CALLBACK infoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         /* Update menu checkmark */
         if (hwndMain) {
             hMenu = GetMenu(hwndMain);
-            hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+            hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
             if (hViewMenu) {
                 CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
             }
@@ -1739,7 +1737,7 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         /* Update menu checkmark */
         if (hwndMain) {
             hMenu = GetMenu(hwndMain);
-            hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+            hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
             if (hViewMenu) {
                 CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
             }
@@ -1909,7 +1907,7 @@ LRESULT CALLBACK tilesWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         selectedTileY = -1;
         
         hMenu = GetMenu(hwndMain);
-        hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+        hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
         if (hViewMenu) {
             CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
         }
@@ -2156,7 +2154,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_VIEW_INFOWINDOW:
             if (hwndInfo) {
                 HMENU hMenu = GetMenu(hwnd);
-                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
                 UINT state = GetMenuState(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND);
 
                 if (state & MF_CHECKED) {
@@ -2177,7 +2175,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_VIEW_LOGWINDOW:
             if (hwndLog) {
                 HMENU hMenu = GetMenu(hwnd);
-                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
                 UINT state = GetMenuState(hViewMenu, IDM_VIEW_LOGWINDOW, MF_BYCOMMAND);
 
                 if (state & MF_CHECKED) {
@@ -2198,7 +2196,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         case IDM_VIEW_POWER_OVERLAY: {
             HMENU hMenu = GetMenu(hwnd);
-            HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+            HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
             
             /* Simply toggle based on current variable state */
             powerOverlayEnabled = !powerOverlayEnabled;
@@ -2222,7 +2220,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_VIEW_MINIMAPWINDOW:
             if (hwndMinimap) {
                 HMENU hMenu = GetMenu(hwnd);
-                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
                 UINT state = GetMenuState(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND);
 
                 if (state & MF_CHECKED) {
@@ -2244,7 +2242,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             addDebugLog("Tiles window menu clicked, hwndTiles=%p", hwndTiles);
             if (hwndTiles) {
                 HMENU hMenu = GetMenu(hwnd);
-                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
 
                 addDebugLog("Current tilesWindowVisible: %d", tilesWindowVisible);
                 if (tilesWindowVisible) {
@@ -2269,7 +2267,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_VIEW_CHARTSWINDOW:
             if (hwndCharts) {
                 HMENU hMenu = GetMenu(hwnd);
-                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
 
                 addDebugLog("Current chartsWindowVisible: %d", chartsWindowVisible);
                 if (chartsWindowVisible) {
@@ -2294,30 +2292,19 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_VIEW_TILE_DEBUG:
             {
                 HMENU hMenu = GetMenu(hwnd);
-                HMENU hViewMenu = GetSubMenu(hMenu, 4); /* View is the 5th menu (0-based index) */
+                HMENU hViewMenu = GetSubMenu(hMenu, 6); /* View is the 7th menu (0-based index) */
 
-#ifdef TILE_DEBUG
-#ifdef DEBUG
-                addDebugLog("Tile debug menu clicked, current state: %d", tileDebugEnabled);
-#endif
                 if (tileDebugEnabled) {
                     /* Disable tile debug */
-#ifdef DEBUG
-                    addDebugLog("Disabling tile debug");
-#endif
                     tileDebugEnabled = FALSE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_UNCHECKED);
                     /* Reset window title to remove tile info */
                     SetWindowText(hwnd, "WiNTown NT");
                 } else {
                     /* Enable tile debug */
-#ifdef DEBUG
-                    addDebugLog("Enabling tile debug");
-#endif
                     tileDebugEnabled = TRUE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_BYCOMMAND | MF_CHECKED);
                 }
-#endif
             }
             return 0;
 
@@ -2865,7 +2852,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
 
         /* Tile debug functionality - show tile info under cursor */
-#ifdef TILE_DEBUG
         if (tileDebugEnabled) {
             ScreenToMap(xPos, yPos, &mapX, &mapY, xOffset, yOffset);
             if (mapX >= 0 && mapX < WORLD_X && mapY >= 0 && mapY < WORLD_Y) {
@@ -2891,7 +2877,6 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 SetWindowText(hwnd, titleBuffer);
             }
         }
-#endif
 
         if (isMouseDown) {
             int dx = lastMouseX - xPos;
@@ -5278,14 +5263,14 @@ HMENU createMainMenu(void) {
     /* Check it by default since the minimap window is shown on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_CHECKED);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_BUDGET, "&Budget Window");
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_CHARTSWINDOW, "&Charts Window");
+    /* Check it by default since the charts window is shown on startup */
+    CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_CHECKED);
+    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILESWINDOW, "Tile &Viewer");
     /* Leave unchecked by default since the tiles window is hidden on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILESWINDOW, MF_UNCHECKED);
-    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_CHARTSWINDOW, "&Charts Window");
-    /* Leave unchecked by default since the charts window is hidden on startup */
-    CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_UNCHECKED);
-    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_POWER_OVERLAY, "&Power Overlay");
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TILE_DEBUG, "Tile &Debug");
     /* Leave unchecked by default since tile debug is disabled on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_UNCHECKED);
