@@ -3739,13 +3739,13 @@ int loadFile(char *filename) {
         QUAD l;
         
         /* Extract TotalFunds from MiscHis[50-51] */
-        l = *(QUAD *)(MiscHis + 50);
-        /* Data is in big-endian format in file, but WiNTown uses little-endian */
-        /* swapShorts already converted to native format, so no additional swap needed */
+        /* Reconstruct QUAD from two shorts with half-word swap (like original HALF_SWAP_LONGS) */
+        l = (QUAD)MiscHis[51] | ((QUAD)MiscHis[50] << 16);
         TotalFunds = l;
         
         /* Extract CityTime from MiscHis[8-9] */
-        l = *(QUAD *)(MiscHis + 8);
+        /* Reconstruct QUAD from two shorts with half-word swap (like original HALF_SWAP_LONGS) */
+        l = (QUAD)MiscHis[9] | ((QUAD)MiscHis[8] << 16);
         CityTime = l;
         
         /* Extract game flags and settings - these were stored as shorts */

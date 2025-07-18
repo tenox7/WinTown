@@ -112,56 +112,48 @@ int loadScenario(int scenarioId) {
         fname = "dullsville.scn";
         ScenarioID = 1;
         startYear = 1900;
-        TotalFunds = 5000;
         break;
     case 2:
         name = "San Francisco";
         fname = "sanfrancisco.scn";
         ScenarioID = 2;
         startYear = 1906;
-        TotalFunds = 20000;
         break;
     case 3:
         name = "Hamburg";
         fname = "hamburg.scn";
         ScenarioID = 3;
         startYear = 1944;
-        TotalFunds = 20000;
         break;
     case 4:
         name = "Bern";
         fname = "bern.scn";
         ScenarioID = 4;
         startYear = 1965;
-        TotalFunds = 20000;
         break;
     case 5:
         name = "Tokyo";
         fname = "tokyo.scn";
         ScenarioID = 5;
         startYear = 1957;
-        TotalFunds = 20000;
         break;
     case 6:
         name = "Detroit";
         fname = "detroit.scn";
         ScenarioID = 6;
         startYear = 1972;
-        TotalFunds = 20000;
         break;
     case 7:
         name = "Boston";
         fname = "boston.scn";
         ScenarioID = 7;
         startYear = 2010;
-        TotalFunds = 20000;
         break;
     case 8:
         name = "Rio de Janeiro";
         fname = "rio.scn";
         ScenarioID = 8;
         startYear = 2047;
-        TotalFunds = 20000;
         break;
     }
 
@@ -243,6 +235,25 @@ int loadScenario(int scenarioId) {
     if (!loadFile(path)) {
         addGameLog("ERROR: Failed to load scenario file: %s", path);
         return 0;
+    }
+
+    /* Override TotalFunds with correct scenario values (after file load) */
+    switch (ScenarioID) {
+        case 1: /* Dullsville */
+            TotalFunds = 5000;
+            break;
+        case 2: /* San Francisco */
+        case 3: /* Hamburg */
+        case 4: /* Bern */
+        case 5: /* Tokyo */
+        case 6: /* Detroit */
+        case 7: /* Boston */
+        case 8: /* Rio */
+            TotalFunds = 20000;
+            break;
+        default:
+            TotalFunds = 10000;
+            break;
     }
 
     /* CRITICAL: Set the flag to prevent ClearCensus from erasing population */

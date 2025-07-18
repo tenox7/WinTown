@@ -6,12 +6,11 @@
 - Sound System
 
 ## Bugs
-- Scenario load negative money
+- Bridges, power over water
 - Power line issues
 - Minimap stats not working: fire, police
 - Pink squares on roads due to incorrect ties
 - Wrong tiles, especially middle tile
-- Bridges, power over water
 
 
 ## Audit Code
@@ -31,5 +30,6 @@
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Assets as resources (single .exec)
+- Charts window needs to reset after new city/scenario loaded
 
 
