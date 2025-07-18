@@ -25,6 +25,130 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Data
+//
+
+IDR_TILESET_CLASSIC     RCDATA  MOVEABLE PURE   "tilesets\\classic.bmp"
+IDR_TILESET_CLASSIC95   RCDATA  MOVEABLE PURE   "tilesets\\classic95.bmp"
+IDR_TILESET_DEFAULT     RCDATA  MOVEABLE PURE   "tilesets\\default.bmp"
+IDR_TILESET_ANCIENTASIA RCDATA  MOVEABLE PURE   "tilesets\\ancientasia.bmp"
+IDR_TILESET_DUX         RCDATA  MOVEABLE PURE   "tilesets\\dux.bmp"
+IDR_TILESET_FUTUREEUROPE RCDATA  MOVEABLE PURE   "tilesets\\futureeurope.bmp"
+IDR_TILESET_FUTUREUSA   RCDATA  MOVEABLE PURE   "tilesets\\futureusa.bmp"
+IDR_TILESET_MEDIEVALTIMES RCDATA  MOVEABLE PURE   "tilesets\\medievaltimes.bmp"
+IDR_TILESET_MOONCOLONY  RCDATA  MOVEABLE PURE   "tilesets\\mooncolony.bmp"
+IDR_TILESET_WILDWEST    RCDATA  MOVEABLE PURE   "tilesets\\wildwest.bmp"
+IDR_CITY_BADNEWS        RCDATA  MOVEABLE PURE   "cities\\badnews.cty"
+IDR_CITY_BRUCE          RCDATA  MOVEABLE PURE   "cities\\bruce.cty"
+IDR_CITY_DEADWOOD       RCDATA  MOVEABLE PURE   "cities\\deadwood.cty"
+IDR_CITY_FINNIGAN       RCDATA  MOVEABLE PURE   "cities\\finnigan.cty"
+IDR_CITY_FREDS          RCDATA  MOVEABLE PURE   "cities\\freds.cty"
+IDR_CITY_HAIGHT         RCDATA  MOVEABLE PURE   "cities\\haight.cty"
+IDR_CITY_HAPPISLE       RCDATA  MOVEABLE PURE   "cities\\happisle.cty"
+IDR_CITY_JOFFBURG       RCDATA  MOVEABLE PURE   "cities\\joffburg.cty"
+IDR_CITY_KAMAKURA       RCDATA  MOVEABLE PURE   "cities\\kamakura.cty"
+IDR_CITY_KOBE           RCDATA  MOVEABLE PURE   "cities\\kobe.cty"
+IDR_CITY_KOWLOON        RCDATA  MOVEABLE PURE   "cities\\kowloon.cty"
+IDR_CITY_KYOTO          RCDATA  MOVEABLE PURE   "cities\\kyoto.cty"
+IDR_CITY_LINECITY       RCDATA  MOVEABLE PURE   "cities\\linecity.cty"
+IDR_CITY_MED_ISLE       RCDATA  MOVEABLE PURE   "cities\\med_isle.cty"
+IDR_CITY_NDULLS         RCDATA  MOVEABLE PURE   "cities\\ndulls.cty"
+IDR_CITY_NEATMAP        RCDATA  MOVEABLE PURE   "cities\\neatmap.cty"
+IDR_CITY_RADIAL         RCDATA  MOVEABLE PURE   "cities\\radial.cty"
+IDR_CITY_SENRI          RCDATA  MOVEABLE PURE   "cities\\senri.cty"
+IDR_CITY_SIMCITY4       RCDATA  MOVEABLE PURE   "cities\\simcity4.cty"
+IDR_CITY_SOUTHPAC       RCDATA  MOVEABLE PURE   "cities\\southpac.cty"
+IDR_CITY_SPLATS         RCDATA  MOVEABLE PURE   "cities\\splats.cty"
+IDR_CITY_WETCITY        RCDATA  MOVEABLE PURE   "cities\\wetcity.cty"
+IDR_CITY_YOKOHAMA       RCDATA  MOVEABLE PURE   "cities\\yokohama.cty"
+IDR_SCENARIO_BERN       RCDATA  MOVEABLE PURE   "cities\\bern.scn"
+IDR_SCENARIO_BOSTON     RCDATA  MOVEABLE PURE   "cities\\boston.scn"
+IDR_SCENARIO_DETROIT    RCDATA  MOVEABLE PURE   "cities\\detroit.scn"
+IDR_SCENARIO_DULLSVILLE RCDATA  MOVEABLE PURE   "cities\\dullsville.scn"
+IDR_SCENARIO_HAMBURG    RCDATA  MOVEABLE PURE   "cities\\hamburg.scn"
+IDR_SCENARIO_RIO        RCDATA  MOVEABLE PURE   "cities\\rio.scn"
+IDR_SCENARIO_SANFRANCISCO RCDATA  MOVEABLE PURE   "cities\\sanfrancisco.scn"
+IDR_SCENARIO_TOKYO      RCDATA  MOVEABLE PURE   "cities\\tokyo.scn"
+IDR_SPRITE_AIRPLANE_0   RCDATA  MOVEABLE PURE   "assets\\airplane-0.bmp"
+IDR_SPRITE_AIRPLANE_1   RCDATA  MOVEABLE PURE   "assets\\airplane-1.bmp"
+IDR_SPRITE_AIRPLANE_2   RCDATA  MOVEABLE PURE   "assets\\airplane-2.bmp"
+IDR_SPRITE_AIRPLANE_3   RCDATA  MOVEABLE PURE   "assets\\airplane-3.bmp"
+IDR_SPRITE_AIRPLANE_4   RCDATA  MOVEABLE PURE   "assets\\airplane-4.bmp"
+IDR_SPRITE_AIRPLANE_5   RCDATA  MOVEABLE PURE   "assets\\airplane-5.bmp"
+IDR_SPRITE_AIRPLANE_6   RCDATA  MOVEABLE PURE   "assets\\airplane-6.bmp"
+IDR_SPRITE_AIRPLANE_7   RCDATA  MOVEABLE PURE   "assets\\airplane-7.bmp"
+IDR_SPRITE_AIRPLANE_8   RCDATA  MOVEABLE PURE   "assets\\airplane-8.bmp"
+IDR_SPRITE_AIRPLANE_9   RCDATA  MOVEABLE PURE   "assets\\airplane-9.bmp"
+IDR_SPRITE_AIRPLANE_10  RCDATA  MOVEABLE PURE   "assets\\airplane-10.bmp"
+IDR_SPRITE_BUS_0        RCDATA  MOVEABLE PURE   "assets\\bus-0.bmp"
+IDR_SPRITE_BUS_1        RCDATA  MOVEABLE PURE   "assets\\bus-1.bmp"
+IDR_SPRITE_BUS_2        RCDATA  MOVEABLE PURE   "assets\\bus-2.bmp"
+IDR_SPRITE_BUS_3        RCDATA  MOVEABLE PURE   "assets\\bus-3.bmp"
+IDR_SPRITE_HELICOPTER_0 RCDATA  MOVEABLE PURE   "assets\\helicopter-0.bmp"
+IDR_SPRITE_HELICOPTER_1 RCDATA  MOVEABLE PURE   "assets\\helicopter-1.bmp"
+IDR_SPRITE_HELICOPTER_2 RCDATA  MOVEABLE PURE   "assets\\helicopter-2.bmp"
+IDR_SPRITE_HELICOPTER_3 RCDATA  MOVEABLE PURE   "assets\\helicopter-3.bmp"
+IDR_SPRITE_HELICOPTER_4 RCDATA  MOVEABLE PURE   "assets\\helicopter-4.bmp"
+IDR_SPRITE_HELICOPTER_5 RCDATA  MOVEABLE PURE   "assets\\helicopter-5.bmp"
+IDR_SPRITE_HELICOPTER_6 RCDATA  MOVEABLE PURE   "assets\\helicopter-6.bmp"
+IDR_SPRITE_HELICOPTER_7 RCDATA  MOVEABLE PURE   "assets\\helicopter-7.bmp"
+IDR_SPRITE_MONSTER_0    RCDATA  MOVEABLE PURE   "assets\\monster-0.bmp"
+IDR_SPRITE_MONSTER_1    RCDATA  MOVEABLE PURE   "assets\\monster-1.bmp"
+IDR_SPRITE_MONSTER_2    RCDATA  MOVEABLE PURE   "assets\\monster-2.bmp"
+IDR_SPRITE_MONSTER_3    RCDATA  MOVEABLE PURE   "assets\\monster-3.bmp"
+IDR_SPRITE_MONSTER_4    RCDATA  MOVEABLE PURE   "assets\\monster-4.bmp"
+IDR_SPRITE_MONSTER_5    RCDATA  MOVEABLE PURE   "assets\\monster-5.bmp"
+IDR_SPRITE_MONSTER_6    RCDATA  MOVEABLE PURE   "assets\\monster-6.bmp"
+IDR_SPRITE_MONSTER_7    RCDATA  MOVEABLE PURE   "assets\\monster-7.bmp"
+IDR_SPRITE_MONSTER_8    RCDATA  MOVEABLE PURE   "assets\\monster-8.bmp"
+IDR_SPRITE_MONSTER_9    RCDATA  MOVEABLE PURE   "assets\\monster-9.bmp"
+IDR_SPRITE_MONSTER_10   RCDATA  MOVEABLE PURE   "assets\\monster-10.bmp"
+IDR_SPRITE_MONSTER_11   RCDATA  MOVEABLE PURE   "assets\\monster-11.bmp"
+IDR_SPRITE_MONSTER_12   RCDATA  MOVEABLE PURE   "assets\\monster-12.bmp"
+IDR_SPRITE_MONSTER_13   RCDATA  MOVEABLE PURE   "assets\\monster-13.bmp"
+IDR_SPRITE_MONSTER_14   RCDATA  MOVEABLE PURE   "assets\\monster-14.bmp"
+IDR_SPRITE_MONSTER_15   RCDATA  MOVEABLE PURE   "assets\\monster-15.bmp"
+IDR_SPRITE_SHIP_0       RCDATA  MOVEABLE PURE   "assets\\ship-0.bmp"
+IDR_SPRITE_SHIP_1       RCDATA  MOVEABLE PURE   "assets\\ship-1.bmp"
+IDR_SPRITE_SHIP_2       RCDATA  MOVEABLE PURE   "assets\\ship-2.bmp"
+IDR_SPRITE_SHIP_3       RCDATA  MOVEABLE PURE   "assets\\ship-3.bmp"
+IDR_SPRITE_SHIP_4       RCDATA  MOVEABLE PURE   "assets\\ship-4.bmp"
+IDR_SPRITE_SHIP_5       RCDATA  MOVEABLE PURE   "assets\\ship-5.bmp"
+IDR_SPRITE_SHIP_6       RCDATA  MOVEABLE PURE   "assets\\ship-6.bmp"
+IDR_SPRITE_SHIP_7       RCDATA  MOVEABLE PURE   "assets\\ship-7.bmp"
+IDR_SPRITE_TRAIN_0      RCDATA  MOVEABLE PURE   "assets\\train-0.bmp"
+IDR_SPRITE_TRAIN_1      RCDATA  MOVEABLE PURE   "assets\\train-1.bmp"
+IDR_SPRITE_TRAIN_2      RCDATA  MOVEABLE PURE   "assets\\train-2.bmp"
+IDR_SPRITE_TRAIN_3      RCDATA  MOVEABLE PURE   "assets\\train-3.bmp"
+IDR_SPRITE_TRAIN_4      RCDATA  MOVEABLE PURE   "assets\\train-4.bmp"
+IDR_SPRITE_EXPLOSION_0  RCDATA  MOVEABLE PURE   "assets\\explosion-0.bmp"
+IDR_SPRITE_EXPLOSION_1  RCDATA  MOVEABLE PURE   "assets\\explosion-1.bmp"
+IDR_SPRITE_EXPLOSION_2  RCDATA  MOVEABLE PURE   "assets\\explosion-2.bmp"
+IDR_SPRITE_EXPLOSION_3  RCDATA  MOVEABLE PURE   "assets\\explosion-3.bmp"
+IDR_SPRITE_EXPLOSION_4  RCDATA  MOVEABLE PURE   "assets\\explosion-4.bmp"
+IDR_SPRITE_EXPLOSION_5  RCDATA  MOVEABLE PURE   "assets\\explosion-5.bmp"
+IDR_SPRITE_TORNADO_0    RCDATA  MOVEABLE PURE   "assets\\tornado-0.bmp"
+IDR_SPRITE_TORNADO_1    RCDATA  MOVEABLE PURE   "assets\\tornado-1.bmp"
+IDR_SPRITE_TORNADO_2    RCDATA  MOVEABLE PURE   "assets\\tornado-2.bmp"
+IDR_ICON_AIRPORT        RCDATA  MOVEABLE PURE   "assets\\airport.bmp"
+IDR_ICON_BULLDOZER      RCDATA  MOVEABLE PURE   "assets\\bulldzr.bmp"
+IDR_ICON_COMMERCE       RCDATA  MOVEABLE PURE   "assets\\commerce.bmp"
+IDR_ICON_FIRESTATION    RCDATA  MOVEABLE PURE   "assets\\firest.bmp"
+IDR_ICON_INDUSTRIAL     RCDATA  MOVEABLE PURE   "assets\\industrl.bmp"
+IDR_ICON_NUCLEAR        RCDATA  MOVEABLE PURE   "assets\\nuclear.bmp"
+IDR_ICON_PARK           RCDATA  MOVEABLE PURE   "assets\\park.bmp"
+IDR_ICON_POLICESTATION  RCDATA  MOVEABLE PURE   "assets\\policest.bmp"
+IDR_ICON_POWERLINES     RCDATA  MOVEABLE PURE   "assets\\powerln.bmp"
+IDR_ICON_POWERPLANT     RCDATA  MOVEABLE PURE   "assets\\powerpl.bmp"
+IDR_ICON_QUERY          RCDATA  MOVEABLE PURE   "assets\\query.bmp"
+IDR_ICON_RAIL           RCDATA  MOVEABLE PURE   "assets\\rail.bmp"
+IDR_ICON_RESIDENTIAL    RCDATA  MOVEABLE PURE   "assets\\resident.bmp"
+IDR_ICON_ROAD           RCDATA  MOVEABLE PURE   "assets\\road.bmp"
+IDR_ICON_SEAPORT        RCDATA  MOVEABLE PURE   "assets\\seaport.bmp"
+5015                    RCDATA  MOVEABLE PURE   "assets\\stadium.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog
 //
 
@@ -82,13 +206,15 @@ STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "New Game - WiNTown"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Game Type",IDC_STATIC,10,10,288,37
+    GROUPBOX        "Game Type",IDC_STATIC,10,10,298,39
     CONTROL         "&New City",IDC_NEW_CITY,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP | WS_TABSTOP,20,25,48,12
-    CONTROL         "&Load City",IDC_LOAD_CITY,"Button",BS_AUTORADIOBUTTON,
-                    79,25,60,12
-    CONTROL         "&Scenario",IDC_SCENARIO,"Button",BS_AUTORADIOBUTTON,145,
-                    25,60,12
+    CONTROL         "Load City &Builtin",IDC_LOAD_CITY_BUILTIN,"Button",
+                    BS_AUTORADIOBUTTON,79,25,80,12
+    CONTROL         "Load City &File",IDC_LOAD_CITY_FILE,"Button",
+                    BS_AUTORADIOBUTTON,149,26,70,12
+    CONTROL         "&Scenario",IDC_SCENARIO,"Button",BS_AUTORADIOBUTTON,217,
+                    26,60,12
     GROUPBOX        "New City Options",IDC_STATIC,9,52,124,192
     LTEXT           "City Name:",IDC_STATIC,15,65,40,12
     EDITTEXT        IDC_CITY_NAME,18,76,84,14,ES_AUTOHSCROLL

@@ -1,6 +1,6 @@
 CC = cl
 RC = rc
-CFLAGS = /nologo /W3 /Ox /Ot /Oi /Ob2 /D "_WINDOWS" /ML
+CFLAGS = /nologo /W3 /Ox /Ot /Oi /Ob2 /D "_WINDOWS" /ML /I.
 LIBS = gdi32.lib user32.lib kernel32.lib COMDLG32.lib
 
 all: wintown.exe
@@ -66,11 +66,14 @@ src\newgame.obj: src\newgame.c
 src\mapgen.obj: src\mapgen.c
 	$(CC) $(CFLAGS) /c src\mapgen.c /Fosrc\mapgen.obj
 
-wintown.res: wintown.rc
-	$(RC) wintown.rc
+src\assets.obj: src\assets.c
+	$(CC) $(CFLAGS) /c src\assets.c /Fosrc\assets.obj
 
-wintown.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notify.obj src\animtab.obj src\newgame.obj src\mapgen.obj wintown.res
-	link /NOLOGO /OUT:wintown.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notify.obj src\animtab.obj src\newgame.obj src\mapgen.obj wintown.res $(LIBS)
+wintown.res: wintown.rc
+	$(RC) /i. wintown.rc
+
+wintown.exe: src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notify.obj src\animtab.obj src\newgame.obj src\mapgen.obj src\assets.obj wintown.res
+	link /NOLOGO /OUT:wintown.exe src\anim.obj src\budget.obj src\charts.obj src\disastr.obj src\eval.obj src\main.obj src\power.obj src\scanner.obj src\scenario.obj src\sim.obj src\sprite.obj src\tiles.obj src\tools.obj src\traffic.obj src\zone.obj src\gdifix.obj src\notify.obj src\animtab.obj src\newgame.obj src\mapgen.obj src\assets.obj wintown.res $(LIBS)
 
 clean:
 	del /q src\*.obj

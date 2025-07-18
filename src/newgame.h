@@ -40,8 +40,9 @@
 
 /* New Game options */
 #define NEWGAME_NEW_CITY 0
-#define NEWGAME_LOAD_CITY 1
-#define NEWGAME_SCENARIO 2
+#define NEWGAME_LOAD_CITY_BUILTIN 1
+#define NEWGAME_LOAD_CITY_FILE 2
+#define NEWGAME_SCENARIO 3
 
 /* Difficulty levels */
 #define DIFFICULTY_EASY 0
@@ -68,6 +69,7 @@ typedef struct {
     int mapType;         /* Map generation type (rivers/island) */
     int waterPercent;    /* Water coverage percentage (0-100) */
     int forestPercent;   /* Forest coverage percentage (0-100) */
+    int loadFromInternal; /* 1 for internal resources, 0 for external files */
 } NewGameConfig;
 
 /* Function prototypes */

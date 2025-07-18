@@ -9,6 +9,7 @@
 #include "charts.h"
 #include "notify.h"
 #include "newgame.h"
+#include "assets.h"
 #include <commdlg.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -3335,6 +3336,9 @@ int loadTileset(const char *filename) {
     DWORD error;
     BITMAP bm;
     char debugMsg[256];
+    char tilesetName[MAX_PATH];
+    char* namePtr;
+    int resourceId;
 
     if (hdcTiles) {
         DeleteDC(hdcTiles);
@@ -3346,9 +3350,33 @@ int loadTileset(const char *filename) {
         hbmTiles = NULL;
     }
 
-    /* Load the bitmap with explicit color control */
-wsprintf(debugMsg, "Loading tileset %s\n",filename);
-    hbmTiles = LoadImageFromFile(filename, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+    /* Extract tileset name from full path */
+    namePtr = strrchr(filename, '\\');
+    if (namePtr) {
+        namePtr++; /* Skip the backslash */
+    } else {
+        namePtr = (char*)filename;
+    }
+    strcpy(tilesetName, namePtr);
+
+    /* Try to load from embedded resources first */
+    resourceId = findTilesetResourceByName(tilesetName);
+    if (resourceId != 0) {
+        wsprintf(debugMsg, "Loading tileset %s from embedded resources (ID: %d)\n", tilesetName, resourceId);
+        OutputDebugString(debugMsg);
+        
+        hbmTiles = loadTilesetFromResource(resourceId);
+        if (hbmTiles != NULL) {
+            wsprintf(debugMsg, "Successfully loaded tileset %s from resources\n", tilesetName);
+            OutputDebugString(debugMsg);
+        }
+    }
+
+    /* If resource not found, report it */
+    if (hbmTiles == NULL) {
+        wsprintf(debugMsg, "Tileset %s not found in embedded resources\n", tilesetName);
+        OutputDebugString(debugMsg);
+    }
 
     if (hbmTiles == NULL) {
         /* Output debug message */
@@ -3404,15 +3432,16 @@ wsprintf(debugMsg, "Loading tileset %s\n",filename);
 }
 
 int changeTileset(HWND hwnd, const char *tilesetName) {
-    char tilesetPath[MAX_PATH];
     char windowTitle[MAX_PATH];
     HDC hdc;
     char errorMsg[256];
     DWORD error;
     BITMAP bm;
     char debugMsg[256];
+    char tilesetFilename[MAX_PATH];
+    int resourceId;
 
-    wsprintf(tilesetPath, "%s\\tilesets\\%s.bmp", progPathName, tilesetName);
+    wsprintf(tilesetFilename, "%s.bmp", tilesetName);
 
     if (hdcTiles) {
         DeleteDC(hdcTiles);
@@ -3424,34 +3453,39 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
         hbmTiles = NULL;
     }
 
-    hbmTiles =
-        LoadImageFromFile(tilesetPath, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+    /* Load from embedded resources only */
+    resourceId = findTilesetResourceByName(tilesetFilename);
+    if (resourceId != 0) {
+        wsprintf(debugMsg, "Changing to tileset %s from embedded resources (ID: %d)\n", tilesetName, resourceId);
+        OutputDebugString(debugMsg);
+        
+        hbmTiles = loadTilesetFromResource(resourceId);
+        if (hbmTiles != NULL) {
+            wsprintf(debugMsg, "Successfully changed to tileset %s from resources\n", tilesetName);
+            OutputDebugString(debugMsg);
+        }
+    } else {
+        wsprintf(debugMsg, "Tileset %s not found in embedded resources\n", tilesetName);
+        OutputDebugString(debugMsg);
+    }
 
     if (hbmTiles == NULL) {
-        /* Output debug message */
-        error = GetLastError();
-
-        wsprintf(errorMsg, "Failed to change tileset: %s, Error: %d", tilesetPath, error);
-        OutputDebugString(errorMsg);
-        
         /* Try fallback to default if requested tileset isn't 'default' */
         if (strcmp(tilesetName, "default") != 0) {
             wsprintf(errorMsg, "Trying to fallback to default tileset");
             OutputDebugString(errorMsg);
             
-            wsprintf(tilesetPath, "%s\\tilesets\\default.bmp", progPathName);
-            hbmTiles = LoadImageFromFile(tilesetPath, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+            resourceId = findTilesetResourceByName("default.bmp");
+            if (resourceId != 0) {
+                hbmTiles = loadTilesetFromResource(resourceId);
+            }
                               
             if (hbmTiles == NULL) {
                 /* If default also fails, give up */
-                error = GetLastError();
-                wsprintf(errorMsg, "Failed to load default fallback: Error: %d", error);
+                wsprintf(errorMsg, "Failed to load default fallback from resources");
                 OutputDebugString(errorMsg);
                 return 0;
             }
-            
-            /* Success with default tileset - update in the strcpy below */
-            /* We can't modify tilesetName directly as it's a const parameter */
         } else {
             /* If we're already trying to load default and it failed, give up */
             return 0;
@@ -3498,12 +3532,8 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     /* Force a background color update to use our palette */
     SetBkMode(hdcTiles, TRANSPARENT);
 
-    /* If we used the fallback to default.bmp, use "default" as the tileset name */
-    if (strstr(tilesetPath, "tilesets\\default.bmp") != NULL && strcmp(tilesetName, "default") != 0) {
-        strcpy(currentTileset, "default");
-    } else {
-        strcpy(currentTileset, tilesetName);
-    }
+    /* Update current tileset name */
+    strcpy(currentTileset, tilesetName);
 
     wsprintf(windowTitle, "WiNTown - Tileset: %s", currentTileset);
     SetWindowText(hwnd, windowTitle);
@@ -5158,10 +5188,8 @@ void drawCity(HDC hdc) {
 void openCityDialog(HWND hwnd) {
     OPENFILENAME ofn;
     char szFileName[MAX_PATH];
-    char citiesPath[MAX_PATH];
 
     szFileName[0] = '\0';
-    wsprintf(citiesPath, "%s\\cities", progPathName);
 
     ZeroMemory(&ofn, sizeof(ofn));
 
@@ -5170,7 +5198,7 @@ void openCityDialog(HWND hwnd) {
     ofn.lpstrFilter = "City Files (*.cty)\0*.cty\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = szFileName;
     ofn.nMaxFile = MAX_PATH;
-    ofn.lpstrInitialDir = citiesPath;
+    ofn.lpstrInitialDir = NULL; /* Use current directory instead of hardcoded cities path */
     ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
     ofn.lpstrDefExt = "cty";
 
@@ -5332,9 +5360,8 @@ HMENU createMainMenu(void) {
     return hMainMenu;
 }
 
-/* Load sprite bitmaps from assets directory */
+/* Load sprite bitmaps from embedded resources */
 void loadSpriteBitmaps(void) {
-    char filename[MAX_PATH];
     int type, frame;
     int maxFrames[9] = {5, 8, 11, 8, 4, 16, 3, 6, 0}; /* Max frames per sprite type */
     char *prefix[9] = {"train", "helicopter", "airplane", "ship", "bus", "monster", "tornado", "explosion", NULL};
@@ -5352,29 +5379,28 @@ void loadSpriteBitmaps(void) {
         }
     }
     
-    /* Load each sprite type */
+    /* Load each sprite type from embedded resources */
     for (type = 0; type < 8; type++) {
         for (frame = 0; frame < maxFrames[type]; frame++) {
-            /* Build filename */
-            wsprintf(filename, "%s\\assets\\%s-%d.bmp", progPathName, prefix[type], frame);
+            int resourceId;
+            extern int findSpriteResourceByName(const char* spriteType, int frameNumber);
+            extern HBITMAP loadTilesetFromResource(int resourceId);
             
-            /* Load bitmap with proper palette support */
-            hbmSprites[type + 1][frame] = (HBITMAP)LoadImageFromFile(filename, 
-                                                              LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+            /* Find the resource ID for this sprite frame */
+            resourceId = findSpriteResourceByName(prefix[type], frame);
             
-            if (!hbmSprites[type + 1][frame]) {
-                /* Try without path in case assets are in current directory */
-                wsprintf(filename, "assets\\%s-%d.bmp", prefix[type], frame);
-                hbmSprites[type + 1][frame] = (HBITMAP)LoadImageFromFile(filename, 
-                                                                  LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_DEFAULTCOLOR);
+            if (resourceId != 0) {
+                /* Load the sprite from embedded resource */
+                hbmSprites[type + 1][frame] = loadTilesetFromResource(resourceId);
                 
                 if (hbmSprites[type + 1][frame]) {
-                    addDebugLog("Loaded sprite: %s", filename);
+                    addDebugLog("Loaded sprite from resource: %s-%d (ID: %d)", prefix[type], frame, resourceId);
                 } else {
-                    addDebugLog("Failed to load sprite: %s", filename);
+                    addDebugLog("Failed to load sprite from resource: %s-%d (ID: %d)", prefix[type], frame, resourceId);
                 }
             } else {
-                addDebugLog("Loaded sprite: %s", filename);
+                addDebugLog("Resource not found for sprite: %s-%d", prefix[type], frame);
+                hbmSprites[type + 1][frame] = NULL;
             }
         }
     }
@@ -5434,9 +5460,6 @@ void DrawTransparentBitmap(HDC hdcDest, int xDest, int yDest, int width, int hei
 }
 
 void populateTilesetMenu(HMENU hSubMenu) {
-    WIN32_FIND_DATA findData;
-    HANDLE hFind;
-    char searchPath[MAX_PATH];
     char tilesetNames[IDM_TILESET_MAX - IDM_TILESET_BASE][MAX_PATH];
     char fileName[MAX_PATH];
     char *dot;
@@ -5445,35 +5468,23 @@ void populateTilesetMenu(HMENU hSubMenu) {
     int count = 0;
     int i, j;
     char temp[MAX_PATH];
-
-    strcpy(searchPath, progPathName);
-    strcat(searchPath, "\\tilesets\\*.bmp");
-
-    hFind = FindFirstFile(searchPath, &findData);
-
-    if (hFind != INVALID_HANDLE_VALUE) {
-        /* First, collect all tileset names */
-        do {
-            if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) {
-                continue;
-            }
-
-            strcpy(fileName, findData.cFileName);
+    GameAssetInfo* tilesetInfo;
+    
+    /* Get embedded tilesets */
+    for (i = 0; i < getTilesetCount() && count < (IDM_TILESET_MAX - IDM_TILESET_BASE); i++) {
+        tilesetInfo = getTilesetInfo(i);
+        if (tilesetInfo && tilesetInfo->filename) {
+            strcpy(fileName, tilesetInfo->filename);
             dot = strrchr(fileName, '.');
             if (dot != NULL) {
                 *dot = '\0';
             }
-
-            /* Store the name if we haven't exceeded the limit */
-            if (count < (IDM_TILESET_MAX - IDM_TILESET_BASE)) {
-                strcpy(tilesetNames[count], fileName);
-                count++;
-            }
-
-        } while (FindNextFile(hFind, &findData));
-
-        FindClose(hFind);
-
+            strcpy(tilesetNames[count], fileName);
+            count++;
+        }
+    }
+    
+    if (count > 0) {
         /* Sort the tileset names alphabetically using bubble sort */
         for (i = 0; i < count - 1; i++) {
             for (j = 0; j < count - i - 1; j++) {

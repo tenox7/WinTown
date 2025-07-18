@@ -2,10 +2,12 @@
  * Based on original WiNTown scenarios and new game functionality
  */
 
+#include "resource.h"
 #include "newgame.h"
 #include "mapgen.h"
 #include "sim.h"
 #include "tiles.h"
+#include "assets.h"
 #include <windows.h>
 #include <commdlg.h>
 #include <stdio.h>
@@ -108,6 +110,7 @@ int showNewGameDialog(HWND parent, NewGameConfig *config) {
     config->mapType = MAPTYPE_RIVERS; /* Default: unchecked = rivers */
     config->waterPercent = 25;
     config->forestPercent = 30;
+    config->loadFromInternal = 1;
     
     currentConfig = config;
     
@@ -169,7 +172,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         sprintf(labelText, "Forest: %d%%", 30);
         SetDlgItemText(hwnd, IDC_FOREST_LABEL, labelText);
         
-        /* Populate scenario list */
+        /* Populate scenario list - start with internal scenarios by default */
         listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
         /* CRITICAL: Clear any existing items first to prevent corruption */
         SendMessage(listBox, LB_RESETCONTENT, 0, 0);
@@ -201,6 +204,18 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     }
     
     case WM_COMMAND: {
+        HWND listBox;
+        int i, sel, itemData;
+        GameAssetInfo* cityInfo;
+        OPENFILENAME ofn;
+        char fileName[MAX_PATH];
+        MapGenParams params;
+        HWND previewCtrl;
+        RECT previewRect;
+        int previewWidth, previewHeight;
+        int waterPos, forestPos;
+        int isIslandChecked;
+        
         switch (LOWORD(wParam)) {
         case IDC_NEW_CITY:
             if (HIWORD(wParam) == BN_CLICKED) {
@@ -222,7 +237,43 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             }
             break;
             
-        case IDC_LOAD_CITY:
+        case IDC_LOAD_CITY_BUILTIN:
+            if (HIWORD(wParam) == BN_CLICKED) {
+                /* Disable new city controls */
+                EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_EASY), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_MEDIUM), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_DIFFICULTY_HARD), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_MAP_ISLAND), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_WATER_PERCENT), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_FOREST_PERCENT), FALSE);
+                EnableWindow(GetDlgItem(hwnd, IDC_GENERATE_PREVIEW), FALSE);
+                /* Show scenario list for builtin cities */
+                ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_SHOW);
+                ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_SHOW);
+                
+                /* Populate with builtin cities */
+                listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+                SendMessage(listBox, LB_RESETCONTENT, 0, 0);
+                for (i = 0; i < getCityCount(); i++) {
+                    GameAssetInfo* cityInfo = getCityInfo(i);
+                    if (cityInfo) {
+                        SendMessage(listBox, LB_ADDSTRING, 0, (LPARAM)cityInfo->description);
+                        SendMessage(listBox, LB_SETITEMDATA, i, i);
+                    }
+                }
+                if (SendMessage(listBox, LB_GETCOUNT, 0, 0) > 0) {
+                    SendMessage(listBox, LB_SETCURSEL, 0, 0);
+                    SetDlgItemText(hwnd, IDC_SCENARIO_DESC, "Select a builtin city to load.");
+                }
+                
+                if (currentConfig) {
+                    currentConfig->gameType = NEWGAME_LOAD_CITY_BUILTIN;
+                }
+            }
+            break;
+            
+        case IDC_LOAD_CITY_FILE:
             if (HIWORD(wParam) == BN_CLICKED) {
                 /* Disable new city controls */
                 EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), FALSE);
@@ -237,7 +288,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_HIDE);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_HIDE);
                 if (currentConfig) {
-                    currentConfig->gameType = NEWGAME_LOAD_CITY;
+                    currentConfig->gameType = NEWGAME_LOAD_CITY_FILE;
                 }
             }
             break;
@@ -287,15 +338,9 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             }
             break;
             
+            
         case IDC_GENERATE_PREVIEW:
             if (HIWORD(wParam) == BN_CLICKED && currentConfig) {
-                MapGenParams params;
-                HWND previewCtrl;
-                RECT previewRect;
-                int previewWidth, previewHeight;
-                int waterPos, forestPos;
-                int isIslandChecked;
-                
                 /* Get current slider values */
                 waterPos = GetScrollPos(GetDlgItem(hwnd, IDC_WATER_PERCENT), SB_CTL);
                 forestPos = GetScrollPos(GetDlgItem(hwnd, IDC_FOREST_PERCENT), SB_CTL);
@@ -331,9 +376,9 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             
         case IDC_SCENARIO_LIST:
             if (HIWORD(wParam) == LBN_SELCHANGE) {
-                HWND listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                int sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
-                int itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
+                listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
                 
                 addGameLog("DEBUG: Listbox selection changed - sel=%d, itemData=%d", sel, itemData);
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
@@ -366,9 +411,29 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 }
                 break;
                 
-            case NEWGAME_LOAD_CITY: {
-                OPENFILENAME ofn;
-                char fileName[MAX_PATH] = "";
+            case NEWGAME_LOAD_CITY_BUILTIN: {
+                /* Load from builtin resources */
+                listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
+                
+                if (sel != LB_ERR && itemData >= 0 && itemData < getCityCount()) {
+                    cityInfo = getCityInfo(itemData);
+                    if (cityInfo) {
+                        currentConfig->scenarioId = cityInfo->resourceId;
+                        currentConfig->loadFromInternal = 1;
+                        strcpy(currentConfig->loadFile, cityInfo->filename);
+                    }
+                } else {
+                    MessageBox(hwnd, "Please select a builtin city to load.", "Error", MB_OK | MB_ICONERROR);
+                    return TRUE;
+                }
+                break;
+            }
+            
+            case NEWGAME_LOAD_CITY_FILE: {
+                /* Load from external file */
+                fileName[0] = '\0';
                 
                 /* Setup file dialog */
                 ZeroMemory(&ofn, sizeof(ofn));
@@ -383,6 +448,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 
                 if (GetOpenFileName(&ofn)) {
                     strcpy(currentConfig->loadFile, fileName);
+                    currentConfig->loadFromInternal = 0;
                 } else {
                     return TRUE; /* User cancelled */
                 }
@@ -390,8 +456,8 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             }
             
             case NEWGAME_SCENARIO: {
-                HWND listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                int sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
                 
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
                     currentConfig->scenarioId = scenarios[sel].id;
@@ -508,11 +574,14 @@ BOOL CALLBACK scenarioDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     }
     
     case WM_COMMAND: {
+        HWND listBox;
+        int sel;
+        
         switch (LOWORD(wParam)) {
         case IDC_SCENARIO_LIST:
             if (HIWORD(wParam) == LBN_SELCHANGE) {
-                HWND listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                int sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
                 
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
                     addGameLog("Scenario dialog: Selected scenario %d (%s): %s", 
@@ -526,8 +595,8 @@ BOOL CALLBACK scenarioDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
             
         case IDC_SCENARIO_OK: {
-            HWND listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-            int sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+            listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+            sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
             
             if (sel != LB_ERR && sel >= 0 && sel < scenarioCount && selectedScenario) {
                 *selectedScenario = scenarios[sel].id;
@@ -565,7 +634,12 @@ int initNewGame(NewGameConfig *config) {
                                         config->mapType, config->waterPercent, 
                                         config->forestPercent);
         
-    case NEWGAME_LOAD_CITY:
+    case NEWGAME_LOAD_CITY_BUILTIN:
+        /* Load city from internal resources */
+        return loadCityFromResource(config->scenarioId, NULL);
+        
+    case NEWGAME_LOAD_CITY_FILE:
+        /* Load city from external file */
         return loadCityFile(config->loadFile);
         
     case NEWGAME_SCENARIO:

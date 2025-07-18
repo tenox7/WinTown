@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "gdifix.h"
+#include "assets.h"
 
 /* External log functions */
 extern void addGameLog(const char *format, ...);
@@ -55,7 +56,6 @@ int loadScenario(int scenarioId) {
     char *fname = NULL;
     char path[MAX_PATH];
     int startYear = 1900;
-    FILE *f;
 
     /* Reset city filename */
     cityFileName[0] = '\0';
@@ -68,43 +68,44 @@ int loadScenario(int scenarioId) {
         scenarioId = 1;
     }
 
-    /* Check if scenario files are available - construct filename based on ID */
+    /* Load scenario from embedded resources */
     switch (scenarioId) {
     case 1:
-        strcpy(path, "cities\\dullsville.scn");
+        strcpy(path, "dullsville.scn");
         break;
     case 2:
-        strcpy(path, "cities\\sanfrancisco.scn");
+        strcpy(path, "sanfrancisco.scn");
         break;
     case 3:
-        strcpy(path, "cities\\hamburg.scn");
+        strcpy(path, "hamburg.scn");
         break;
     case 4:
-        strcpy(path, "cities\\bern.scn");
+        strcpy(path, "bern.scn");
         break;
     case 5:
-        strcpy(path, "cities\\tokyo.scn");
+        strcpy(path, "tokyo.scn");
         break;
     case 6:
-        strcpy(path, "cities\\detroit.scn");
+        strcpy(path, "detroit.scn");
         break;
     case 7:
-        strcpy(path, "cities\\boston.scn");
+        strcpy(path, "boston.scn");
         break;
     case 8:
-        strcpy(path, "cities\\rio.scn");
+        strcpy(path, "rio.scn");
         break;
     default:
-        strcpy(path, "cities\\dullsville.scn");
+        strcpy(path, "dullsville.scn");
         break;
     }
 
-    f = fopen(path, "rb");
-    if (f == NULL) {
-        addGameLog("ERROR: Scenario files not found! Please copy scenario files to the cities directory.");
+    /* Try to load the scenario from embedded resources */
+    if (!loadScenarioFromResource(findScenarioResourceByName(path), path)) {
+        addGameLog("ERROR: Scenario '%s' not found in embedded resources!", path);
         return 0;
     }
-    fclose(f);
+    
+    addGameLog("Scenario '%s' loaded successfully from embedded resources", path);
 
     switch (scenarioId) {
     case 1:
@@ -230,14 +231,9 @@ int loadScenario(int scenarioId) {
     }
     ScoreType = ScenarioID;
 
-    /* Load scenario file */
-    wsprintf(path, "cities\\%s", fname);
-    if (!loadFile(path)) {
-        addGameLog("ERROR: Failed to load scenario file: %s", path);
-        return 0;
-    }
+    /* Scenario data already loaded from embedded resources above */
 
-    /* Override TotalFunds with correct scenario values (after file load) */
+    /* Override TotalFunds with correct scenario values */
     switch (ScenarioID) {
         case 1: /* Dullsville */
             TotalFunds = 5000;

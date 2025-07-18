@@ -1799,21 +1799,30 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 /* Load all toolbar bitmap resources */
 void LoadToolbarBitmaps(void) {
     int i;
-    char filename[MAX_PATH];
+    int resourceId;
+    extern int findToolIconResourceByName(const char* toolName);
+    extern HBITMAP loadTilesetFromResource(int resourceId);
+    extern void addDebugLog(const char *format, ...);
 
-    /* Load the renamed bitmaps directly from the assets folder */
+    addDebugLog("LoadToolbarBitmaps: Loading tool icons from embedded resources");
+
+    /* Load the bitmaps from embedded resources */
     for (i = 0; i < 17; i++) {
-        /* Use only the new bitmap files with descriptive names */
-        wsprintf(filename, "assets\\%s.bmp", toolBitmapFiles[i]);
-
-        /* Load the bitmap */
-        hToolBitmaps[i] =
-            LoadImageFromFile(filename, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-
-        if (hToolBitmaps[i] == NULL) {
-            /* Log error if bitmap loading fails */
-            OutputDebugString("Failed to load bitmap: ");
-            OutputDebugString(filename);
+        /* Find the resource ID for this tool */
+        resourceId = findToolIconResourceByName(toolBitmapFiles[i]);
+        
+        if (resourceId != 0) {
+            /* Load the bitmap from embedded resource */
+            hToolBitmaps[i] = loadTilesetFromResource(resourceId);
+            
+            if (hToolBitmaps[i] != NULL) {
+                addDebugLog("LoadToolbarBitmaps: Successfully loaded tool %d (%s)", i, toolBitmapFiles[i]);
+            } else {
+                addDebugLog("LoadToolbarBitmaps: Failed to load tool %d (%s) from resource", i, toolBitmapFiles[i]);
+            }
+        } else {
+            addDebugLog("LoadToolbarBitmaps: Resource not found for tool %d (%s)", i, toolBitmapFiles[i]);
+            hToolBitmaps[i] = NULL;
         }
     }
 }

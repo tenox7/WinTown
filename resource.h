@@ -7,7 +7,8 @@
 #define IDD_BUDGET                      1001
 #define IDC_NEW_CITY                    1001
 #define IDC_TAX_RATE_SLIDER             1002
-#define IDC_LOAD_CITY                   1002
+#define IDC_LOAD_CITY_BUILTIN           1002
+#define IDC_LOAD_CITY_FILE              1021
 #define IDC_TAX_RATE_LABEL              1003
 #define IDC_SCENARIO                    1003
 #define IDC_ROAD_SLIDER                 1004
@@ -53,6 +54,147 @@
 #define IDC_MAP_PREVIEW                 10007
 #define IDC_GENERATE_PREVIEW            10008
 #define IDC_STATIC                      -1
+
+/* Resource IDs for embedded assets */
+
+/* Tilesets */
+#define IDR_TILESET_CLASSIC             2000
+#define IDR_TILESET_CLASSIC95           2001
+#define IDR_TILESET_DEFAULT             2002
+#define IDR_TILESET_ANCIENTASIA         2003
+#define IDR_TILESET_DUX                 2004
+#define IDR_TILESET_FUTUREEUROPE        2005
+#define IDR_TILESET_FUTUREUSA           2006
+#define IDR_TILESET_MEDIEVALTIMES       2007
+#define IDR_TILESET_MOONCOLONY          2008
+#define IDR_TILESET_WILDWEST            2009
+
+/* Cities */
+#define IDR_CITY_BADNEWS                3000
+#define IDR_CITY_BRUCE                  3001
+#define IDR_CITY_DEADWOOD               3002
+#define IDR_CITY_FINNIGAN               3003
+#define IDR_CITY_FREDS                  3004
+#define IDR_CITY_HAIGHT                 3005
+#define IDR_CITY_HAPPISLE               3006
+#define IDR_CITY_JOFFBURG               3007
+#define IDR_CITY_KAMAKURA               3008
+#define IDR_CITY_KOBE                   3009
+#define IDR_CITY_KOWLOON                3010
+#define IDR_CITY_KYOTO                  3011
+#define IDR_CITY_LINECITY               3012
+#define IDR_CITY_MED_ISLE               3013
+#define IDR_CITY_NDULLS                 3014
+#define IDR_CITY_NEATMAP                3015
+#define IDR_CITY_RADIAL                 3016
+#define IDR_CITY_SENRI                  3017
+#define IDR_CITY_SIMCITY4               3018
+#define IDR_CITY_SOUTHPAC               3019
+#define IDR_CITY_SPLATS                 3020
+#define IDR_CITY_WETCITY                3021
+#define IDR_CITY_YOKOHAMA               3022
+
+/* Scenarios */
+#define IDR_SCENARIO_BERN               3100
+#define IDR_SCENARIO_BOSTON             3101
+#define IDR_SCENARIO_DETROIT            3102
+#define IDR_SCENARIO_DULLSVILLE         3103
+#define IDR_SCENARIO_HAMBURG            3104
+#define IDR_SCENARIO_RIO                3105
+#define IDR_SCENARIO_SANFRANCISCO       3106
+#define IDR_SCENARIO_TOKYO              3107
+
+/* Sprites */
+#define IDR_SPRITE_AIRPLANE_0           4000
+#define IDR_SPRITE_AIRPLANE_1           4001
+#define IDR_SPRITE_AIRPLANE_2           4002
+#define IDR_SPRITE_AIRPLANE_3           4003
+#define IDR_SPRITE_AIRPLANE_4           4004
+#define IDR_SPRITE_AIRPLANE_5           4005
+#define IDR_SPRITE_AIRPLANE_6           4006
+#define IDR_SPRITE_AIRPLANE_7           4007
+#define IDR_SPRITE_AIRPLANE_8           4008
+#define IDR_SPRITE_AIRPLANE_9           4009
+#define IDR_SPRITE_AIRPLANE_10          4010
+
+#define IDR_SPRITE_BUS_0                4020
+#define IDR_SPRITE_BUS_1                4021
+#define IDR_SPRITE_BUS_2                4022
+#define IDR_SPRITE_BUS_3                4023
+
+#define IDR_SPRITE_HELICOPTER_0         4030
+#define IDR_SPRITE_HELICOPTER_1         4031
+#define IDR_SPRITE_HELICOPTER_2         4032
+#define IDR_SPRITE_HELICOPTER_3         4033
+#define IDR_SPRITE_HELICOPTER_4         4034
+#define IDR_SPRITE_HELICOPTER_5         4035
+#define IDR_SPRITE_HELICOPTER_6         4036
+#define IDR_SPRITE_HELICOPTER_7         4037
+
+#define IDR_SPRITE_MONSTER_0            4040
+#define IDR_SPRITE_MONSTER_1            4041
+#define IDR_SPRITE_MONSTER_2            4042
+#define IDR_SPRITE_MONSTER_3            4043
+#define IDR_SPRITE_MONSTER_4            4044
+#define IDR_SPRITE_MONSTER_5            4045
+#define IDR_SPRITE_MONSTER_6            4046
+#define IDR_SPRITE_MONSTER_7            4047
+#define IDR_SPRITE_MONSTER_8            4048
+#define IDR_SPRITE_MONSTER_9            4049
+#define IDR_SPRITE_MONSTER_10           4050
+#define IDR_SPRITE_MONSTER_11           4051
+#define IDR_SPRITE_MONSTER_12           4052
+#define IDR_SPRITE_MONSTER_13           4053
+#define IDR_SPRITE_MONSTER_14           4054
+#define IDR_SPRITE_MONSTER_15           4055
+
+#define IDR_SPRITE_SHIP_0               4060
+#define IDR_SPRITE_SHIP_1               4061
+#define IDR_SPRITE_SHIP_2               4062
+#define IDR_SPRITE_SHIP_3               4063
+#define IDR_SPRITE_SHIP_4               4064
+#define IDR_SPRITE_SHIP_5               4065
+#define IDR_SPRITE_SHIP_6               4066
+#define IDR_SPRITE_SHIP_7               4067
+
+#define IDR_SPRITE_TRAIN_0              4070
+#define IDR_SPRITE_TRAIN_1              4071
+#define IDR_SPRITE_TRAIN_2              4072
+#define IDR_SPRITE_TRAIN_3              4073
+#define IDR_SPRITE_TRAIN_4              4074
+
+#define IDR_SPRITE_EXPLOSION_0          4080
+#define IDR_SPRITE_EXPLOSION_1          4081
+#define IDR_SPRITE_EXPLOSION_2          4082
+#define IDR_SPRITE_EXPLOSION_3          4083
+#define IDR_SPRITE_EXPLOSION_4          4084
+#define IDR_SPRITE_EXPLOSION_5          4085
+
+#define IDR_SPRITE_TORNADO_0            4090
+#define IDR_SPRITE_TORNADO_1            4091
+#define IDR_SPRITE_TORNADO_2            4092
+
+/* Tool Icons */
+#define IDR_ICON_AIRPORT                5000
+#define IDR_ICON_BULLDOZER              5001
+#define IDR_ICON_COMMERCE               5002
+#define IDR_ICON_FIRESTATION            5003
+#define IDR_ICON_INDUSTRIAL             5004
+#define IDR_ICON_NUCLEAR                5005
+#define IDR_ICON_PARK                   5006
+#define IDR_ICON_POLICESTATION          5007
+#define IDR_ICON_POWERLINES             5008
+#define IDR_ICON_POWERPLANT             5009
+#define IDR_ICON_QUERY                  5010
+#define IDR_ICON_RAIL                   5011
+#define IDR_ICON_RESIDENTIAL            5012
+#define IDR_ICON_ROAD                   5013
+#define IDR_ICON_SEAPORT                5014
+#define IDR_ICON_STADIUM                5015
+
+/* Load source option */
+#define IDC_LOAD_SOURCE_INTERNAL        11001
+#define IDC_LOAD_SOURCE_EXTERNAL        11002
 
 // Next default values for new objects
 // 
