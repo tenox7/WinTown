@@ -84,7 +84,7 @@
 
 /* Chart window timer */
 #define CHART_TIMER_ID       4
-#define CHART_TIMER_INTERVAL 1000  /* Update charts every 1 second */
+#define CHART_TIMER_INTERVAL 5000  /* Update charts every 5 seconds for periodic refresh */
 
 /* Chart data storage structure */
 typedef struct {

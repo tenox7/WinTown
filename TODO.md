@@ -6,6 +6,7 @@
 - Sound System
 
 ## Bugs
+- Scenario load negative money
 - Power line issues
 - Minimap stats not working: fire, police
 - Pink squares on roads due to incorrect ties
@@ -20,6 +21,7 @@
 
 
 ## Cosmetic
+- Add refresh uder view and F5
 - Buttons / sizing / layout / etc
 - Better RCI and mini chart indicators
 - No power needs to flash

@@ -437,7 +437,13 @@ int InitChartWindowGraphics(HWND hwnd) {
 /* Show or hide chart window */
 void ShowChartWindow(int show) {
     if (g_chartData && g_chartData->hwnd) {
-        ShowWindow(g_chartData->hwnd, show ? SW_SHOW : SW_HIDE);
+        if (show) {
+            SetTimer(g_chartData->hwnd, CHART_TIMER_ID, CHART_TIMER_INTERVAL, NULL);
+            ShowWindow(g_chartData->hwnd, SW_SHOW);
+        } else {
+            KillTimer(g_chartData->hwnd, CHART_TIMER_ID);
+            ShowWindow(g_chartData->hwnd, SW_HIDE);
+        }
     }
 }
 
@@ -497,7 +503,7 @@ LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
         case WM_CREATE:
             /* Initialize chart graphics when window is created */
             InitChartWindowGraphics(hwnd);
-            /* Start timer to update chart window */
+            /* Start slower periodic timer for chart updates */
             SetTimer(hwnd, CHART_TIMER_ID, CHART_TIMER_INTERVAL, NULL);
             return 0;
             
@@ -555,6 +561,7 @@ LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
             
         case WM_KEYDOWN:
             if (wParam == VK_ESCAPE) {
+                KillTimer(hwnd, CHART_TIMER_ID);
                 ShowWindow(hwnd, SW_HIDE);
                 return 0;
             }
@@ -583,7 +590,7 @@ LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
             
         case WM_TIMER:
             if (wParam == CHART_TIMER_ID) {
-                /* Refresh chart display */
+                /* Periodic chart refresh */
                 InvalidateRect(hwnd, NULL, FALSE);
                 return 0;
             }
@@ -591,6 +598,7 @@ LRESULT CALLBACK ChartWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
             
         case WM_CLOSE:
             /* Hide window instead of destroying and update menu checkmark */
+            KillTimer(hwnd, CHART_TIMER_ID);
             ShowWindow(hwnd, SW_HIDE);
             return 0;
             

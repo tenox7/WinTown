@@ -89,7 +89,7 @@
 #define MINIMAP_TIMER_ID 3
 #define MINIMAP_TIMER_INTERVAL 2000 /* Update minimap every 2 seconds for periodic refresh */
 #define CHART_TIMER_ID 4
-#define CHART_TIMER_INTERVAL 1000 /* Update charts every 1000ms */
+#define CHART_TIMER_INTERVAL 5000 /* Update charts every 5 seconds for periodic refresh */
 #define EARTHQUAKE_TIMER_ID 5
 #define MINIMAP_SCALE 3 /* 3x3 pixels per tile */
 
@@ -114,7 +114,7 @@
 #define INFO_WINDOW_WIDTH 300
 #define INFO_WINDOW_HEIGHT 320
 #define INFO_TIMER_ID 2
-#define INFO_TIMER_INTERVAL 500 /* Update info window every 500ms */
+#define INFO_TIMER_INTERVAL 2000 /* Update info window every 2 seconds */
 
 /* Log window definitions */
 #define LOG_WINDOW_CLASS "WiNTownLogWindow"
@@ -1733,6 +1733,7 @@ LRESULT CALLBACK minimapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
     case WM_CLOSE:
         /* Don't destroy, just hide the window */
+        KillTimer(hwnd, MINIMAP_TIMER_ID);
         ShowWindow(hwnd, SW_HIDE);
 
         /* Update menu checkmark */
@@ -2161,10 +2162,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (state & MF_CHECKED) {
                     /* Hide info window */
                     CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                    KillTimer(hwndInfo, INFO_TIMER_ID);
                     ShowWindow(hwndInfo, SW_HIDE);
                 } else {
                     /* Show info window */
                     CheckMenuItem(hViewMenu, IDM_VIEW_INFOWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                    SetTimer(hwndInfo, INFO_TIMER_ID, INFO_TIMER_INTERVAL, NULL);
                     ShowWindow(hwndInfo, SW_SHOW);
                     SetFocus(hwnd); /* Keep focus on main window */
                 }
@@ -2225,10 +2228,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (state & MF_CHECKED) {
                     /* Hide minimap window */
                     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
+                    KillTimer(hwndMinimap, MINIMAP_TIMER_ID);
                     ShowWindow(hwndMinimap, SW_HIDE);
                 } else {
                     /* Show minimap window */
                     CheckMenuItem(hViewMenu, IDM_VIEW_MINIMAPWINDOW, MF_BYCOMMAND | MF_CHECKED);
+                    SetTimer(hwndMinimap, MINIMAP_TIMER_ID, MINIMAP_TIMER_INTERVAL, NULL);
                     ShowWindow(hwndMinimap, SW_SHOW);
                     SetFocus(hwnd); /* Keep focus on main window */
                 }
@@ -2272,13 +2277,13 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     addDebugLog("Hiding charts window");
                     chartsWindowVisible = FALSE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_BYCOMMAND | MF_UNCHECKED);
-                    ShowWindow(hwndCharts, SW_HIDE);
+                    ShowChartWindow(0); /* Use existing function which handles timer */
                 } else {
                     /* Show charts window */
                     addDebugLog("Showing charts window");
                     chartsWindowVisible = TRUE;
                     CheckMenuItem(hViewMenu, IDM_VIEW_CHARTSWINDOW, MF_BYCOMMAND | MF_CHECKED);
-                    ShowWindow(hwndCharts, SW_SHOWNORMAL);
+                    ShowChartWindow(1); /* Use existing function which handles timer */
                     SetForegroundWindow(hwndCharts);
                 }
             } else {
@@ -2700,6 +2705,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (wParam == SIM_TIMER_ID) {
             BOOL needRedraw;
             static int minimapUpdateCounter = 0;
+            static int chartUpdateCounter = 0;
 
             /* Run the simulation frame */
             SimFrame();
@@ -2714,8 +2720,16 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 minimapUpdateCounter++;
                 if (minimapUpdateCounter >= 20) {
                     minimapUpdateCounter = 0;
-                    if (hwndMinimap) {
+                    if (hwndMinimap && IsWindowVisible(hwndMinimap)) {
                         InvalidateRect(hwndMinimap, NULL, FALSE);
+                    }
+                }
+                /* Update chart only every 50 frames (5 seconds at 100ms intervals) */
+                chartUpdateCounter++;
+                if (chartUpdateCounter >= 50) {
+                    chartUpdateCounter = 0;
+                    if (hwndCharts && IsWindowVisible(hwndCharts)) {
+                        InvalidateRect(hwndCharts, NULL, FALSE);
                     }
                 }
             }
@@ -3667,7 +3681,7 @@ void scrollView(int dx, int dy) {
     DeleteObject(hRgn);
     
     /* Update minimap to show new viewport position */
-    if (hwndMinimap) {
+    if (hwndMinimap && IsWindowVisible(hwndMinimap)) {
         InvalidateRect(hwndMinimap, NULL, FALSE);
     }
 }

@@ -285,12 +285,12 @@ void SimFrame(void) {
     static int debugCounter = 0;
     
     debugCounter++;
-    if (debugCounter % 60 == 0) { /* Log every 60 frames (about once per second) */
+    if (debugCounter % 300 == 0) { /* Log every 300 frames (about every 5 seconds) */
         addDebugLog("SimFrame called: SimPaused=%d, SimSpeed=%d, Spdcycle=%d", SimPaused, SimSpeed, Spdcycle);
     }
 
     if (SimPaused) {
-        if (debugCounter % 60 == 0) {
+        if (debugCounter % 300 == 0) {
             addDebugLog("SimFrame: Simulation is paused, returning early");
         }
         return;
