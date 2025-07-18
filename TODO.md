@@ -24,12 +24,11 @@
 - Buttons / sizing / layout / etc
 - Better RCI and mini chart indicators
 - No power needs to flash
-- Helicopter / plane etc wrong colors / colormap also slow
+- Helicopter / plane etc wrong colors / colormap, also slow
 - Some overlays are not working, like crime, fire etc
 - Power DEBUG over tiles, roads and train tracks
 - Drawing, eg drawing road/powerlines as continuous line
 - Animations are in wrong spot, eg radar, or nuclear sign
-- Assets as resources (single .exec)
 - Charts window needs to reset after new city/scenario loaded
 
 
