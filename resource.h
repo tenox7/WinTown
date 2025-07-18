@@ -196,6 +196,9 @@
 #define IDC_LOAD_SOURCE_INTERNAL        11001
 #define IDC_LOAD_SOURCE_EXTERNAL        11002
 
+/* Application Icon */
+#define IDI_WINTOWN                     100
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
