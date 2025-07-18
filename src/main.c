@@ -2872,8 +2872,8 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (flagStr[0] == '\0') strcpy(flagStr, "NONE");
                 
                 /* Update window title with tile information */
-                wsprintf(titleBuffer, "WiNTown NT - Tile Debug: [%d,%d] = %d (0x%04X) base=%d flags=[%s]", 
-                         mapX, mapY, tileValue, tileValue, baseTile, flagStr);
+                wsprintf(titleBuffer, "WiNTown NT - Tile Debug: [%d,%d] = %s (%d/0x%04X) base=%d flags=[%s]", 
+                         mapX, mapY, GetZoneName(tileValue), tileValue, tileValue, baseTile, flagStr);
                 SetWindowText(hwnd, titleBuffer);
             }
         }

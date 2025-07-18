@@ -77,4 +77,7 @@ int DoSeaport(int mapX, int mapY);
 int DoAirport(int mapX, int mapY);
 int DoQuery(int mapX, int mapY);
 
+/* Zone name lookup function */
+const char *GetZoneName(short tile);
+
 #endif /* _TOOLS_H */
