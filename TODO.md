@@ -2,8 +2,8 @@
 
 
 ## Major Features Missing
-- Evaluation window
 - Sound System
+- Evaluation window
 
 ## Bugs
 - Bridges, power over water
@@ -20,15 +20,14 @@
 
 
 ## Cosmetic
-- Add refresh uder view and F5
 - Buttons / sizing / layout / etc
-- Better RCI and mini chart indicators
-- No power needs to flash
 - Helicopter / plane etc wrong colors / colormap, also slow
+- Better RCI and mini chart indicators
+- No power indicator not flashing
 - Some overlays are not working, like crime, fire etc
-- Power DEBUG over tiles, roads and train tracks
-- Drawing, eg drawing road/powerlines as continuous line
+- Power debug over tiles, roads and train tracks
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Charts window needs to reset after new city/scenario loaded
+- Add refresh under view and F5
 
 
