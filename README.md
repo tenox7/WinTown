@@ -4,7 +4,7 @@ Back port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (
 
 ![WiNTown](wintown.png)
 
-Download from [Releases](https://github.com/tenox7/WiNTown/releases)
+Download from [Releases](https://github.com/tenox7/WiNTown/releases). Note the .exe files are self contained. All assets are baked in as resources. You don't need to download any other files.
 
 --------------
 
