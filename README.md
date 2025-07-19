@@ -4,6 +4,8 @@ Back port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (
 
 ![WiNTown](wintown.png)
 
+Download from [Releases](https://github.com/tenox7/WiNTown/releases)
+
 --------------
 
 **WIP: The game is playable but not fully finished and has [bugs](TODO.md).**
