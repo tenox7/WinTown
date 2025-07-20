@@ -4,6 +4,7 @@
 ## Major Features Missing
 - Sound System
 - Evaluation window
+- Dynamic refresh rate based on clock speed
 
 ## Bugs
 - Bridges, power over water
