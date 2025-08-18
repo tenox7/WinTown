@@ -6,12 +6,12 @@
 - Evaluation window
 - Dynamic refresh rate based on clock speed
 
+
 ## Bugs
 - Bridges, power over water
 - Power line issues
 - Minimap stats not working: fire, police
 - Pink squares on roads due to incorrect ties
-- Wrong tiles, especially middle tile
 
 
 ## Audit Code
