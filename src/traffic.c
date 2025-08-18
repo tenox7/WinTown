@@ -408,14 +408,37 @@ void CalcTrafficAverage(void) {
                         if (mapX < WORLD_X && mapY < WORLD_Y) {
                             tile = Map[mapY][mapX] & LOMASK;
 
-                            /* Only set ANIMBIT on road tiles */
+                            /* Only set ANIMBIT on canonical road tiles (exclude bridges/crossings) */
                             if (tile >= ROADBASE && tile <= LASTROAD) {
+                                int rawTile = tile;
+                                int normTile;
+                                /* Exclude special crossing/bridge composites from heavy mapping */
+                                if (rawTile == HROADPOWER || rawTile == VROADPOWER ||
+                                    rawTile == HRAILROAD || rawTile == VRAILROAD ||
+                                    rawTile == HBRIDGE || rawTile == VBRIDGE) {
+                                    /* For these, only toggle ANIMBIT below, never remap tile index */
+                                }
                                 /* Heavy traffic */
                                 if (TrfDensity[y][x] > 40) {
                                     /* Only convert to heavy traffic if not already heavy traffic */
                                     if (tile < HTRFBASE) {
-                                        /* Set animation bit and add HTRFBASE offset */
-                                        setMapTile(mapX, mapY, tile - ROADBASE + HTRFBASE, ANIMBIT, TILE_SET_PRESERVE, "CalcTrafficAverage-heavy");
+                                        /* Map only canonical road shapes to heavy equivalents */
+                                        /* Normalize road tile using tools.c logic */
+                                        if (rawTile >= ROADBASE && rawTile <= LASTROAD) {
+                                            normTile = (rawTile & 15) + ROADS;
+                                        } else {
+                                            normTile = rawTile;
+                                        }
+                                        if (normTile >= ROADS && normTile <= INTERSECTION &&
+                                            rawTile != HROADPOWER && rawTile != VROADPOWER &&
+                                            rawTile != HRAILROAD && rawTile != VRAILROAD &&
+                                            rawTile != HBRIDGE && rawTile != VBRIDGE) {
+                                            int heavyTile = HTRFBASE + (normTile - ROADS);
+                                            setMapTile(mapX, mapY, heavyTile, ANIMBIT, TILE_SET_PRESERVE, "CalcTrafficAverage-heavy");
+                                        } else {
+                                            /* Fallback: do not change base tile; only set ANIMBIT */
+                                            setMapTile(mapX, mapY, 0, ANIMBIT, TILE_SET_FLAGS, "CalcTrafficAverage-heavy-skip");
+                                        }
                                     } else {
                                         /* Already heavy traffic, just set animation bit */
                                         setMapTile(mapX, mapY, 0, ANIMBIT, TILE_SET_FLAGS, "CalcTrafficAverage-heavy-existing");

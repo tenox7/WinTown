@@ -1067,6 +1067,11 @@ void FixSingle(int x, int y) {
     short tile;
     short adjTile = 0; /* Adjacency bitmask */
     short mapValue;
+    /* Raw and normalized neighbor values for road/wire logic */
+    short rawNorth, normNorth;
+    short rawEast, normEast;
+    short rawSouth, normSouth;
+    short rawWest, normWest;
 
     /* Verify the coordinates */
     if (!TestBounds(x, y)) {
@@ -1087,48 +1092,48 @@ void FixSingle(int x, int y) {
     if (tile >= ROADS && tile <= INTERSECTION) {
         /* Check the north side */
         if (y > 0) {
-            mapValue = Map[y - 1][x] & LOMASK;
-            mapValue = NormalizeRoad(mapValue);
+            rawNorth = Map[y - 1][x] & LOMASK;
+            normNorth = NormalizeRoad(rawNorth);
 
-            if ((mapValue == HRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
-                mapValue != HROADPOWER && mapValue != VRAILROAD &&
-                mapValue != ROADBASE) {
+            if ((rawNorth == HRAILROAD || (normNorth >= ROADS && normNorth <= INTERSECTION)) &&
+                rawNorth != HROADPOWER && rawNorth != VRAILROAD &&
+                rawNorth != HBRIDGE) {
                 adjTile |= 1;  /* North connection */
             }
         }
 
         /* Check the east side */
         if (x < WORLD_X - 1) {
-            mapValue = Map[y][x + 1] & LOMASK;
-            mapValue = NormalizeRoad(mapValue);
+            rawEast = Map[y][x + 1] & LOMASK;
+            normEast = NormalizeRoad(rawEast);
 
-            if ((mapValue == VRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
-                mapValue != VROADPOWER && mapValue != HRAILROAD &&
-                mapValue != VBRIDGE) {
+            if ((rawEast == VRAILROAD || (normEast >= ROADS && normEast <= INTERSECTION)) &&
+                rawEast != VROADPOWER && rawEast != HRAILROAD &&
+                rawEast != VBRIDGE) {
                 adjTile |= 2;  /* East connection */
             }
         }
 
         /* Check the south side */
         if (y < WORLD_Y - 1) {
-            mapValue = Map[y + 1][x] & LOMASK;
-            mapValue = NormalizeRoad(mapValue);
+            rawSouth = Map[y + 1][x] & LOMASK;
+            normSouth = NormalizeRoad(rawSouth);
 
-            if ((mapValue == HRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
-                mapValue != HROADPOWER && mapValue != VRAILROAD &&
-                mapValue != ROADBASE) {
+            if ((rawSouth == HRAILROAD || (normSouth >= ROADS && normSouth <= INTERSECTION)) &&
+                rawSouth != HROADPOWER && rawSouth != VRAILROAD &&
+                rawSouth != HBRIDGE) {
                 adjTile |= 4;  /* South connection */
             }
         }
 
         /* Check the west side */
         if (x > 0) {
-            mapValue = Map[y][x - 1] & LOMASK;
-            mapValue = NormalizeRoad(mapValue);
+            rawWest = Map[y][x - 1] & LOMASK;
+            normWest = NormalizeRoad(rawWest);
 
-            if ((mapValue == VRAILROAD || (mapValue >= ROADBASE && mapValue <= VROADPOWER)) &&
-                mapValue != VROADPOWER && mapValue != HRAILROAD &&
-                mapValue != VBRIDGE) {
+            if ((rawWest == VRAILROAD || (normWest >= ROADS && normWest <= INTERSECTION)) &&
+                rawWest != VROADPOWER && rawWest != HRAILROAD &&
+                rawWest != VBRIDGE) {
                 adjTile |= 8;  /* West connection */
             }
         }
@@ -1196,9 +1201,9 @@ void FixSingle(int x, int y) {
         /* Check the north side */
         if (y > 0) {
             if ((Map[y - 1][x] & CONDBIT) != 0) {
-                mapValue = Map[y - 1][x] & LOMASK;
-                mapValue = NormalizeRoad(mapValue);
-                if (mapValue != VPOWER && mapValue != VROADPOWER && mapValue != RAILVPOWERH) {
+                rawNorth = (Map[y - 1][x] & LOMASK);
+                /* Treat any conductive neighbor except specific vertical crossings/power as a connection */
+                if (rawNorth != VPOWER && rawNorth != VROADPOWER && rawNorth != RAILVPOWERH) {
                     adjTile |= 1;  /* North connection */
                 }
             }
@@ -1207,9 +1212,8 @@ void FixSingle(int x, int y) {
         /* Check the east side */
         if (x < WORLD_X - 1) {
             if ((Map[y][x + 1] & CONDBIT) != 0) {
-                mapValue = Map[y][x + 1] & LOMASK;
-                mapValue = NormalizeRoad(mapValue);
-                if (mapValue != HPOWER && mapValue != HROADPOWER && mapValue != RAILHPOWERV) {
+                rawEast = (Map[y][x + 1] & LOMASK);
+                if (rawEast != HPOWER && rawEast != HROADPOWER && rawEast != RAILHPOWERV) {
                     adjTile |= 2;  /* East connection */
                 }
             }
@@ -1218,9 +1222,8 @@ void FixSingle(int x, int y) {
         /* Check the south side */
         if (y < WORLD_Y - 1) {
             if ((Map[y + 1][x] & CONDBIT) != 0) {
-                mapValue = Map[y + 1][x] & LOMASK;
-                mapValue = NormalizeRoad(mapValue);
-                if (mapValue != VPOWER && mapValue != VROADPOWER && mapValue != RAILVPOWERH) {
+                rawSouth = (Map[y + 1][x] & LOMASK);
+                if (rawSouth != VPOWER && rawSouth != VROADPOWER && rawSouth != RAILVPOWERH) {
                     adjTile |= 4;  /* South connection */
                 }
             }
@@ -1229,9 +1232,8 @@ void FixSingle(int x, int y) {
         /* Check the west side */
         if (x > 0) {
             if ((Map[y][x - 1] & CONDBIT) != 0) {
-                mapValue = Map[y][x - 1] & LOMASK;
-                mapValue = NormalizeRoad(mapValue);
-                if (mapValue != HPOWER && mapValue != HROADPOWER && mapValue != RAILHPOWERV) {
+                rawWest = (Map[y][x - 1] & LOMASK);
+                if (rawWest != HPOWER && rawWest != HROADPOWER && rawWest != RAILHPOWERV) {
                     adjTile |= 8;  /* West connection */
                 }
             }
