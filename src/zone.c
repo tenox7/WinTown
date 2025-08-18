@@ -777,63 +777,55 @@ static void IncROG(int amount) {
 
 /* Handle residential zone decline */
 static void DoResOut(int pop, int value, int x, int y) {
-    short originalTile;
+    int locX;
+    int locY;
+    int loc;
+    int z;
+    static short brdr[9] = {0,3,6,1,4,7,2,5,8};
 
-    originalTile = Map[y][x] & LOMASK;
-
-    /* Only process center tiles (those with ZONEBIT) */
-    if (!(Map[y][x] & ZONEBIT)) {
+    /* Follow original WiNTown behavior to keep 3x3 tiles consistent */
+    if (!pop) {
         return;
     }
 
-    /* Validate this is a valid residential center tile */
-    if ((originalTile - RZB) % 9 != 0) {
-        addDebugLog("ERROR: DoResOut called on invalid residential center %d at %d,%d", originalTile, x, y);
-        return;
-    }
-
-    /* For residential zone decay, we need to find the next lower valid center tile */
-    /* Current calculation: ((value * 4) + den) * 9 + RZB = originalTile */
-    /* We want to reduce either value or density to get a lower tile */
-    
     if (pop > 16) {
-        /* High population - reduce by one density level */
-        int currentFormula = originalTile - RZB;
-        int currentCombined = currentFormula / 9;
-        
-        if (currentCombined > 0) {
-            int newCombined = currentCombined - 1;
-            int newTile = (newCombined * 9) + RZB;
-            
-            /* Validate the new tile is in residential range and is a valid center */
-            if (newTile >= RESBASE && newTile < COMBASE && (newTile - RZB) % 9 == 0) {
-                UpgradeTile(x, y, newTile);
-                addDebugLog("DoResOut decline: %d->%d at %d,%d", originalTile, newTile, x, y);
-            }
-        }
-    } else if (ZoneRandom(4) == 0) {
-        /* Low population - gradual decay */
-        int currentFormula = originalTile - RZB;
-        int currentCombined = currentFormula / 9;
-        
-        if (currentCombined > 0) {
-            int newCombined = currentCombined - 1;
-            int newTile = (newCombined * 9) + RZB;
-            
-            /* Validate the new tile is in residential range and is a valid center */
-            if (newTile >= RESBASE && newTile < COMBASE && (newTile - RZB) % 9 == 0) {
-                UpgradeTile(x, y, newTile);
-                addDebugLog("DoResOut decay: %d->%d at %d,%d", originalTile, newTile, x, y);
-            }
-        }
+        /* Reduce density/value by re-plopping a lower tier */
+        ResPlop(x, y, ((pop - 24) / 8), value);
+        IncROG(-8);
+        return;
     }
 
-    /* Check for complete ruin - only for very low tiles close to FREEZ */
-    if ((originalTile <= (FREEZ + 18)) && (value < 30) && (!pop) && (ZoneRandom(4) == 0)) {
-        if (ZoneRandom(2) == 0) {
-            /* Make into rubble */
-            SetRubbleTile(x, y);
-            addDebugLog("Zone ruined to rubble at %d,%d (month=%d)", x, y, CityMonth);
+    if (pop == 16) {
+        IncROG(-8);
+        /* Center becomes FREEZ with zone + bulldoze bits */
+        setMapTile(x, y, FREEZ, ZONEBIT | BULLBIT, TILE_SET_REPLACE, "DoResOut-freez-center");
+
+        /* Ring becomes low houses varying by land value */
+        for (locX = x - 1; locX <= x + 1; locX++) {
+            for (locY = y - 1; locY <= y + 1; locY++) {
+                if (locX >= 0 && locX < WORLD_X && locY >= 0 && locY < WORLD_Y) {
+                    if ((Map[locY][locX] & LOMASK) != FREEZ) {
+                        setMapTile(locX, locY, (LHTHR + value + ZoneRandom(2)), BULLBIT, TILE_SET_REPLACE, "DoResOut-freez-ring");
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    /* pop < 16: shrink one border house back to FREEZ pattern */
+    IncROG(-1);
+    z = 0;
+    for (locX = x - 1; locX <= x + 1; locX++) {
+        for (locY = y - 1; locY <= y + 1; locY++) {
+            if (locX >= 0 && locX < WORLD_X && locY >= 0 && locY < WORLD_Y) {
+                loc = Map[locY][locX] & LOMASK;
+                if ((loc >= LHTHR) && (loc <= HHTHR)) {
+                    setMapTile(locX, locY, (FREEZ - 4 + brdr[z]), BULLBIT, TILE_SET_REPLACE, "DoResOut-shrink");
+                    return;
+                }
+            }
+            z++;
         }
     }
 }
@@ -901,57 +893,17 @@ static void BuildHouse(int x, int y, int value) {
 
 /* Place a residential zone */
 static void ResPlop(int x, int y, int den, int value) {
-    int targetTile;
+    int base;
     
-    /* Debug logging to track parameters */
     addDebugLog("ResPlop: x=%d y=%d den=%d value=%d", x, y, den, value);
     
-    /* Validate density parameter - allow negative like original */
-    if (den < -4 || den > 4) {
-        addDebugLog("ERROR: Invalid residential density %d at %d,%d", den, x, y);
-        return;
-    }
-    
-    /* Validate value parameter */
-    if (value < 0 || value > 8) {
-        addDebugLog("ERROR: Invalid residential value %d at %d,%d", value, x, y);
-        return;
-    }
-    
-    /* Use original WiNTown formula */
-    /* base = (((Value * 4) + Den) * 9) + RZB - 4 */
-    /* Note: RZB is 265, and we subtract 4 to get the base for ZonePlop */
     if (value < 0) value = 0;
     if (value > 3) value = 3;
     
-    /* Don't cap density - allow negative values like original */
+    /* Original formula: base is top-left of 3x3 block */
+    base = (((value * 4) + den) * 9) + RZB - 4;
     
-    /* Apply the original formula - but ensure we stay close to RZB for normal zones */
-    /* Original: (((value * 4) + den) * 9) + RZB - 4 */
-    /* But this creates tiles too far from RZB. Use RZB as the base instead. */
-    targetTile = (((value * 4) + den) * 9) + RZB;
-    
-    /* Debug logging for calculation */
-    addDebugLog("ResPlop calc: (((value=%d * 4) + den=%d) * 9) + RZB=%d - 4 = %d", 
-                value, den, RZB, targetTile);
-    
-    /* Final validation */
-    if (targetTile < RESBASE || targetTile >= COMBASE) {
-        addDebugLog("ERROR: ResPlop tile %d out of range at %d,%d (den=%d val=%d)", 
-                   targetTile, x, y, den, value);
-        return;
-    }
-    
-    /* Validate that the calculated tile is a valid residential center */
-    /* Valid residential center tiles have (tile - RZB) divisible by 9 */
-    if ((targetTile - RZB) % 9 != 0) {
-        addDebugLog("ERROR: ResPlop tile %d is not a valid residential center at %d,%d (den=%d val=%d)", 
-                   targetTile, x, y, den, value);
-        addDebugLog("ERROR: (tile-RZB)=%d is not divisible by 9", targetTile - RZB);
-        return;
-    }
-    
-    ZonePlop(x, y, targetTile);
+    ZonePlop(x, y, base);
 }
 
 /* Place a commercial zone */
@@ -1021,60 +973,39 @@ static int EvalLot(int x, int y) {
 
 /* Place a 3x3 zone on the map */
 static int ZonePlop(int xpos, int ypos, int base) {
-    short dx;
-    short dy;
-    short x;
-    short y;
-    short z;
-    short newTile;
+    int dx;
+    int dy;
+    int x;
+    int y;
+    int index;
 
     /* Bounds check */
     if (xpos < 0 || xpos >= WORLD_X || ypos < 0 || ypos >= WORLD_Y) {
         return 0;
     }
 
-    /* Make sure center tile is bulldozable */
-    if (!(Map[ypos][xpos] & BULLBIT)) {
-        return 0;
-    }
-
-    /* Additional validation for base value */
-    if (base < RESBASE || base > LASTZONE) {
+    /* Validate base range */
+    if (base < 0 || base > LASTZONE) {
         addDebugLog("ERROR: Invalid zone base %d at %d,%d", base, xpos, ypos);
         return 0;
     }
 
-    /* Update zone center with the zone bit and power */
-    setMapTile(xpos, ypos, base, BNCNBIT | CONDBIT | BURNBIT | BULLBIT, TILE_SET_PRESERVE, "ZonePlop-center");
-
-    /* Set the 3x3 zone around center */
+    /* Lay out tiles in reading order; center is index 4 */
+    index = 0;
     for (dy = -1; dy <= 1; dy++) {
         for (dx = -1; dx <= 1; dx++) {
             x = xpos + dx;
             y = ypos + dy;
-
-            if (BOUNDS_CHECK(x, y)) {
-                if (!(dx == 0 && dy == 0)) {
-                    /* Not the center tile */
-                    z = Map[y][x] & LOMASK;
-
-                    if ((z < ROADS) || (z > LASTRAIL)) {
-                        if (Map[y][x] & BULLBIT) {
-                            /* Calculate new tile value with bounds checking */
-                            newTile = base + BSIZE + ZoneRandom(2);
-                            
-                            /* Validate the new tile value */
-                            if (newTile < 0 || newTile > LASTZONE) {
-                                addDebugLog("ERROR: Invalid tile calc %d = %d + %d + rand at %d,%d", 
-                                           newTile, base, BSIZE, x, y);
-                                continue;
-                            }
-                            
-                            setMapTile(x, y, newTile, CONDBIT | BURNBIT | BULLBIT, TILE_SET_PRESERVE, "ZonePlop-surround");
-                        }
-                    }
-                }
+            if (!BOUNDS_CHECK(x, y)) {
+                index++;
+                continue;
             }
+            if (dx == 0 && dy == 0) {
+                setMapTile(x, y, base + index, ZONEBIT | BULLBIT | CONDBIT, TILE_SET_REPLACE, "ZonePlop-center");
+            } else {
+                setMapTile(x, y, base + index, BULLBIT | CONDBIT, TILE_SET_REPLACE, "ZonePlop-tile");
+            }
+            index++;
         }
     }
 
