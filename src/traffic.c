@@ -281,10 +281,7 @@ static void SetTrafMem(void) {
                     z = 240;
                     TrafMaxX = SMapX;
                     TrafMaxY = SMapY;
-                    /* Add police car sprite at congestion point */
-                    if (SimRandom(8) == 0) {
-                        NewSprite(SPRITE_POLICE, SMapX << 4, SMapY << 4);
-                    }
+                    /* Do not spawn a sprite here; road traffic animation already indicates congestion */
                 }
 
                 TrfDensity[ty][tx] = (Byte)z;
