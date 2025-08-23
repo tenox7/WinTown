@@ -51,7 +51,7 @@ int GetCurrentTool(void);
 int GetToolResult(void);
 int GetToolCost(void);
 int GetToolSize(int toolType);
-void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected);
+void DrawToolIcon(HDC hdc, int toolType, int x, int y, int desiredWidth, int desiredHeight, int isSelected);
 void LoadToolbarBitmaps(void);
 void CleanupToolbarBitmaps(void);
 void ScreenToMap(int screenX, int screenY, int *mapX, int *mapY, int xOffset, int yOffset);

@@ -232,7 +232,7 @@ static int cxClient = 0;
 static int cyClient = 0;
 static int xOffset = 0;
 static int yOffset = 0;
-static int toolbarWidth = 108; /* 3-column toolbar width */
+static int toolbarWidth = 132; /* Original Micropolis toolbar width */
 
 static BOOL isMouseDown = FALSE; /* Used for map dragging */
 static int lastMouseX = 0;
@@ -604,7 +604,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     /* Create main window */
     hwndMain = CreateWindowEx(WS_EX_CLIENTEDGE, "WiNTown", "WiNTown - Tileset: classic",
                               WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT,
-                              908, 600, /* Additional 108px width for the 3-column toolbar */
+                              932, 600, /* Additional 132px width for the original toolbar */
                               NULL, hMenu, hInstance, NULL);
 
     if (hwndMain == NULL) {

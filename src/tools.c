@@ -1275,26 +1275,26 @@ static int toolCost = 0;
 static int lastMouseMapX = -1;
 static int lastMouseMapY = -1;
 
-/* Mapping of toolbar indices to tool states - this maps from toolbar position (0-17) to the
- * simulation.h tool state constants */
-static const int toolbarToStateMapping[17] = {
-    residentialState, /* 0 - Residential in toolbar position 0 */
-    commercialState,  /* 1 - Commercial in toolbar position 1 */
-    industrialState,  /* 2 - Industrial in toolbar position 2 */
-    fireState,        /* 3 - Fire Station in toolbar position 3 */
-    policeState,      /* 4 - Police Station in toolbar position 4 */
-    wireState,        /* 5 - Wire in toolbar position 5 */
-    roadState,        /* 6 - Road in toolbar position 6 */
-    railState,        /* 7 - Rail in toolbar position 7 */
-    parkState,        /* 8 - Park in toolbar position 8 */
-    stadiumState,     /* 9 - Stadium in toolbar position 9 */
-    seaportState,     /* 10 - Seaport in toolbar position 10 */
-    powerState,       /* 11 - Power Plant in toolbar position 11 */
-    nuclearState,     /* 12 - Nuclear Plant in toolbar position 12 */
-    airportState,     /* 13 - Airport in toolbar position 13 */
-    bulldozerState,   /* 14 - Bulldozer in toolbar position 14 */
-    queryState,       /* 15 - Query in toolbar position 15 */
-    noToolState       /* 16 - No Tool in toolbar position 16 */
+/* Mapping following EXACT original Micropolis tool layout (18 tools: 0-17) */
+static const int toolbarToStateMapping[18] = {
+    residentialState, /* 0 - Residential Zone */
+    commercialState,  /* 1 - Commercial Zone */
+    industrialState,  /* 2 - Industrial Zone */
+    fireState,        /* 3 - Fire Station */
+    queryState,       /* 4 - Query Tool */
+    policeState,      /* 5 - Police Station */
+    wireState,        /* 6 - Power Lines */
+    bulldozerState,   /* 7 - Bulldozer (ONLY bulldozer) */
+    railState,        /* 8 - Railway */
+    roadState,        /* 9 - Roads */
+    noToolState,      /* 10 - Chalk Tool (using noToolState for now) */
+    noToolState,      /* 11 - Eraser Tool (using noToolState for now) */
+    stadiumState,     /* 12 - Stadium */
+    parkState,        /* 13 - Park */
+    seaportState,     /* 14 - Seaport */
+    powerState,       /* 15 - Coal Power Plant */
+    nuclearState,     /* 16 - Nuclear Power Plant */
+    airportState      /* 17 - Airport */
 };
 
 /* Reverse mapping from tool state to toolbar position for fast lookups */
@@ -1303,21 +1303,21 @@ static const int stateToToolbarMapping[19] = {
     1,  /* commercialState (1) -> position 1 */
     2,  /* industrialState (2) -> position 2 */
     3,  /* fireState (3) -> position 3 */
-    4,  /* policeState (4) -> position 4 */
-    5,  /* wireState (5) -> position 5 */
-    6,  /* roadState (6) -> position 6 */
-    7,  /* railState (7) -> position 7 */
-    8,  /* parkState (8) -> position 8 */
-    9,  /* stadiumState (9) -> position 9 */
-    10, /* seaportState (10) -> position 10 */
-    11, /* powerState (11) -> position 11 */
-    12, /* nuclearState (12) -> position 12 */
-    13, /* airportState (13) -> position 13 */
+    5,  /* policeState (4) -> position 5 */
+    6,  /* wireState (5) -> position 6 */
+    9,  /* roadState (6) -> position 9 */
+    8,  /* railState (7) -> position 8 */
+    13, /* parkState (8) -> position 13 */
+    12, /* stadiumState (9) -> position 12 */
+    14, /* seaportState (10) -> position 14 */
+    15, /* powerState (11) -> position 15 */
+    16, /* nuclearState (12) -> position 16 */
+    17, /* airportState (13) -> position 17 */
     0,  /* networkState (14) - not used in toolbar */
-    14, /* bulldozerState (15) -> position 14 */
-    15, /* queryState (16) -> position 15 */
-    16, /* windowState (17) - not used in toolbar */
-    16  /* noToolState (18) -> position 16 */
+    7,  /* bulldozerState (15) -> position 7 */
+    4,  /* queryState (16) -> position 4 */
+    10, /* windowState (17) - chalk tool position */
+    11  /* noToolState (18) - eraser tool position */
 };
 
 /* Tool active flag - needs to be exportable to main.c */
@@ -1441,32 +1441,59 @@ int Check6x6Area(int x, int y, int *cost) {
 #define TB_QUERY 115
 
 static HWND hwndToolbar = NULL; /* Toolbar window handle */
-static int toolButtonSize = 36; /* Size of each tool button, increased for better spacing */
-static int toolbarWidth = 108;  /* Width of the toolbar (3 columns) */
-static int toolbarColumns = 3;  /* Number of tool columns */
+static int toolbarWidth = 132;  /* Original Micropolis toolbar width */
 
 /* Tool bitmap handles */
-static HBITMAP hToolBitmaps[17]; /* Tool bitmaps */
+static HBITMAP hToolBitmaps[18]; /* Tool bitmaps */
 
-/* File names for tool bitmaps - order matches toolbar position */
-static const char *toolBitmapFiles[17] = {
-    "resident",   /* 0 - Residential */
-    "commerce",    /* 1 - Commercial */
-    "industrl",    /* 2 - Industrial */
-    "firest",   /* 3 - Fire Station */
-    "policest", /* 4 - Police Station */
-    "powerln",     /* 5 - Wire */
-    "road",          /* 6 - Road */
-    "rail",          /* 7 - Rail */
-    "park",          /* 8 - Park */
-    "stadium",       /* 9 - Stadium */
-    "seaport",       /* 10 - Seaport */
-    "powerpl",    /* 11 - Coal Power Plant */
-    "nuclear",       /* 12 - Nuclear Power Plant */
-    "airport",       /* 13 - Airport */
-    "bulldzr",     /* 14 - Bulldozer */
-    "query",         /* 15 - Query */
-    "bulldzr"      /* 16 - No Tool (use a hand icon if available, otherwise bulldozer) */
+/* Button position and size data for original Micropolis layout */
+typedef struct {
+    int x, y;        /* Button position */
+    int width, height; /* Button size */
+    int iconWidth, iconHeight; /* Icon size within button */
+} ToolButtonLayout;
+
+static const ToolButtonLayout toolLayout[18] = {
+    {9, 58, 34, 50, 34, 50},    /* 0 - Residential Zone (tall) */
+    {47, 58, 34, 50, 34, 50},   /* 1 - Commercial Zone (tall) */
+    {85, 58, 34, 50, 34, 50},   /* 2 - Industrial Zone (tall) */
+    {9, 112, 34, 34, 34, 34},   /* 3 - Fire Station (square) */
+    {47, 112, 34, 34, 34, 34},  /* 4 - Query Tool (square) */
+    {85, 112, 34, 34, 34, 34},  /* 5 - Police Station (square) */
+    {28, 150, 34, 34, 34, 34},  /* 6 - Power Lines (square) */
+    {66, 150, 34, 34, 34, 34},  /* 7 - Bulldozer (square) */
+    {6, 188, 56, 24, 56, 24},   /* 8 - Railway (wide) */
+    {66, 188, 56, 24, 56, 24},  /* 9 - Roads (wide) */
+    {28, 216, 34, 34, 34, 34},  /* 10 - Chalk Tool (square) */
+    {66, 216, 34, 34, 34, 34},  /* 11 - Eraser Tool (square) */
+    {1, 254, 42, 42, 42, 42},   /* 12 - Stadium (medium square like coal plant) */
+    {47, 254, 34, 34, 34, 34},  /* 13 - Park (square) */
+    {85, 254, 42, 42, 42, 42},  /* 14 - Seaport (medium square like coal plant) */
+    {1, 300, 42, 42, 42, 42},   /* 15 - Coal Power Plant (medium square) */
+    {85, 300, 42, 42, 42, 42},  /* 16 - Nuclear Power Plant (medium square like coal plant) */
+    {35, 346, 50, 50, 50, 50}   /* 17 - Airport (slightly larger than others) */
+};
+
+/* File names for tool bitmaps - matches original Micropolis order */
+static const char *toolBitmapFiles[18] = {
+    "resident",   /* 0 - Residential Zone */
+    "commerce",    /* 1 - Commercial Zone */
+    "industrl",    /* 2 - Industrial Zone */
+    "firest",      /* 3 - Fire Station */
+    "query",       /* 4 - Query Tool */
+    "policest",    /* 5 - Police Station */
+    "powerln",     /* 6 - Power Lines */
+    "bulldzr",     /* 7 - Bulldozer */
+    "rail",        /* 8 - Railway */
+    "road",        /* 9 - Roads */
+    "query",       /* 10 - Chalk Tool (placeholder) */
+    "bulldzr",     /* 11 - Eraser Tool (placeholder) */
+    "stadium",     /* 12 - Stadium */
+    "park",        /* 13 - Park */
+    "seaport",     /* 14 - Seaport */
+    "powerpl",     /* 15 - Coal Power Plant */
+    "nuclear",     /* 16 - Nuclear Power Plant */
+    "airport"      /* 17 - Airport */
 };
 
 /* Function to process toolbar button clicks */
@@ -1489,25 +1516,26 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     case WM_CREATE:
         return 0;
 
-    case WM_PAINT:
+    case WM_PAINT: {
+        int iconCenterX, iconCenterY;
+        
         hdc = BeginPaint(hwnd, &ps);
 
         /* Fill the background */
         GetClientRect(hwnd, &rect);
         FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
 
-        /* Draw the buttons in a 3-column grid */
-        for (i = 0; i < 17; i++) {
-            row = i / toolbarColumns;
-            col = i % toolbarColumns;
-            buttonX = col * toolButtonSize;
-            buttonY = row * toolButtonSize;
+        /* Draw buttons using original Micropolis positioning */
+        for (i = 0; i < 18; i++) {
+            /* Use exact positioning from original layout */
+            buttonX = toolLayout[i].x;
+            buttonY = toolLayout[i].y;
 
-            /* Set up button rect */
+            /* Set up button rect using original button size */
             rect.left = buttonX;
             rect.top = buttonY;
-            rect.right = buttonX + toolButtonSize;
-            rect.bottom = buttonY + toolButtonSize;
+            rect.right = buttonX + toolLayout[i].width;
+            rect.bottom = buttonY + toolLayout[i].height;
 
             /* Determine if this button is selected */
             isSelected = (GetCurrentTool() == toolbarToStateMapping[i]);
@@ -1518,28 +1546,10 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             /* Draw a thin dark gray border */
             FrameRect(hdc, &rect, (HBRUSH)GetStockObject(DKGRAY_BRUSH));
 
-            /* Draw the tool icon, with special handling for noToolState */
-            if (toolbarToStateMapping[i] == noToolState) {
-                /* Draw the tool icon */
-                DrawToolIcon(hdc, bulldozerState, buttonX, buttonY, isSelected);
-
-                /* Add a slash symbol to indicate "no tool" */
-
-                /* Create a red pen for the slash */
-                hRedPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
-                hOldPen = SelectObject(hdc, hRedPen);
-
-                /* Draw a diagonal line (slash) */
-                MoveToEx(hdc, buttonX + 8, buttonY + 8, NULL);
-                LineTo(hdc, buttonX + toolButtonSize - 8, buttonY + toolButtonSize - 8);
-
-                /* Clean up */
-                SelectObject(hdc, hOldPen);
-                DeleteObject(hRedPen);
-            } else {
-                /* Draw the normal tool icon */
-                DrawToolIcon(hdc, toolbarToStateMapping[i], buttonX, buttonY, isSelected);
-            }
+            /* Center the icon within the button based on actual button and icon sizes */
+            iconCenterX = buttonX + (toolLayout[i].width - toolLayout[i].iconWidth) / 2;
+            iconCenterY = buttonY + (toolLayout[i].height - toolLayout[i].iconHeight) / 2;
+            DrawToolIcon(hdc, toolbarToStateMapping[i], iconCenterX, iconCenterY, toolLayout[i].iconWidth, toolLayout[i].iconHeight, isSelected);
         }
 
         /* Draw RCI bars below the tool buttons */
@@ -1548,13 +1558,17 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             int barWidth = 24;
             int maxHeight = 50;
             int spacing = 6;
-            int rciStartX = 12;          /* Center in the toolbar (108px wide) */
-            int rciStartY = 6 * 36 + 40; /* Position RCI below the last row of tools */
+            int rciStartX = 18;          /* Center in the toolbar (132px wide) */
+            int rciStartY;
             int localR, localC, localI;
             int rHeight, cHeight, iHeight;
             RECT rciRect;
             HBRUSH hResBrush, hComBrush, hIndBrush;
             HPEN hCenterPen, hOldPen;
+
+            /* Get toolbar height and anchor RCI to bottom */
+            GetClientRect(hwnd, &rciRect);
+            rciStartY = rciRect.bottom - 25; /* Position baseline 25px from bottom (bars grow up, labels below) */
 
             /* Copy RCI values to local variables */
             localR = RValve;
@@ -1688,7 +1702,7 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             const char *toolName;
             int toolCost;
             char buffer[256];
-            int textY = 6 * 36 + 55; /* Position below the RCI labels (rciStartY + 15) */
+            int textY = 5; /* Anchor to top of toolbar */
 
             /* Get the tool name */
             switch (GetCurrentTool()) {
@@ -1761,30 +1775,27 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
         EndPaint(hwnd, &ps);
         return 0;
+    }
 
     case WM_LBUTTONDOWN: {
         /* Get mouse coordinates */
         mouseX = LOWORD(lParam);
         mouseY = HIWORD(lParam);
 
-        /* Calculate row and column */
-        col = mouseX / toolButtonSize;
-        row = mouseY / toolButtonSize;
+        /* Check each button's area to find which was clicked */
+        for (toolIndex = 0; toolIndex < 18; toolIndex++) {
+            if (mouseX >= toolLayout[toolIndex].x && 
+                mouseX < toolLayout[toolIndex].x + toolLayout[toolIndex].width &&
+                mouseY >= toolLayout[toolIndex].y && 
+                mouseY < toolLayout[toolIndex].y + toolLayout[toolIndex].height) {
+                
+                /* Found the clicked button */
+                SelectTool(toolbarToStateMapping[toolIndex]);
 
-        /* Ensure col is within bounds */
-        if (col >= toolbarColumns) {
-            col = toolbarColumns - 1;
-        }
-
-        /* Calculate the tool index */
-        toolIndex = row * toolbarColumns + col;
-
-        if (toolIndex >= 0 && toolIndex < 17) {
-            /* Select the corresponding tool using the mapping */
-            SelectTool(toolbarToStateMapping[toolIndex]);
-
-            /* Redraw the toolbar */
-            InvalidateRect(hwnd, NULL, TRUE);
+                /* Redraw the toolbar */
+                InvalidateRect(hwnd, NULL, TRUE);
+                break;
+            }
         }
         return 0;
     }
@@ -1809,7 +1820,7 @@ void LoadToolbarBitmaps(void) {
     addDebugLog("LoadToolbarBitmaps: Loading tool icons from embedded resources");
 
     /* Load the bitmaps from embedded resources */
-    for (i = 0; i < 17; i++) {
+    for (i = 0; i < 18; i++) {
         /* Find the resource ID for this tool */
         resourceId = findToolIconResourceByName(toolBitmapFiles[i]);
         
@@ -1834,7 +1845,7 @@ void CleanupToolbarBitmaps(void) {
     int i;
 
     /* Delete all bitmap handles */
-    for (i = 0; i < 17; i++) {
+    for (i = 0; i < 18; i++) {
         if (hToolBitmaps[i]) {
             DeleteObject(hToolBitmaps[i]);
             hToolBitmaps[i] = NULL;
@@ -1843,7 +1854,7 @@ void CleanupToolbarBitmaps(void) {
 }
 
 /* Draw a tool icon using bitmap resources */
-void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected) {
+void DrawToolIcon(HDC hdc, int toolType, int x, int y, int desiredWidth, int desiredHeight, int isSelected) {
     HDC hdcMem;
     HBITMAP hbmOld;
     int toolIndex;
@@ -1866,7 +1877,7 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected) {
     }
 
     /* Make sure index is in range */
-    if (toolIndex < 0 || toolIndex >= 16) {
+    if (toolIndex < 0 || toolIndex >= 18) {
         return;
     }
 
@@ -1909,43 +1920,25 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int isSelected) {
         return;
     }
 
-    width = bm.bmWidth;
-    height = bm.bmHeight;
+    /* Use the desired dimensions instead of bitmap dimensions */
+    width = desiredWidth;
+    height = desiredHeight;
 
-    /* Calculate centering position within the button with minimum margin of 4 pixels */
-    margin = 4;
+    /* Use the passed coordinates directly - they are already calculated to center the icon */
+    centerX = x;
+    centerY = y;
 
-    /* Ensure we don't exceed button size minus margin */
-    if (width > toolButtonSize - 2 * margin) {
-        width = toolButtonSize - 2 * margin;
-    }
-    if (height > toolButtonSize - 2 * margin) {
-        height = toolButtonSize - 2 * margin;
-    }
-
-    /* Calculate centered position */
-    centerX = x + (toolButtonSize - width) / 2;
-    centerY = y + (toolButtonSize - height) / 2;
-
-    /* Make sure we respect minimum margins */
-    if (centerX < x + margin) {
-        centerX = x + margin;
-    }
-    if (centerY < y + margin) {
-        centerY = y + margin;
-    }
-
-    /* Draw the bitmap with proper sizing */
+    /* Draw the bitmap scaled to desired size */
     StretchBlt(hdc, centerX, centerY, width, height, hdcMem, 0, 0, bm.bmWidth, bm.bmHeight,
                SRCCOPY);
 
-    /* If this tool is selected, draw a thick yellow box around it */
+    /* If this tool is selected, draw a thick yellow box around the icon */
     if (isSelected) {
-        /* Draw the highlight box using the BUTTON boundaries, not the icon */
-        toolRect.left = x + 2;
-        toolRect.top = y + 2;
-        toolRect.right = x + toolButtonSize - 2;
-        toolRect.bottom = y + toolButtonSize - 2;
+        /* Draw the highlight box around the icon */
+        toolRect.left = x - 2;
+        toolRect.top = y - 2;
+        toolRect.right = x + width + 2;
+        toolRect.bottom = y + height + 2;
 
         /* Create a yellow pen for the outline */
         hYellowPen = CreatePen(PS_SOLID, 3, RGB(255, 255, 0));
