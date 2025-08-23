@@ -1275,8 +1275,8 @@ static int toolCost = 0;
 static int lastMouseMapX = -1;
 static int lastMouseMapY = -1;
 
-/* Mapping following EXACT original Micropolis tool layout (18 tools: 0-17) */
-static const int toolbarToStateMapping[18] = {
+/* Mapping following original Micropolis tool layout (16 tools: 0-15) - removed chalk/eraser */
+static const int toolbarToStateMapping[16] = {
     residentialState, /* 0 - Residential Zone */
     commercialState,  /* 1 - Commercial Zone */
     industrialState,  /* 2 - Industrial Zone */
@@ -1284,17 +1284,15 @@ static const int toolbarToStateMapping[18] = {
     queryState,       /* 4 - Query Tool */
     policeState,      /* 5 - Police Station */
     wireState,        /* 6 - Power Lines */
-    bulldozerState,   /* 7 - Bulldozer (ONLY bulldozer) */
+    bulldozerState,   /* 7 - Bulldozer */
     railState,        /* 8 - Railway */
     roadState,        /* 9 - Roads */
-    noToolState,      /* 10 - Chalk Tool (using noToolState for now) */
-    noToolState,      /* 11 - Eraser Tool (using noToolState for now) */
-    stadiumState,     /* 12 - Stadium */
-    parkState,        /* 13 - Park */
-    seaportState,     /* 14 - Seaport */
-    powerState,       /* 15 - Coal Power Plant */
-    nuclearState,     /* 16 - Nuclear Power Plant */
-    airportState      /* 17 - Airport */
+    stadiumState,     /* 10 - Stadium */
+    parkState,        /* 11 - Park */
+    seaportState,     /* 12 - Seaport */
+    powerState,       /* 13 - Coal Power Plant */
+    nuclearState,     /* 14 - Nuclear Power Plant */
+    airportState      /* 15 - Airport */
 };
 
 /* Reverse mapping from tool state to toolbar position for fast lookups */
@@ -1307,17 +1305,17 @@ static const int stateToToolbarMapping[19] = {
     6,  /* wireState (5) -> position 6 */
     9,  /* roadState (6) -> position 9 */
     8,  /* railState (7) -> position 8 */
-    13, /* parkState (8) -> position 13 */
-    12, /* stadiumState (9) -> position 12 */
-    14, /* seaportState (10) -> position 14 */
-    15, /* powerState (11) -> position 15 */
-    16, /* nuclearState (12) -> position 16 */
-    17, /* airportState (13) -> position 17 */
+    11, /* parkState (8) -> position 11 */
+    10, /* stadiumState (9) -> position 10 */
+    12, /* seaportState (10) -> position 12 */
+    13, /* powerState (11) -> position 13 */
+    14, /* nuclearState (12) -> position 14 */
+    15, /* airportState (13) -> position 15 */
     0,  /* networkState (14) - not used in toolbar */
     7,  /* bulldozerState (15) -> position 7 */
     4,  /* queryState (16) -> position 4 */
-    10, /* windowState (17) - chalk tool position */
-    11  /* noToolState (18) - eraser tool position */
+    0,  /* windowState (17) - not used in toolbar */
+    0   /* noToolState (18) - not used in toolbar */
 };
 
 /* Tool active flag - needs to be exportable to main.c */
@@ -1444,7 +1442,7 @@ static HWND hwndToolbar = NULL; /* Toolbar window handle */
 static int toolbarWidth = 132;  /* Original Micropolis toolbar width */
 
 /* Tool bitmap handles */
-static HBITMAP hToolBitmaps[18]; /* Tool bitmaps */
+static HBITMAP hToolBitmaps[16]; /* Tool bitmaps */
 
 /* Button position and size data for original Micropolis layout */
 typedef struct {
@@ -1453,7 +1451,7 @@ typedef struct {
     int iconWidth, iconHeight; /* Icon size within button */
 } ToolButtonLayout;
 
-static const ToolButtonLayout toolLayout[18] = {
+static const ToolButtonLayout toolLayout[16] = {
     {9, 58, 34, 50, 34, 50},    /* 0 - Residential Zone (tall) */
     {47, 58, 34, 50, 34, 50},   /* 1 - Commercial Zone (tall) */
     {85, 58, 34, 50, 34, 50},   /* 2 - Industrial Zone (tall) */
@@ -1464,18 +1462,16 @@ static const ToolButtonLayout toolLayout[18] = {
     {66, 150, 34, 34, 34, 34},  /* 7 - Bulldozer (square) */
     {6, 188, 56, 24, 56, 24},   /* 8 - Railway (wide) */
     {66, 188, 56, 24, 56, 24},  /* 9 - Roads (wide) */
-    {28, 216, 34, 34, 34, 34},  /* 10 - Chalk Tool (square) */
-    {66, 216, 34, 34, 34, 34},  /* 11 - Eraser Tool (square) */
-    {1, 254, 42, 42, 42, 42},   /* 12 - Stadium (medium square like coal plant) */
-    {47, 254, 34, 34, 34, 34},  /* 13 - Park (square) */
-    {85, 254, 42, 42, 42, 42},  /* 14 - Seaport (medium square like coal plant) */
-    {1, 300, 42, 42, 42, 42},   /* 15 - Coal Power Plant (medium square) */
-    {85, 300, 42, 42, 42, 42},  /* 16 - Nuclear Power Plant (medium square like coal plant) */
-    {35, 346, 50, 50, 50, 50}   /* 17 - Airport (slightly larger than others) */
+    {1, 254, 42, 42, 42, 42},   /* 10 - Stadium (medium square) */
+    {47, 254, 34, 34, 34, 34},  /* 11 - Park (square) */
+    {85, 254, 42, 42, 42, 42},  /* 12 - Seaport (medium square) */
+    {1, 300, 42, 42, 42, 42},   /* 13 - Coal Power Plant (medium square) */
+    {85, 300, 42, 42, 42, 42},  /* 14 - Nuclear Power Plant (medium square) */
+    {35, 346, 50, 50, 50, 50}   /* 15 - Airport (slightly larger) */
 };
 
-/* File names for tool bitmaps - matches original Micropolis order */
-static const char *toolBitmapFiles[18] = {
+/* File names for tool bitmaps - removed chalk/eraser tools */
+static const char *toolBitmapFiles[16] = {
     "resident",   /* 0 - Residential Zone */
     "commerce",    /* 1 - Commercial Zone */
     "industrl",    /* 2 - Industrial Zone */
@@ -1486,14 +1482,12 @@ static const char *toolBitmapFiles[18] = {
     "bulldzr",     /* 7 - Bulldozer */
     "rail",        /* 8 - Railway */
     "road",        /* 9 - Roads */
-    "query",       /* 10 - Chalk Tool (placeholder) */
-    "bulldzr",     /* 11 - Eraser Tool (placeholder) */
-    "stadium",     /* 12 - Stadium */
-    "park",        /* 13 - Park */
-    "seaport",     /* 14 - Seaport */
-    "powerpl",     /* 15 - Coal Power Plant */
-    "nuclear",     /* 16 - Nuclear Power Plant */
-    "airport"      /* 17 - Airport */
+    "stadium",     /* 10 - Stadium */
+    "park",        /* 11 - Park */
+    "seaport",     /* 12 - Seaport */
+    "powerpl",     /* 13 - Coal Power Plant */
+    "nuclear",     /* 14 - Nuclear Power Plant */
+    "airport"      /* 15 - Airport */
 };
 
 /* Function to process toolbar button clicks */
@@ -1526,7 +1520,7 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         FillRect(hdc, &rect, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
 
         /* Draw buttons using original Micropolis positioning */
-        for (i = 0; i < 18; i++) {
+        for (i = 0; i < 16; i++) {
             /* Use exact positioning from original layout */
             buttonX = toolLayout[i].x;
             buttonY = toolLayout[i].y;
@@ -1783,7 +1777,7 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         mouseY = HIWORD(lParam);
 
         /* Check each button's area to find which was clicked */
-        for (toolIndex = 0; toolIndex < 18; toolIndex++) {
+        for (toolIndex = 0; toolIndex < 16; toolIndex++) {
             if (mouseX >= toolLayout[toolIndex].x && 
                 mouseX < toolLayout[toolIndex].x + toolLayout[toolIndex].width &&
                 mouseY >= toolLayout[toolIndex].y && 
@@ -1820,7 +1814,7 @@ void LoadToolbarBitmaps(void) {
     addDebugLog("LoadToolbarBitmaps: Loading tool icons from embedded resources");
 
     /* Load the bitmaps from embedded resources */
-    for (i = 0; i < 18; i++) {
+    for (i = 0; i < 16; i++) {
         /* Find the resource ID for this tool */
         resourceId = findToolIconResourceByName(toolBitmapFiles[i]);
         
@@ -1845,7 +1839,7 @@ void CleanupToolbarBitmaps(void) {
     int i;
 
     /* Delete all bitmap handles */
-    for (i = 0; i < 18; i++) {
+    for (i = 0; i < 16; i++) {
         if (hToolBitmaps[i]) {
             DeleteObject(hToolBitmaps[i]);
             hToolBitmaps[i] = NULL;
@@ -1877,7 +1871,7 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int desiredWidth, int des
     }
 
     /* Make sure index is in range */
-    if (toolIndex < 0 || toolIndex >= 18) {
+    if (toolIndex < 0 || toolIndex >= 16) {
         return;
     }
 
