@@ -1497,14 +1497,10 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     RECT rect;
     int buttonY;
     int i;
-    int row;
-    int col;
     int buttonX;
     int isSelected;
     int mouseX, mouseY;
     int toolIndex;
-    HPEN hRedPen;
-    HPEN hOldPen;
 
     switch (msg) {
     case WM_CREATE:
@@ -1861,7 +1857,6 @@ void DrawToolIcon(HDC hdc, int toolType, int x, int y, int desiredWidth, int des
     char debugMsg[100];
     char indexStr[8];
     RECT rect;
-    int margin; /* Margin around tool icons */
 
     /* Get the toolbar index using the reverse mapping */
     if (toolType >= 0 && toolType < 17) {
