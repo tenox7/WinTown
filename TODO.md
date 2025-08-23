@@ -11,8 +11,7 @@
 - Bridges, power over water
 - Power line issues
 - Minimap stats not working: fire, police
-- Pink squares on roads due to incorrect ties
-
+- RCI indicator != charts
 
 ## Audit Code
 - Zone demand
@@ -23,7 +22,6 @@
 ## Cosmetic
 - Buttons / sizing / layout / etc
 - Helicopter / plane etc wrong colors / colormap, also slow
-- Better RCI and mini chart indicators
 - No power indicator not flashing
 - Some overlays are not working, like crime, fire etc
 - Power debug over tiles, roads and train tracks
