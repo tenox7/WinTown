@@ -50,6 +50,7 @@ static ScenarioInfo scenarios[] = {
 static int scenarioCount = 8;
 static NewGameConfig *currentConfig = NULL;
 static HBITMAP currentPreviewBitmap = NULL;
+static int currentListMode = NEWGAME_SCENARIO; /* Track what's in the listbox */
 
 /* Helper function to generate preview map */
 static void generateDefaultPreview(HWND hwnd) {
@@ -187,6 +188,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         /* Select first scenario by default */
         SendMessage(listBox, LB_SETCURSEL, 0, 0);
         SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[0].description);
+        currentListMode = NEWGAME_SCENARIO;
         
         /* Show appropriate controls for New City (default selection) */
         EnableWindow(GetDlgItem(hwnd, IDC_CITY_NAME), TRUE);
@@ -266,6 +268,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     SendMessage(listBox, LB_SETCURSEL, 0, 0);
                     SetDlgItemText(hwnd, IDC_SCENARIO_DESC, "Select a builtin city to load.");
                 }
+                currentListMode = NEWGAME_LOAD_CITY_BUILTIN;
                 
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_LOAD_CITY_BUILTIN;
@@ -307,6 +310,18 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 /* Show scenario controls */
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_LIST), SW_SHOW);
                 ShowWindow(GetDlgItem(hwnd, IDC_SCENARIO_DESC), SW_SHOW);
+                
+                /* Repopulate with scenarios */
+                listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
+                SendMessage(listBox, LB_RESETCONTENT, 0, 0);
+                for (i = 0; i < scenarioCount; i++) {
+                    SendMessage(listBox, LB_ADDSTRING, 0, (LPARAM)scenarios[i].name);
+                    SendMessage(listBox, LB_SETITEMDATA, i, i);
+                }
+                SendMessage(listBox, LB_SETCURSEL, 0, 0);
+                SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[0].description);
+                currentListMode = NEWGAME_SCENARIO;
+                
                 if (currentConfig) {
                     currentConfig->gameType = NEWGAME_SCENARIO;
                 }
@@ -380,13 +395,27 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
                 itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
                 
-                addGameLog("DEBUG: Listbox selection changed - sel=%d, itemData=%d", sel, itemData);
-                if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
-                    addGameLog("New game dialog: Selected scenario %d (%s): %s", 
-                              sel, scenarios[sel].name, scenarios[sel].description);
-                    SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[sel].description);
-                } else {
-                    addGameLog("DEBUG: Invalid selection - sel=%d, scenarioCount=%d", sel, scenarioCount);
+                addGameLog("DEBUG: Listbox selection changed - sel=%d, itemData=%d, mode=%d", sel, itemData, currentListMode);
+                
+                if (currentListMode == NEWGAME_SCENARIO) {
+                    if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
+                        addGameLog("New game dialog: Selected scenario %d (%s): %s", 
+                                  sel, scenarios[sel].name, scenarios[sel].description);
+                        SetDlgItemText(hwnd, IDC_SCENARIO_DESC, scenarios[sel].description);
+                    } else {
+                        addGameLog("DEBUG: Invalid scenario selection - sel=%d, scenarioCount=%d", sel, scenarioCount);
+                    }
+                } else if (currentListMode == NEWGAME_LOAD_CITY_BUILTIN) {
+                    int cityCount = getCityCount();
+                    if (sel != LB_ERR && sel >= 0 && sel < cityCount) {
+                        GameAssetInfo* cityInfo = getCityInfo(sel);
+                        if (cityInfo) {
+                            addGameLog("New game dialog: Selected builtin city %d (%s)", sel, cityInfo->description);
+                            SetDlgItemText(hwnd, IDC_SCENARIO_DESC, cityInfo->description);
+                        }
+                    } else {
+                        addGameLog("DEBUG: Invalid city selection - sel=%d, cityCount=%d", sel, cityCount);
+                    }
                 }
             }
             break;
@@ -634,9 +663,26 @@ int initNewGame(NewGameConfig *config) {
                                         config->mapType, config->waterPercent, 
                                         config->forestPercent);
         
-    case NEWGAME_LOAD_CITY_BUILTIN:
+    case NEWGAME_LOAD_CITY_BUILTIN: {
         /* Load city from internal resources */
-        return loadCityFromResource(config->scenarioId, NULL);
+        GameAssetInfo* cityInfo = NULL;
+        int i;
+        /* Find the city info by resource ID */
+        for (i = 0; i < getCityCount(); i++) {
+            GameAssetInfo* info = getCityInfo(i);
+            if (info && info->resourceId == config->scenarioId) {
+                cityInfo = info;
+                break;
+            }
+        }
+        
+        if (cityInfo) {
+            return loadCityFromResource(config->scenarioId, cityInfo->description);
+        } else {
+            addGameLog("ERROR: Could not find city info for resource ID %d", config->scenarioId);
+            return loadCityFromResource(config->scenarioId, "Unknown City");
+        }
+    }
         
     case NEWGAME_LOAD_CITY_FILE:
         /* Load city from external file */

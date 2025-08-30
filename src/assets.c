@@ -144,8 +144,16 @@ int loadCityFromResource(int resourceId, char* cityName) {
     
     if (loadCity(tempFileName)) {
         DeleteFile(tempFileName);
+        /* Set the city filename to the provided name instead of temp filename */
         if (cityName) {
-            strcpy(cityName, tempFileName);
+            extern char cityFileName[MAX_PATH];
+            extern HWND hwndMain;
+            char windowTitle[256];
+            strcpy(cityFileName, cityName);
+            
+            /* Update window title */
+            wsprintf(windowTitle, "WiNTown - %s", cityName);
+            SetWindowText(hwndMain, windowTitle);
         }
         return 1;
     }
