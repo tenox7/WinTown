@@ -12,6 +12,7 @@
 - Power line issues
 - Minimap stats not working: fire, police
 - RCI indicator != charts
+- Sprites like airplane too slow also wrong direction
 
 ## Audit Code
 - Zone demand
