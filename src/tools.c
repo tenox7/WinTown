@@ -1458,16 +1458,16 @@ static const ToolButtonLayout toolLayout[16] = {
     {9, 112, 34, 34, 34, 34},   /* 3 - Fire Station (square) */
     {47, 112, 34, 34, 34, 34},  /* 4 - Query Tool (square) */
     {85, 112, 34, 34, 34, 34},  /* 5 - Police Station (square) */
-    {28, 150, 34, 34, 34, 34},  /* 6 - Power Lines (square) */
-    {66, 150, 34, 34, 34, 34},  /* 7 - Bulldozer (square) */
+    {9, 150, 34, 34, 34, 34},   /* 6 - Power Lines (square) */
+    {47, 150, 34, 34, 34, 34},  /* 7 - Bulldozer (square) */
     {6, 188, 56, 24, 56, 24},   /* 8 - Railway (wide) */
     {66, 188, 56, 24, 56, 24},  /* 9 - Roads (wide) */
-    {1, 254, 42, 42, 42, 42},   /* 10 - Stadium (medium square) */
-    {47, 254, 34, 34, 34, 34},  /* 11 - Park (square) */
-    {85, 254, 42, 42, 42, 42},  /* 12 - Seaport (medium square) */
-    {1, 300, 42, 42, 42, 42},   /* 13 - Coal Power Plant (medium square) */
-    {85, 300, 42, 42, 42, 42},  /* 14 - Nuclear Power Plant (medium square) */
-    {35, 346, 50, 50, 50, 50}   /* 15 - Airport (slightly larger) */
+    {11, 254, 50, 50, 50, 50},  /* 10 - Stadium (large, properly spaced) */
+    {85, 150, 34, 34, 34, 34},  /* 11 - Park (moved to row 3) */
+    {71, 254, 50, 50, 50, 50},  /* 12 - Seaport (large, properly spaced) */
+    {11, 310, 50, 50, 50, 50},  /* 13 - Coal Power Plant (large, properly spaced) */
+    {71, 310, 50, 50, 50, 50},  /* 14 - Nuclear Power Plant (large, properly spaced) */
+    {35, 366, 50, 50, 50, 50}   /* 15 - Airport (adjusted y position) */
 };
 
 /* File names for tool bitmaps - removed chalk/eraser tools */
