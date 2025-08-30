@@ -222,7 +222,7 @@ static HBITMAP hbmBuffer = NULL;
 static HDC hdcBuffer = NULL;
 static HBITMAP hbmTiles = NULL;
 static HDC hdcTiles = NULL;
-static HPALETTE hPalette = NULL;
+HPALETTE hPalette = NULL;
 
 /* Sprite bitmaps - array indexed by sprite type and frame */
 static HBITMAP hbmSprites[9][16] = {0}; /* 9 sprite types, max 16 frames each */

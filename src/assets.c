@@ -354,6 +354,23 @@ HBITMAP loadTilesetFromResource(int resourceId) {
     DeleteFile(tempFileName);
     
     if (hBitmap) {
+        /* Convert to 8-bit using system palette for proper color rendering */
+        extern HPALETTE hPalette;
+        extern HBITMAP convertTo8Bit(HBITMAP hSrcBitmap, HDC hdc, HPALETTE hSystemPalette);
+        extern HWND hwndMain;
+        
+        HDC hdcTemp = GetDC(hwndMain);
+        HBITMAP hConvertedBitmap = convertTo8Bit(hBitmap, hdcTemp, hPalette);
+        ReleaseDC(hwndMain, hdcTemp);
+        
+        if (hConvertedBitmap) {
+            DeleteObject(hBitmap);
+            hBitmap = hConvertedBitmap;
+            addDebugLog("loadTilesetFromResource: Successfully converted to 8-bit palette");
+        } else {
+            addDebugLog("loadTilesetFromResource: Failed to convert to 8-bit, using original");
+        }
+        
         addDebugLog("loadTilesetFromResource: Successfully loaded tileset bitmap");
     } else {
         addDebugLog("loadTilesetFromResource: Failed to load bitmap from temp file");
