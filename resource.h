@@ -192,6 +192,16 @@
 #define IDR_ICON_SEAPORT                5014
 #define IDR_ICON_STADIUM                5015
 
+/* CPU Icons */
+#define IDR_CPU_X86                     5022
+#define IDR_CPU_MIPS                    5024
+#define IDR_CPU_AXP                     5025
+#define IDR_CPU_AXP64                   5026
+#define IDR_CPU_PPC                     5027
+#define IDR_CPU_ARM                     5028
+#define IDR_CPU_ARM64                   5029
+#define IDR_CPU_IA64                    5030
+
 /* Load source option */
 #define IDC_LOAD_SOURCE_INTERNAL        11001
 #define IDC_LOAD_SOURCE_EXTERNAL        11002

@@ -10,6 +10,8 @@
 #include <string.h>
 #include <windows.h>
 #include "gdifix.h"
+#include "arch.h"
+#include "assets.h"
 
 /* External reference to the toolbar width */
 extern int toolbarWidth;
@@ -17,9 +19,71 @@ extern int toolbarWidth;
 /* External reference to RCI values */
 extern short RValve, CValve, IValve;
 
+/* CPU detection variables */
+static char cpuArchStr[64] = "Unknown";
+static HBITMAP hCpuBitmap = NULL;
+
+/* CPU detection function using arch.h */
+void DetectCPUType(void) {
+    SYSTEM_INFO sysInfo;
+    int resourceId;
+    char bitmapName[32];
+    extern int findToolIconResourceByName(const char* toolName);
+    extern HBITMAP loadTilesetFromResource(int resourceId);
+    
+    GetSystemInfo(&sysInfo);
+    
+    /* Use ProcessorArchitectureNames array from arch.h for CPU name */
+    if (sysInfo.wProcessorArchitecture < 15) {
+        strcpy(cpuArchStr, ProcessorArchitectureNames[sysInfo.wProcessorArchitecture]);
+    } else {
+        strcpy(cpuArchStr, PROCESSOR_ARCHITECTURE_STR_UNKNOWN);
+    }
+    
+    /* Map to bitmap filename */
+    switch (sysInfo.wProcessorArchitecture) {
+        case PROCESSOR_ARCHITECTURE_INTEL:
+            strcpy(bitmapName, "x86");
+            break;
+        case PROCESSOR_ARCHITECTURE_MIPS:
+            strcpy(bitmapName, "mips");
+            break;
+        case PROCESSOR_ARCHITECTURE_ALPHA:
+            strcpy(bitmapName, "axp");
+            break;
+        case PROCESSOR_ARCHITECTURE_PPC:
+            strcpy(bitmapName, "ppc");
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM:
+            strcpy(bitmapName, "arm");
+            break;
+        case PROCESSOR_ARCHITECTURE_IA64:
+            strcpy(bitmapName, "ia64");
+            break;
+        case PROCESSOR_ARCHITECTURE_ALPHA64:
+            strcpy(bitmapName, "axp64");
+            break;
+        case PROCESSOR_ARCHITECTURE_AMD64:
+            strcpy(bitmapName, "x86"); /* Use x86 bitmap for x64 */
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM64:
+            strcpy(bitmapName, "arm64");
+            break;
+        default:
+            strcpy(bitmapName, "x86");
+            break;
+    }
+    
+    resourceId = findToolIconResourceByName(bitmapName);
+    if (resourceId != 0) {
+        hCpuBitmap = loadTilesetFromResource(resourceId);
+    }
+}
+
 /* Logging functions */
 extern void addGameLog(const char *format, ...);
-extern void addDebugLog(const char *format, ...);
+
+/* Asset functions removed to avoid conflicts */
 
 /* Constants for boolean values */
 #ifndef TRUE
@@ -1542,149 +1606,52 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             DrawToolIcon(hdc, toolbarToStateMapping[i], iconCenterX, iconCenterY, toolLayout[i].iconWidth, toolLayout[i].iconHeight, isSelected);
         }
 
-        /* Draw RCI bars below the tool buttons */
+        /* Draw CPU indicator at bottom of toolbar */
         {
-            /* Constants for RCI display - position below the last row of tools */
-            int barWidth = 24;
-            int maxHeight = 50;
-            int spacing = 6;
-            int rciStartX = 18;          /* Center in the toolbar (132px wide) */
-            int rciStartY;
-            int localR, localC, localI;
-            int rHeight, cHeight, iHeight;
-            RECT rciRect;
-            HBRUSH hResBrush, hComBrush, hIndBrush;
-            HPEN hCenterPen, hOldPen;
-
-            /* Get toolbar height and anchor RCI to bottom */
-            GetClientRect(hwnd, &rciRect);
-            rciStartY = rciRect.bottom - 25; /* Position baseline 25px from bottom (bars grow up, labels below) */
-
-            /* Copy RCI values to local variables */
-            localR = RValve;
-            localC = CValve;
-            localI = IValve;
-
-            /* Limit values to range for drawing */
-            if (localR > 2000) {
-                localR = 2000;
+            RECT cpuRect;
+            int cpuX, cpuY;
+            HDC hdcMem;
+            HBITMAP hOldBitmap;
+            FILE* debugFile;
+            
+            /* Get toolbar height and position CPU display at bottom */
+            GetClientRect(hwnd, &cpuRect);
+            cpuX = 50; /* Center in 132px toolbar */
+            cpuY = cpuRect.bottom - 40; /* At bottom of toolbar */
+            
+            /* Debug logging to file */
+            debugFile = fopen("debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "CPU Display: rect.bottom=%d, cpuY=%d, bitmap=%p\n", 
+                        cpuRect.bottom, cpuY, hCpuBitmap);
+                fclose(debugFile);
             }
-            if (localR < -2000) {
-                localR = -2000;
-            }
-            if (localC > 2000) {
-                localC = 2000;
-            }
-            if (localC < -2000) {
-                localC = -2000;
-            }
-            if (localI > 2000) {
-                localI = 2000;
-            }
-            if (localI < -2000) {
-                localI = -2000;
-            }
-
-            /* Create brushes using system palette colors */
-            hResBrush = CreateSolidBrush(RGB(0, 128, 0));   /* Dark Green */
-            hComBrush = CreateSolidBrush(RGB(0, 0, 128));   /* Dark Blue */
-            hIndBrush = CreateSolidBrush(RGB(128, 128, 0)); /* Dark Yellow */
-
-            /* Error check for failed resource creation */
-            if (!hResBrush || !hComBrush || !hIndBrush) {
-                /* Clean up any resources that were created */
-                if (hResBrush) {
-                    DeleteObject(hResBrush);
+            
+            /* Draw CPU bitmap if available */
+            if (hCpuBitmap) {
+                hdcMem = CreateCompatibleDC(hdc);
+                if (hdcMem) {
+                    hOldBitmap = SelectObject(hdcMem, hCpuBitmap);
+                    
+                    /* Draw CPU bitmap (32x32) */
+                    BitBlt(hdc, cpuX, cpuY, 32, 32, hdcMem, 0, 0, SRCCOPY);
+                    
+                    SelectObject(hdcMem, hOldBitmap);
+                    DeleteDC(hdcMem);
                 }
-                if (hComBrush) {
-                    DeleteObject(hComBrush);
-                }
-                if (hIndBrush) {
-                    DeleteObject(hIndBrush);
-                }
-                EndPaint(hwnd, &ps);
-                return 0;
-            }
-
-            /* Draw the horizontal center line */
-            hCenterPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-            if (hCenterPen) {
-                hOldPen = (HPEN)SelectObject(hdc, hCenterPen);
-                MoveToEx(hdc, rciStartX - 5, rciStartY, NULL);
-                LineTo(hdc, rciStartX + barWidth * 3 + spacing * 2 + 5, rciStartY);
-                SelectObject(hdc, hOldPen);
-            }
-
-            /* Residential demand bar */
-            if (localR >= 0) {
-                rHeight = localR * maxHeight / 2000;
-                rciRect.left = rciStartX;
-                rciRect.right = rciStartX + barWidth;
-                rciRect.bottom = rciStartY;
-                rciRect.top = rciStartY - rHeight;
             } else {
-                rHeight = -localR * maxHeight / 2000;
-                rciRect.left = rciStartX;
-                rciRect.right = rciStartX + barWidth;
-                rciRect.top = rciStartY;
-                rciRect.bottom = rciStartY + rHeight;
+                /* Draw red placeholder rectangle if bitmap failed to load */
+                HBRUSH redBrush = CreateSolidBrush(RGB(255, 0, 0));
+                RECT bitmapRect;
+                bitmapRect.left = cpuX;
+                bitmapRect.top = cpuY;
+                bitmapRect.right = cpuX + 32;
+                bitmapRect.bottom = cpuY + 32;
+                FillRect(hdc, &bitmapRect, redBrush);
+                DeleteObject(redBrush);
             }
-            FillRect(hdc, &rciRect, hResBrush);
-
-            /* Commercial demand bar */
-            if (localC >= 0) {
-                cHeight = localC * maxHeight / 2000;
-                rciRect.left = rciStartX + barWidth + spacing;
-                rciRect.right = rciStartX + barWidth * 2 + spacing;
-                rciRect.bottom = rciStartY;
-                rciRect.top = rciStartY - cHeight;
-            } else {
-                cHeight = -localC * maxHeight / 2000;
-                rciRect.left = rciStartX + barWidth + spacing;
-                rciRect.right = rciStartX + barWidth * 2 + spacing;
-                rciRect.top = rciStartY;
-                rciRect.bottom = rciStartY + cHeight;
-            }
-            FillRect(hdc, &rciRect, hComBrush);
-
-            /* Industrial demand bar */
-            if (localI >= 0) {
-                iHeight = localI * maxHeight / 2000;
-                rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
-                rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
-                rciRect.bottom = rciStartY;
-                rciRect.top = rciStartY - iHeight;
-            } else {
-                iHeight = -localI * maxHeight / 2000;
-                rciRect.left = rciStartX + barWidth * 2 + spacing * 2;
-                rciRect.right = rciStartX + barWidth * 3 + spacing * 2;
-                rciRect.top = rciStartY;
-                rciRect.bottom = rciStartY + iHeight;
-            }
-            FillRect(hdc, &rciRect, hIndBrush);
-
-            /* Add labels for RCI bars */
-            SetTextColor(hdc, RGB(0, 0, 0)); /* Black text */
-            SetBkMode(hdc, TRANSPARENT);
-            TextOut(hdc, rciStartX + (barWidth / 2) - 4, rciStartY + 5, "R", 1);
-            TextOut(hdc, rciStartX + barWidth + spacing + (barWidth / 2) - 4, rciStartY + 5, "C",
-                    1);
-            TextOut(hdc, rciStartX + barWidth * 2 + spacing * 2 + (barWidth / 2) - 4, rciStartY + 5,
-                    "I", 1);
-
-            /* Clean up GDI resources properly */
-            if (hResBrush) {
-                DeleteObject(hResBrush);
-            }
-            if (hComBrush) {
-                DeleteObject(hComBrush);
-            }
-            if (hIndBrush) {
-                DeleteObject(hIndBrush);
-            }
-            if (hCenterPen) {
-                DeleteObject(hCenterPen);
-            }
+            
+            /* CPU text label removed - icon only */
         }
 
         /* Show current tool information if a tool is active */
@@ -1803,11 +1770,8 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 void LoadToolbarBitmaps(void) {
     int i;
     int resourceId;
-    extern int findToolIconResourceByName(const char* toolName);
-    extern HBITMAP loadTilesetFromResource(int resourceId);
-    extern void addDebugLog(const char *format, ...);
 
-    addDebugLog("LoadToolbarBitmaps: Loading tool icons from embedded resources");
+    /* Loading tool icons from embedded resources */
 
     /* Load the bitmaps from embedded resources */
     for (i = 0; i < 16; i++) {
@@ -1819,12 +1783,12 @@ void LoadToolbarBitmaps(void) {
             hToolBitmaps[i] = loadTilesetFromResource(resourceId);
             
             if (hToolBitmaps[i] != NULL) {
-                addDebugLog("LoadToolbarBitmaps: Successfully loaded tool %d (%s)", i, toolBitmapFiles[i]);
+                /* Successfully loaded tool bitmap */
             } else {
-                addDebugLog("LoadToolbarBitmaps: Failed to load tool %d (%s) from resource", i, toolBitmapFiles[i]);
+                /* Failed to load tool bitmap */
             }
         } else {
-            addDebugLog("LoadToolbarBitmaps: Resource not found for tool %d (%s)", i, toolBitmapFiles[i]);
+            /* Resource not found for tool */
             hToolBitmaps[i] = NULL;
         }
     }
@@ -1954,6 +1918,9 @@ void CreateToolbar(HWND hwndParent, int x, int y, int width, int height) {
 
     /* Load the tool bitmaps */
     LoadToolbarBitmaps();
+    
+    /* Detect CPU type and load appropriate bitmap */
+    DetectCPUType();
 
     /* Register the toolbar window class if not already done */
     if (!GetClassInfo(NULL, "WiNTownToolbar", &wc)) {

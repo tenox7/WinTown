@@ -153,6 +153,14 @@ IDR_ICON_RESIDENTIAL    RCDATA  MOVEABLE PURE   "assets\\resident.bmp"
 IDR_ICON_ROAD           RCDATA  MOVEABLE PURE   "assets\\road.bmp"
 IDR_ICON_SEAPORT        RCDATA  MOVEABLE PURE   "assets\\seaport.bmp"
 5015                    RCDATA  MOVEABLE PURE   "assets\\stadium.bmp"
+5022                    RCDATA  MOVEABLE PURE   "assets\\x86.bmp"
+5024                    RCDATA  MOVEABLE PURE   "assets\\mips.bmp"
+5025                    RCDATA  MOVEABLE PURE   "assets\\axp.bmp"
+5026                    RCDATA  MOVEABLE PURE   "assets\\axp64.bmp"
+5027                    RCDATA  MOVEABLE PURE   "assets\\ppc.bmp"
+5028                    RCDATA  MOVEABLE PURE   "assets\\arm.bmp"
+5029                    RCDATA  MOVEABLE PURE   "assets\\arm64.bmp"
+5030                    RCDATA  MOVEABLE PURE   "assets\\ia64.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
