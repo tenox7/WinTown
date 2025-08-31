@@ -73,7 +73,7 @@ static GameAssetInfo toolIconAssets[] = {
     { IDR_ICON_PARK, "park", "Park Tool" },
     { IDR_ICON_STADIUM, "stadium", "Stadium Tool" },
     { IDR_ICON_SEAPORT, "seaport", "Seaport Tool" },
-    { IDR_ICON_POWERPLANT, "powerpl", "Power Plant Tool" },
+    { IDR_ICON_POWERPLANT, "coal", "Power Plant Tool" },
     { IDR_ICON_NUCLEAR, "nuclear", "Nuclear Plant Tool" },
     { IDR_ICON_AIRPORT, "airport", "Airport Tool" },
     { IDR_ICON_BULLDOZER, "bulldzr", "Bulldozer Tool" },

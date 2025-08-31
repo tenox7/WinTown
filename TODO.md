@@ -11,7 +11,6 @@
 - Bridges, power over water
 - Power line issues
 - Minimap stats not working: fire, police
-- RCI indicator != charts
 - Sprites like airplane too slow also wrong direction
 
 ## Audit Code
@@ -28,6 +27,6 @@
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Charts window needs to reset after new city/scenario loaded
 - Add refresh under view and F5
-- Toolbar size and icon size too big
-
-
+- Fire
+- Monster
+- Air crash draws square instead of tile
