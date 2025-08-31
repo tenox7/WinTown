@@ -1616,8 +1616,8 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             
             /* Get toolbar height and position CPU display at bottom */
             GetClientRect(hwnd, &cpuRect);
-            cpuX = 50; /* Center in 132px toolbar */
-            cpuY = cpuRect.bottom - 40; /* At bottom of toolbar */
+            cpuX = 34; /* Center 64px icon in 132px toolbar */
+            cpuY = cpuRect.bottom - 72; /* At bottom of toolbar with space for 64px icon */
             
             /* Debug logging to file */
             debugFile = fopen("debug.log", "a");
@@ -1633,8 +1633,8 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 if (hdcMem) {
                     hOldBitmap = SelectObject(hdcMem, hCpuBitmap);
                     
-                    /* Draw CPU bitmap (32x32) */
-                    BitBlt(hdc, cpuX, cpuY, 32, 32, hdcMem, 0, 0, SRCCOPY);
+                    /* Draw CPU bitmap (64x64) */
+                    BitBlt(hdc, cpuX, cpuY, 64, 64, hdcMem, 0, 0, SRCCOPY);
                     
                     SelectObject(hdcMem, hOldBitmap);
                     DeleteDC(hdcMem);
@@ -1645,8 +1645,8 @@ LRESULT CALLBACK ToolbarProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 RECT bitmapRect;
                 bitmapRect.left = cpuX;
                 bitmapRect.top = cpuY;
-                bitmapRect.right = cpuX + 32;
-                bitmapRect.bottom = cpuY + 32;
+                bitmapRect.right = cpuX + 64;
+                bitmapRect.bottom = cpuY + 64;
                 FillRect(hdc, &bitmapRect, redBrush);
                 DeleteObject(redBrush);
             }

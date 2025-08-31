@@ -21,13 +21,13 @@
 
 
 ## Cosmetic
-- Buttons / sizing / layout / etc
-- Helicopter / plane etc wrong colors / colormap, also slow
+- Helicopter / plane etc wrong colors / colormap, also slow, wrong direction
 - No power indicator not flashing
 - Some overlays are not working, like crime, fire etc
 - Power debug over tiles, roads and train tracks
 - Animations are in wrong spot, eg radar, or nuclear sign
 - Charts window needs to reset after new city/scenario loaded
 - Add refresh under view and F5
+- Toolbar size and icon size too big
 
 
