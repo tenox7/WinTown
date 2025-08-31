@@ -64,7 +64,7 @@ void DetectCPUType(void) {
             strcpy(bitmapName, "axp64");
             break;
         case PROCESSOR_ARCHITECTURE_AMD64:
-            strcpy(bitmapName, "x86"); /* Use x86 bitmap for x64 */
+            strcpy(bitmapName, "x64");
             break;
         case PROCESSOR_ARCHITECTURE_ARM64:
             strcpy(bitmapName, "arm64");

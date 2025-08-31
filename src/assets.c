@@ -80,6 +80,7 @@ static GameAssetInfo toolIconAssets[] = {
     { IDR_ICON_QUERY, "query", "Query Tool" },
     { IDR_ICON_BULLDOZER, "bulldzr", "No Tool" },
     { IDR_CPU_X86, "x86", "x86 CPU" },
+    { IDR_CPU_X64, "x64", "x64 CPU" },
     { IDR_CPU_MIPS, "mips", "MIPS CPU" },
     { IDR_CPU_AXP, "axp", "Alpha CPU" },
     { IDR_CPU_AXP64, "axp64", "Alpha64 CPU" },

@@ -195,6 +195,7 @@
 
 /* CPU Icons */
 #define IDR_CPU_X86                     5022
+#define IDR_CPU_X64                     5023
 #define IDR_CPU_MIPS                    5024
 #define IDR_CPU_AXP                     5025
 #define IDR_CPU_AXP64                   5026
