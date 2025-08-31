@@ -10,6 +10,7 @@
 ## Bugs
 - Bridges, power over water
 - Power line issues
+- Power without wires (direct)
 - Minimap stats not working: fire, police
 - Sprites like airplane too slow also wrong direction
 

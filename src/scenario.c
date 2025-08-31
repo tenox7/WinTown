@@ -10,6 +10,7 @@
 #include <windows.h>
 #include "gdifix.h"
 #include "assets.h"
+#include "resource.h"
 
 /* External log functions */
 extern void addGameLog(const char *format, ...);
@@ -52,10 +53,6 @@ static short ScoreWaitTab[9] = {0,      30 * 48, 5 * 48, 5 * 48, 10 * 48,
 
 /* Load scenario based on ID */
 int loadScenario(int scenarioId) {
-    char *name = NULL;
-    char *fname = NULL;
-    char path[MAX_PATH];
-    int startYear = 1900;
 
     /* Reset city filename */
     cityFileName[0] = '\0';
@@ -71,335 +68,24 @@ int loadScenario(int scenarioId) {
     /* Load scenario from embedded resources */
     switch (scenarioId) {
     case 1:
-        strcpy(path, "dullsville.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_DULLSVILLE, "Dullsville");
     case 2:
-        strcpy(path, "sanfrancisco.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_SANFRANCISCO, "San Francisco");
     case 3:
-        strcpy(path, "hamburg.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_HAMBURG, "Hamburg");
     case 4:
-        strcpy(path, "bern.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_BERN, "Bern");
     case 5:
-        strcpy(path, "tokyo.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_TOKYO, "Tokyo");
     case 6:
-        strcpy(path, "detroit.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_DETROIT, "Detroit");
     case 7:
-        strcpy(path, "boston.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_BOSTON, "Boston");
     case 8:
-        strcpy(path, "rio.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_RIO, "Rio de Janeiro");
     default:
-        strcpy(path, "dullsville.scn");
-        break;
+        return loadScenarioFromResource(IDR_SCENARIO_DULLSVILLE, "Dullsville");
     }
-
-    /* Try to load the scenario from embedded resources */
-    if (!loadScenarioFromResource(findScenarioResourceByName(path), path)) {
-        addGameLog("ERROR: Scenario '%s' not found in embedded resources!", path);
-        return 0;
-    }
-    
-    addGameLog("Scenario '%s' loaded successfully from embedded resources", path);
-
-    switch (scenarioId) {
-    case 1:
-        name = "Dullsville";
-        fname = "dullsville.scn";
-        ScenarioID = 1;
-        startYear = 1900;
-        break;
-    case 2:
-        name = "San Francisco";
-        fname = "sanfrancisco.scn";
-        ScenarioID = 2;
-        startYear = 1906;
-        break;
-    case 3:
-        name = "Hamburg";
-        fname = "hamburg.scn";
-        ScenarioID = 3;
-        startYear = 1944;
-        break;
-    case 4:
-        name = "Bern";
-        fname = "bern.scn";
-        ScenarioID = 4;
-        startYear = 1965;
-        break;
-    case 5:
-        name = "Tokyo";
-        fname = "tokyo.scn";
-        ScenarioID = 5;
-        startYear = 1957;
-        break;
-    case 6:
-        name = "Detroit";
-        fname = "detroit.scn";
-        ScenarioID = 6;
-        startYear = 1972;
-        break;
-    case 7:
-        name = "Boston";
-        fname = "boston.scn";
-        ScenarioID = 7;
-        startYear = 2010;
-        break;
-    case 8:
-        name = "Rio de Janeiro";
-        fname = "rio.scn";
-        ScenarioID = 8;
-        startYear = 2047;
-        break;
-    }
-
-    /* Set up scenario initial conditions */
-    strcpy(cityFileName, name);
-    CityYear = startYear;
-    CityMonth = 0;
-
-    /* Update window title with scenario name */
-    {
-        char winTitle[256];
-        wsprintf(winTitle, "WiNTown - Scenario: %s", name);
-        SetWindowText(hwndMain, winTitle);
-
-        /* Log the scenario load */
-        addGameLog("SCENARIO: %s loaded", name);
-        addGameLog("Year: %d, Initial funds: $%d", startYear, (int)TotalFunds);
-
-        /* Add scenario-specific descriptions */
-        switch (scenarioId) {
-        case 1:
-            addGameLog("Dullsville: A sleepy town with room to grow");
-            addDebugLog("Scenario goal: Build a bigger city");
-            break;
-        case 2:
-            addGameLog("San Francisco 1906: Earthquake-prone metropolis");
-            addGameLog("WARNING: Earthquake disaster expected!");
-            addDebugLog("Scenario goal: Recover from earthquake");
-            break;
-        case 3:
-            addGameLog("Hamburg 1944: War-torn city requires rebuilding");
-            addGameLog("WARNING: Expect fire bombing attacks!");
-            addDebugLog("Scenario goal: Rebuild after fire bombing");
-            break;
-        case 4:
-            addGameLog("Bern 1965: Beautiful Swiss capital with growing traffic problems");
-            addGameLog("WARNING: Traffic congestion is becoming severe!");
-            addDebugLog("Scenario goal: Keep traffic average below 80");
-            break;
-        case 5:
-            addGameLog("Tokyo 1957: Dense Japanese metropolis");
-            addGameLog("WARNING: Monster attack imminent!");
-            addDebugLog("Scenario goal: Recover from monster disaster");
-            break;
-        case 6:
-            addGameLog("Detroit 1972: Struggling with economic decline and high crime");
-            addGameLog("WARNING: Crime levels are dangerously high!");
-            addDebugLog("Scenario goal: Reduce crime average below 60");
-            break;
-        case 7:
-            addGameLog("Boston 2010: Home to high-tech industry");
-            addGameLog("WARNING: Nuclear accident risk detected!");
-            addDebugLog("Scenario goal: Manage nuclear disaster");
-            break;
-        case 8:
-            addGameLog("Rio 2047: Coastal city threatened by flooding");
-            addGameLog("WARNING: Flood risk is high!");
-            addDebugLog("Scenario goal: Handle rising water levels");
-            break;
-        }
-
-        addDebugLog("Scenario ID: %d, Starting population ~%d", scenarioId, (int)CityPop);
-    }
-
-    /* Set disaster info */
-    DisasterEvent = ScenarioID;
-    /* Ensure bounds checking before array access */
-    if (DisasterEvent >= 0 && DisasterEvent < 9) {
-        DisasterWait = DisTab[DisasterEvent];
-        ScoreWait = ScoreWaitTab[DisasterEvent];
-    } else {
-        DisasterWait = 0;
-        ScoreWait = 0;
-    }
-    ScoreType = ScenarioID;
-
-    /* Scenario data already loaded from embedded resources above */
-
-    /* Override TotalFunds with correct scenario values */
-    switch (ScenarioID) {
-        case 1: /* Dullsville */
-            TotalFunds = 5000;
-            break;
-        case 2: /* San Francisco */
-        case 3: /* Hamburg */
-        case 4: /* Bern */
-        case 5: /* Tokyo */
-        case 6: /* Detroit */
-        case 7: /* Boston */
-        case 8: /* Rio */
-            TotalFunds = 20000;
-            break;
-        default:
-            TotalFunds = 10000;
-            break;
-    }
-
-    /* CRITICAL: Set the flag to prevent ClearCensus from erasing population */
-    SkipCensusReset = 1;
-
-    /* IMPORTANT: SKIP DoSimInit() for scenarios, as it would reset population!
-       Instead, do a directed initialization that preserves scenario values */
-
-    /* CRITICAL: Initialize timer properly by calling SetSimulationSpeed directly */
-    addDebugLog("loadScenario: About to call SetSimulationSpeed with hwndMain=%p", hwndMain);
-    SetSimulationSpeed(hwndMain, SPEED_MEDIUM);
-    addDebugLog("loadScenario: SetSimulationSpeed complete - SimPaused=%d, SimSpeed=%d", SimPaused, SimSpeed);
-
-    /* Initialize various simulation subsystems */
-    /* These are the essential parts of DoSimInit() */
-
-    /* Set up random number generator */
-    RandomlySeedRand();
-
-    /* Initialize simulation counters */
-    Scycle = 0;
-    Fcycle = 0;
-    Spdcycle = 0;
-
-    /* Set higher growth demand to encourage population increase */
-    SetValves(900, 800, 700);
-    ValveFlag = 1;
-
-    /* Initialize budget system without resetting population */
-    InitBudget();
-
-    /* Initialize sprite system for animations and transportation */
-    InitSprites();
-
-    /* Initialize evaluation system */
-    EvalInit();
-
-    /* Note: DisasterWait is already set correctly from DisTab[] array above */
-    addDebugLog("Scenario %d: Disaster wait period = %d", ScenarioID, DisasterWait);
-    addDebugLog("Disaster system: Event=%d, Wait=%d, Disabled=%d", DisasterEvent, DisasterWait, disastersDisabled);
-
-    /* CRITICAL: Add initial population even before census to avoid zero values */
-    {
-        int x, y;
-        short tileValue;
-        int resCount = 0, comCount = 0, indCount = 0;
-
-        /* Count residential, commercial, and industrial zones */
-        for (y = 0; y < WORLD_Y; y++) {
-            for (x = 0; x < WORLD_X; x++) {
-                tileValue = Map[y][x] & LOMASK;
-                if (Map[y][x] & ZONEBIT) {
-                    if (tileValue >= RESBASE && tileValue <= LASTRES) {
-                        resCount++;
-                    } else if (tileValue >= COMBASE && tileValue <= LASTCOM) {
-                        comCount++;
-                    } else if (tileValue >= INDBASE && tileValue <= LASTIND) {
-                        indCount++;
-                    }
-                }
-            }
-        }
-
-        /* Set higher initial population based on zones for better gameplay */
-        if (resCount > 0) {
-            ResPop = resCount * 16; /* Doubled from 8 */
-        }
-        if (comCount > 0) {
-            ComPop = comCount * 8; /* Doubled from 4 */
-        }
-        if (indCount > 0) {
-            IndPop = indCount * 8; /* Doubled from 4 */
-        }
-
-        /* Initialize total population using unified function */
-        TotalPop = CalculateTotalPopulation(ResPop, ComPop, IndPop);
-
-        /* Initialize city population - scenarios use higher multiplier for challenge */
-        CityPop = CalculateCityPopulation(ResPop, ComPop, IndPop);
-        if (CityPop > 0) {
-            CityPop = (CityPop * 25) / 20; /* 25% boost for scenarios */
-        }
-
-        /* Initialize class based on population */
-        CityClass = 0; /* Village */
-        if (CityPop > 2000) {
-            CityClass++; /* Town */
-        }
-        if (CityPop > 10000) {
-            CityClass++; /* City */
-        }
-        if (CityPop > 50000) {
-            CityClass++; /* Capital */
-        }
-        if (CityPop > 100000) {
-            CityClass++; /* Metropolis */
-        }
-        if (CityPop > 500000) {
-            CityClass++; /* Megalopolis */
-        }
-
-        /* Ensure we have some population */
-        if (CityPop < 100) {
-            ResPop = 10;
-            TotalPop = ResPop * 8;
-            CityPop = ResPop * 20;
-        }
-
-        /* Save this value for debugging */
-        PrevCityPop = CityPop;
-    }
-
-    /* Force a full census calculation */
-    /* This is critical for correctly calculating population */
-    ForceFullCensus();
-
-    /* After census, explicitly update history graphs */
-    TakeCensus();
-
-    /* Make sure population is preserved */
-    if (CityPop == 0 && PrevCityPop > 0) {
-        /* Restore from previous value if we lost it */
-        CityPop = PrevCityPop;
-    }
-    
-    /* Set scenario-specific initial conditions */
-    switch (ScenarioID) {
-        case 4: /* Bern - High initial traffic */
-            TrafficAverage = 120; /* Start with high traffic */
-            addDebugLog("Bern scenario: Initial traffic set to %d", TrafficAverage);
-            break;
-        case 6: /* Detroit - High initial crime */
-            CrimeAverage = 100; /* Start with high crime */
-            addDebugLog("Detroit scenario: Initial crime set to %d", CrimeAverage);
-            break;
-        case 7: /* Boston - Low initial land value (pre-meltdown) */
-            LVAverage = 80; /* Start with lower land values */
-            addDebugLog("Boston scenario: Initial land value set to %d", LVAverage);
-            break;
-    }
-
-    /* We no longer need to change SkipCensusReset flag as we've modified ClearCensus
-       to always reset population counters which allows them to be properly recounted
-       during each map scan. This enables growth while preventing population from disappearing. */
-    /* Note: SkipCensusReset is now only used for debugging purposes */
-
-    /* Redraw screen */
-    InvalidateRect(hwndMain, NULL, TRUE);
-
-    return 1;
 }
 
 /* Process scenario disasters */

@@ -3334,15 +3334,15 @@ void initializeGraphics(HWND hwnd) {
 
     /* Use default.bmp tileset by default */
     strcpy(currentTileset, "default");
-    wsprintf(tilePath, "%s\\tilesets\\%s.bmp", progPathName, currentTileset);
-wsprintf(errorMsg,"PLEASE LOAD TILESET %s\n",tilePath);
-OutputDebugString(errorMsg);
-    /* Load the tileset with our 8-bit palette */
+    wsprintf(tilePath, "%s.bmp", currentTileset);
+    wsprintf(errorMsg,"LOADING TILESET %s FROM RESOURCES\n",tilePath);
+    OutputDebugString(errorMsg);
+    /* Load the tileset from embedded resources */
     if (!loadTileset(tilePath)) {
         OutputDebugString("Failed to load default tileset! Trying classic as fallback...");
         /* Fallback to classic if default is not available */
         strcpy(currentTileset, "classic");
-        wsprintf(tilePath, "%s\\tilesets\\%s.bmp", progPathName, currentTileset);
+        wsprintf(tilePath, "%s.bmp", currentTileset);
         
         if (!loadTileset(tilePath)) {
             OutputDebugString("Failed to load classic tileset too!");
