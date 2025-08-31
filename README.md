@@ -1,6 +1,6 @@
 # WinTown
 
-Back port of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka SimCity) game to Windows. The primary goal is to make the game playable on NT RISC machines like Alpha AXP, MIPS, PPC, IA64 and ARM.
+Backport of the classic [Micropolis](https://github.com/SimHacker/micropolis) (aka SimCity) game to Windows (Win32/NT). The primary goal is to make the game playable on NT RISC machines like Alpha AXP, MIPS, PowerPC PPC, Itanium IA64 and ARM.
 
 ![WinTown](wintown.png)
 
