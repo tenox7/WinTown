@@ -16,6 +16,28 @@ Special thanks to Neozeed and Roytam for major fixes!
 
 --------------
 
+
+## Compile for RISC
+
+### ARM
+
+MSVC (2022)
+
+```
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsamd64_armXXX.bat
+```
+
+### IA64
+
+Win7 SDK only (not Visual Studio), use `setenv /ia64 /2008 /release`.
+
+For security cookie complain add `/GS-` flag.
+
+### AXP64
+
+PSDK 2000 RC2, aka psdk99, `setwin64.bat`.
+
+
 ## License
 
 WinTown is licensed under the GNU General Public License version 3 (GPL-3.0) with the additional terms per section 7 as established by Electronic Arts when releasing the original Micropolis code as open source. See the [LICENSE](LICENSE) file for the full text.
