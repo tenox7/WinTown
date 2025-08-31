@@ -18,4 +18,4 @@ wintown.exe: $(OBJS) wintown.res
         del /q *.obj *.res
 
 clean:
-	del /q *.obj *.res wintown.exe
+	del /q *.obj *.res *.pdb *.ilk wintown.exe
