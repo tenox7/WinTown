@@ -269,6 +269,15 @@ BEGIN
     PUSHBUTTON      "Cancel",IDC_SCENARIO_CANCEL,295,245,50,14
 END
 
+IDD_ABOUT_DIALOG DIALOG DISCARDABLE  0, 0, 200, 120
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About WiNTown"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "https://github.com/tenox7/wintown",IDC_STATIC,20,40,160,8
+    DEFPUSHBUTTON   "OK",IDOK,75,95,50,14
+END
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////

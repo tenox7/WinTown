@@ -40,6 +40,7 @@
 #define IDC_SCENARIO_OK                 2004
 #define IDC_SCENARIO_CANCEL             2005
 #define IDD_NOTIFICATION_DIALOG         9100
+#define IDD_ABOUT_DIALOG                9101
 #define IDC_NOTIF_TITLE                 9102
 #define IDC_NOTIF_MESSAGE               9103
 #define IDC_NOTIF_EXPLANATION           9104

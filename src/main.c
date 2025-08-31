@@ -8,6 +8,7 @@
 #include "tools.h"
 #include "charts.h"
 #include "notify.h"
+#include "resource.h"
 #include "newgame.h"
 #include "assets.h"
 #include <commdlg.h>
@@ -51,6 +52,7 @@
 #define IDM_VIEW_CHARTSWINDOW 4106
 #define IDM_VIEW_TILE_DEBUG 4107
 #define IDM_VIEW_TEST_SAVELOAD 4108
+#define IDM_VIEW_ABOUT 4109
 
 /* Spawn menu IDs */
 #define IDM_SPAWN_HELICOPTER 6001
@@ -855,6 +857,23 @@ void addDebugLog(const char *format, ...) {
         }
     }
 #endif
+}
+
+BOOL CALLBACK AboutDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_INITDIALOG:
+            return TRUE;
+            
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+                case IDOK:
+                case IDCANCEL:
+                    EndDialog(hwnd, LOWORD(wParam));
+                    return TRUE;
+            }
+            break;
+    }
+    return FALSE;
 }
 
 LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -2311,6 +2330,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         case IDM_VIEW_TEST_SAVELOAD:
             testSaveLoad();
+            return 0;
+
+        case IDM_VIEW_ABOUT:
+            DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hwnd, AboutDialogProc);
             return 0;
 
         /* Tool menu items */
@@ -5303,6 +5326,8 @@ HMENU createMainMenu(void) {
     /* Leave unchecked by default since tile debug is disabled on startup */
     CheckMenuItem(hViewMenu, IDM_VIEW_TILE_DEBUG, MF_UNCHECKED);
     AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_TEST_SAVELOAD, "Test Save/&Load");
+    AppendMenu(hViewMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hViewMenu, MF_STRING, IDM_VIEW_ABOUT, "&About");
 
     /* Spawn Menu */
     hSpawnMenu = CreatePopupMenu();
