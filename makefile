@@ -1,6 +1,7 @@
 CC = cl
 RC = rc
-CFLAGS = /nologo /W3 /Ox /Ot /Oi /Ob2 /D "_WINDOWS" /D "_CRT_SECURE_NO_WARNINGS" /I.
+CFLAGS = /nologo /W3 /Ox /Ot /Oi /Ob2 /D "_WINDOWS" /ML /I.
+#CFLAGS = /nologo /W3 /Ox /Ot /Oi /Ob2 /D "_WINDOWS" /D "_CRT_SECURE_NO_WARNINGS" /I.
 #CFLAGS = /nologo -D_AXP64_=1 -D_ALPHA64_=1 -DALPHA=1 -DWIN64 -D_WIN64 -DWIN32 -D_WIN32  -Wp64 -W4 -Ap64
 LIBS = gdi32.lib user32.lib kernel32.lib COMDLG32.lib
 
