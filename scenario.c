@@ -190,6 +190,9 @@ int loadScenario(int scenarioId) {
     }
     ScoreType = ScenarioID;
 
+    /* Force scenarios to start running */
+    SetGameSpeed(SPEED_MEDIUM);
+
     return 1;
 }
 
