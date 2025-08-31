@@ -199,9 +199,8 @@ int loadScenarioFromResource(int resourceId, char* scenarioName) {
     
     if (loadFile(tempFileName)) {
         DeleteFile(tempFileName);
-        if (scenarioName) {
-            strcpy(scenarioName, tempFileName);
-        }
+        /* Note: scenarioName is already set correctly by calling function */
+        /* Do not overwrite it with tempFileName */
         return 1;
     }
     

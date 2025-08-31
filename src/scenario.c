@@ -53,6 +53,9 @@ static short ScoreWaitTab[9] = {0,      30 * 48, 5 * 48, 5 * 48, 10 * 48,
 
 /* Load scenario based on ID */
 int loadScenario(int scenarioId) {
+    char *name = NULL;
+    int startYear = 1900;
+    int startFunds = 5000;
 
     /* Reset city filename */
     cityFileName[0] = '\0';
@@ -65,27 +68,129 @@ int loadScenario(int scenarioId) {
         scenarioId = 1;
     }
 
-    /* Load scenario from embedded resources */
+    /* Set scenario parameters */
     switch (scenarioId) {
     case 1:
-        return loadScenarioFromResource(IDR_SCENARIO_DULLSVILLE, "Dullsville");
+        name = "Dullsville";
+        ScenarioID = 1;
+        startYear = 1900;
+        startFunds = 5000;
+        break;
     case 2:
-        return loadScenarioFromResource(IDR_SCENARIO_SANFRANCISCO, "San Francisco");
+        name = "San Francisco";
+        ScenarioID = 2;
+        startYear = 1906;
+        startFunds = 20000;
+        break;
     case 3:
-        return loadScenarioFromResource(IDR_SCENARIO_HAMBURG, "Hamburg");
+        name = "Hamburg";
+        ScenarioID = 3;
+        startYear = 1944;
+        startFunds = 20000;
+        break;
     case 4:
-        return loadScenarioFromResource(IDR_SCENARIO_BERN, "Bern");
+        name = "Bern";
+        ScenarioID = 4;
+        startYear = 1965;
+        startFunds = 20000;
+        break;
     case 5:
-        return loadScenarioFromResource(IDR_SCENARIO_TOKYO, "Tokyo");
+        name = "Tokyo";
+        ScenarioID = 5;
+        startYear = 1957;
+        startFunds = 20000;
+        break;
     case 6:
-        return loadScenarioFromResource(IDR_SCENARIO_DETROIT, "Detroit");
+        name = "Detroit";
+        ScenarioID = 6;
+        startYear = 1972;
+        startFunds = 20000;
+        break;
     case 7:
-        return loadScenarioFromResource(IDR_SCENARIO_BOSTON, "Boston");
+        name = "Boston";
+        ScenarioID = 7;
+        startYear = 2010;
+        startFunds = 20000;
+        break;
     case 8:
-        return loadScenarioFromResource(IDR_SCENARIO_RIO, "Rio de Janeiro");
+        name = "Rio de Janeiro";
+        ScenarioID = 8;
+        startYear = 2047;
+        startFunds = 20000;
+        break;
     default:
-        return loadScenarioFromResource(IDR_SCENARIO_DULLSVILLE, "Dullsville");
+        name = "Dullsville";
+        ScenarioID = 1;
+        startYear = 1900;
+        startFunds = 5000;
+        break;
     }
+
+    /* Set city name */
+    strcpy(cityFileName, name);
+
+    /* Set year and month */
+    CityYear = startYear;
+    CityMonth = 0;
+
+    /* Load scenario map data from embedded resources */
+    switch (scenarioId) {
+    case 1:
+        if (!loadScenarioFromResource(IDR_SCENARIO_DULLSVILLE, "Dullsville")) return 0;
+        break;
+    case 2:
+        if (!loadScenarioFromResource(IDR_SCENARIO_SANFRANCISCO, "San Francisco")) return 0;
+        break;
+    case 3:
+        if (!loadScenarioFromResource(IDR_SCENARIO_HAMBURG, "Hamburg")) return 0;
+        break;
+    case 4:
+        if (!loadScenarioFromResource(IDR_SCENARIO_BERN, "Bern")) return 0;
+        break;
+    case 5:
+        if (!loadScenarioFromResource(IDR_SCENARIO_TOKYO, "Tokyo")) return 0;
+        break;
+    case 6:
+        if (!loadScenarioFromResource(IDR_SCENARIO_DETROIT, "Detroit")) return 0;
+        break;
+    case 7:
+        if (!loadScenarioFromResource(IDR_SCENARIO_BOSTON, "Boston")) return 0;
+        break;
+    case 8:
+        if (!loadScenarioFromResource(IDR_SCENARIO_RIO, "Rio de Janeiro")) return 0;
+        break;
+    default:
+        if (!loadScenarioFromResource(IDR_SCENARIO_DULLSVILLE, "Dullsville")) return 0;
+        break;
+    }
+
+    /* Set funds AFTER loading file to prevent corruption */
+    TotalFunds = startFunds;
+
+    /* Update window title with scenario name */
+    {
+        char winTitle[256];
+        wsprintf(winTitle, "WiNTown - Scenario: %s", name);
+        SetWindowText(hwndMain, winTitle);
+
+        /* Log the scenario load */
+        addGameLog("SCENARIO: %s loaded", name);
+        addGameLog("Year: %d, Initial funds: $%d", startYear, startFunds);
+    }
+
+    /* Set disaster info */
+    DisasterEvent = ScenarioID;
+    /* Ensure bounds checking before array access */
+    if (DisasterEvent >= 0 && DisasterEvent < 9) {
+        DisasterWait = DisTab[DisasterEvent];
+        ScoreWait = ScoreWaitTab[DisasterEvent];
+    } else {
+        DisasterWait = 0;
+        ScoreWait = 0;
+    }
+    ScoreType = ScenarioID;
+
+    return 1;
 }
 
 /* Process scenario disasters */
