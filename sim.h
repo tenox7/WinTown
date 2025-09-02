@@ -18,7 +18,7 @@ extern int LastPicNum;
 extern DWORD LastMesTime;
 
 /* Message system functions */
-void SendMessages(void);
+SendMessages();
 void doMessage(void);
 int SendMes(int Mnum);
 void SendMesAt(int Mnum, int x, int y);
@@ -545,7 +545,7 @@ void SetBudgetPercent(int budgetType, float percent);  /* Unified budget percent
 /* Scenario functions (scenarios.c) */
 int loadScenario(int scenarioId);        /* Load a scenario by ID */
 void scenarioDisaster(void);             /* Process scenario disasters */
-void DoScenarioScore(void);              /* Evaluate scenario victory conditions */
+DoScenarioScore(int scoreType);          /* Evaluate scenario victory conditions */
 
 /* Disaster functions (disasters.c) */
 void doEarthquake(void);                 /* Create an earthquake */

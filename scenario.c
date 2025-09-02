@@ -309,7 +309,7 @@ void scenarioDisaster(void) {
 }
 
 /* Evaluate scenario goals and determine win/lose status */
-void DoScenarioScore(void) {
+DoScenarioScore(int scoreType) {
     int win = 0;
     int score = 0;
     char message[256];

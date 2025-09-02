@@ -29,18 +29,18 @@ extern int ResPop, StadiumPop, IndPop, PortPop, ComPop, APortPop;
 extern int UnpwrdZCnt, PwrdZCnt;
 extern int PollutionAverage, CrimeAverage, TotalPop, FireStPop, PolicePop;
 extern int TaxRate, RoadEffect, FireEffect, PoliceEffect, TrafficAverage;
-extern int ScenarioID, ScoreType, ScoreWait;
+extern short ScenarioID, ScoreType, ScoreWait;
 extern int ResCap, IndCap, ComCap;
 
 /* Forward declarations */
 int SendMes(int Mnum);
 void SendMesAt(int Mnum, int x, int y);
 void CheckGrowth(void);
-void DoScenarioScore(void);
+DoScenarioScore(int scoreType);
 void ClearMes(void);
 
 /* Original SendMessages function - called every simulation cycle */
-void SendMessages(void) {
+SendMessages() {
     int z;
     int PowerPop;
     float TM;
@@ -48,7 +48,7 @@ void SendMessages(void) {
     if (ScenarioID && ScoreType && ScoreWait) {
         ScoreWait--;
         if (!ScoreWait)
-            DoScenarioScore();
+            DoScenarioScore(ScoreType);
     }
 
     CheckGrowth();

@@ -61,7 +61,7 @@ extern short DisasterWait;
 extern short ScoreType;
 extern short ScoreWait;
 extern void scenarioDisaster(void);
-extern void DoScenarioScore(void);
+extern DoScenarioScore(int scoreType);
 
 /* Zone population totals for SendMessages */
 int TotalZPop = 0;
@@ -593,7 +593,7 @@ void Simulate(int mod16) {
             ScoreWait--;
             if (ScoreWait == 0) {
                 /* Trigger scenario evaluation */
-                DoScenarioScore();
+                DoScenarioScore(ScoreType);
             }
         }
 
