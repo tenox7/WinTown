@@ -767,7 +767,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         KillTimer(hwndCharts, CHART_TIMER_ID);
     }
 
-    return msg.wParam;
+    return (int)msg.wParam;
 }
 
 /**
@@ -911,7 +911,7 @@ LRESULT CALLBACK logWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         
         /* Draw visible messages */
         for (i = startIndex; i < endIndex; i++) {
-            TextOut(hdc, 5, y, logMessages[i], strlen(logMessages[i]));
+            TextOut(hdc, 5, y, logMessages[i], (int)strlen(logMessages[i]));
             y += lineHeight;
         }
         
@@ -2333,7 +2333,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case IDM_VIEW_ABOUT:
-            DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hwnd, AboutDialogProc);
+            DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hwnd, (DLGPROC)AboutDialogProc);
             return 0;
 
         /* Tool menu items */
@@ -2710,7 +2710,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 return 0;
             }
         }
-        break;
+        return 0;
 
     case WM_TIMER:
         if (wParam == SIM_TIMER_ID) {
@@ -2750,7 +2750,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             stopEarthquake();
             return 0;
         }
-        break;
+        return 0;
 
     case WM_QUERYNEWPALETTE: {
         /* Realize the palette when window gets focus */
@@ -2994,7 +2994,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return TRUE;
         }
-        break;
+        return 0;
     }
 
     case WM_SIZE: {
@@ -3458,7 +3458,6 @@ int changeTileset(HWND hwnd, const char *tilesetName) {
     char windowTitle[MAX_PATH];
     HDC hdc;
     char errorMsg[256];
-    DWORD error;
     BITMAP bm;
     char debugMsg[256];
     char tilesetFilename[MAX_PATH];
@@ -5858,12 +5857,12 @@ BOOL CALLBACK BudgetDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 /* Show budget window function */
 void ShowBudgetWindow(HWND parent) {
     /* Create budget dialog using Windows API */
-    DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, BudgetDlgProc);
+    DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, (DLGPROC)BudgetDlgProc);
 }
 
 /* Show budget window during budget cycle and wait for user input */
 int ShowBudgetWindowAndWait(HWND parent) {
-    return DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, BudgetDlgProc);
+    return (int)DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_BUDGET), parent, (DLGPROC)BudgetDlgProc);
 }
 
 /* Enhanced speed control functions */
@@ -5948,7 +5947,7 @@ void startEarthquake(void) {
     }
     
     /* Start timer to stop earthquake after duration */
-    earthquakeTimer = SetTimer(hwndMain, EARTHQUAKE_TIMER_ID, EARTHQUAKE_DURATION, NULL);
+    earthquakeTimer = (unsigned int)SetTimer(hwndMain, EARTHQUAKE_TIMER_ID, EARTHQUAKE_DURATION, NULL);
     
     /* Force screen redraw to show shake immediately */
     InvalidateRect(hwndMain, NULL, FALSE);

@@ -316,7 +316,7 @@ DoScenarioScore(int scoreType) {
     
     /* Only evaluate if we have an active scenario and score wait has expired */
     if (ScenarioID == 0 || ScoreWait > 0) {
-        return;
+        return 0;
     }
     
     /* Check victory conditions based on scenario */
@@ -403,7 +403,7 @@ DoScenarioScore(int scoreType) {
             
         default:
             /* Unknown scenario */
-            return;
+            return 0;
     }
     
     /* Log the result */
@@ -437,4 +437,5 @@ DoScenarioScore(int scoreType) {
     ScoreWait = 0;
     DisasterEvent = 0;
     DisasterWait = 0;
+    return 1;
 }

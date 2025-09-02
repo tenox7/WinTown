@@ -135,7 +135,7 @@ int loadCityFromResource(int resourceId, char* cityName) {
         return 0;
     }
     
-    written = fwrite(data, 1, size, tempFile);
+    written = (DWORD)fwrite(data, 1, size, tempFile);
     fclose(tempFile);
     
     if (written != size) {
@@ -190,7 +190,7 @@ int loadScenarioFromResource(int resourceId, char* scenarioName) {
         return 0;
     }
     
-    written = fwrite(data, 1, size, tempFile);
+    written = (DWORD)fwrite(data, 1, size, tempFile);
     fclose(tempFile);
     
     if (written != size) {
@@ -354,7 +354,7 @@ HBITMAP loadTilesetFromResource(int resourceId) {
         return NULL;
     }
     
-    written = fwrite(data, 1, size, tempFile);
+    written = (DWORD)fwrite(data, 1, size, tempFile);
     fclose(tempFile);
     
     if (written != size) {

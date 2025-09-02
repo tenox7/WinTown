@@ -118,7 +118,7 @@ int showNewGameDialog(HWND parent, NewGameConfig *config) {
     hInst = GetModuleHandle(NULL);
     addGameLog("About to call DialogBox with resource ID %d, hInst=0x%p", IDD_NEWGAME, hInst);
     
-    result = DialogBox(hInst, MAKEINTRESOURCE(IDD_NEWGAME), parent, newGameDialogProc);
+    result = (int)DialogBox(hInst, MAKEINTRESOURCE(IDD_NEWGAME), parent, (DLGPROC)newGameDialogProc);
     
     addGameLog("DialogBox returned: %d", result);
     if (result == -1) {
@@ -140,8 +140,8 @@ int showScenarioDialog(HWND parent, int *selectedScenario) {
         return 0;
     }
     
-    result = DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_SCENARIO_SELECT), 
-                           parent, scenarioDialogProc, (LPARAM)selectedScenario);
+    result = (int)DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_SCENARIO_SELECT), 
+                           parent, (DLGPROC)scenarioDialogProc, (LPARAM)selectedScenario);
     
     return result;
 }
@@ -179,8 +179,8 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         SendMessage(listBox, LB_RESETCONTENT, 0, 0);
         addGameLog("DEBUG: Cleared and populating NEW GAME scenario listbox with %d scenarios", scenarioCount);
         for (i = 0; i < scenarioCount; i++) {
-            int addResult = SendMessage(listBox, LB_ADDSTRING, 0, (LPARAM)scenarios[i].name);
-            int dataResult = SendMessage(listBox, LB_SETITEMDATA, i, i);
+            int addResult = (int)SendMessage(listBox, LB_ADDSTRING, 0, (LPARAM)scenarios[i].name);
+            int dataResult = (int)SendMessage(listBox, LB_SETITEMDATA, i, i);
             addGameLog("DEBUG: Adding scenario %d: ID=%d, Name='%s' (add=%d, data=%d)", 
                       i, scenarios[i].id, scenarios[i].name, addResult, dataResult);
         }
@@ -392,8 +392,8 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         case IDC_SCENARIO_LIST:
             if (HIWORD(wParam) == LBN_SELCHANGE) {
                 listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
-                itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
+                sel = (int)SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                itemData = (int)SendMessage(listBox, LB_GETITEMDATA, sel, 0);
                 
                 addGameLog("DEBUG: Listbox selection changed - sel=%d, itemData=%d, mode=%d", sel, itemData, currentListMode);
                 
@@ -443,8 +443,8 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             case NEWGAME_LOAD_CITY_BUILTIN: {
                 /* Load from builtin resources */
                 listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
-                itemData = SendMessage(listBox, LB_GETITEMDATA, sel, 0);
+                sel = (int)SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                itemData = (int)SendMessage(listBox, LB_GETITEMDATA, sel, 0);
                 
                 if (sel != LB_ERR && itemData >= 0 && itemData < getCityCount()) {
                     cityInfo = getCityInfo(itemData);
@@ -486,7 +486,7 @@ BOOL CALLBACK newGameDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             
             case NEWGAME_SCENARIO: {
                 listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                sel = (int)SendMessage(listBox, LB_GETCURSEL, 0, 0);
                 
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
                     currentConfig->scenarioId = scenarios[sel].id;
@@ -610,7 +610,7 @@ BOOL CALLBACK scenarioDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         case IDC_SCENARIO_LIST:
             if (HIWORD(wParam) == LBN_SELCHANGE) {
                 listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-                sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+                sel = (int)SendMessage(listBox, LB_GETCURSEL, 0, 0);
                 
                 if (sel != LB_ERR && sel >= 0 && sel < scenarioCount) {
                     addGameLog("Scenario dialog: Selected scenario %d (%s): %s", 
@@ -625,7 +625,7 @@ BOOL CALLBACK scenarioDialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             
         case IDC_SCENARIO_OK: {
             listBox = GetDlgItem(hwnd, IDC_SCENARIO_LIST);
-            sel = SendMessage(listBox, LB_GETCURSEL, 0, 0);
+            sel = (int)SendMessage(listBox, LB_GETCURSEL, 0, 0);
             
             if (sel != LB_ERR && sel >= 0 && sel < scenarioCount && selectedScenario) {
                 *selectedScenario = scenarios[sel].id;

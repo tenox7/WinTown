@@ -1231,7 +1231,7 @@ void SetSimulationSpeed(HWND hwnd, int speed) {
         /* Otherwise, make sure the timer is running */
         SimPaused = 0;
         if (!SimTimerID) {
-            SimTimerID = SetTimer(hwnd, SIM_TIMER_ID, SIM_TIMER_INTERVAL, NULL);
+            SimTimerID = (UINT)SetTimer(hwnd, SIM_TIMER_ID, SIM_TIMER_INTERVAL, NULL);
 
             /* Check for timer creation failure */
             if (!SimTimerID) {

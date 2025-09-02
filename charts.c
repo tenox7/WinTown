@@ -764,7 +764,7 @@ void DrawChartAxes(HDC hdc) {
         y = g_chartData->graphRect.top + i * stepY;
         
         sprintf(text, "%d", value);
-        TextOut(hdc, g_chartData->graphRect.left - 30, y - 6, text, strlen(text));
+        TextOut(hdc, g_chartData->graphRect.left - 30, y - 6, text, (int)(int)strlen(text));
         
         /* Draw tick marks */
         MoveToEx(hdc, g_chartData->graphRect.left - 3, y, NULL);
@@ -795,7 +795,7 @@ void DrawChartAxes(HDC hdc) {
             }
         }
         
-        TextOut(hdc, x - 10, g_chartData->graphRect.bottom + 5, text, strlen(text));
+        TextOut(hdc, x - 10, g_chartData->graphRect.bottom + 5, text, (int)strlen(text));
         
         /* Draw tick marks */
         MoveToEx(hdc, x, g_chartData->graphRect.bottom, NULL);
@@ -937,7 +937,7 @@ void DrawChartLegend(HDC hdc) {
             
             /* Draw series name */
             SetTextColor(hdc, RGB(60, 60, 60));
-            TextOut(hdc, x + 20, y - 6, g_chartData->series[i].name, strlen(g_chartData->series[i].name));
+            TextOut(hdc, x + 20, y - 6, g_chartData->series[i].name, (int)strlen(g_chartData->series[i].name));
             
             /* Move to next position */
             col++;
@@ -959,7 +959,7 @@ void DrawChartLegend(HDC hdc) {
         y += 20;
         SetTextColor(hdc, RGB(60, 60, 60));
         sprintf(powerBuffer, "Power: Powered=%d Unpowered=%d", PwrdZCnt, UnpwrdZCnt);
-        TextOut(hdc, 10, y, powerBuffer, strlen(powerBuffer));
+        TextOut(hdc, 10, y, powerBuffer, (int)strlen(powerBuffer));
     }
     
     SelectObject(hdc, hOldFont);

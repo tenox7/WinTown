@@ -738,11 +738,11 @@ static int TurnTo(int orgDir, int desDir) {
         return orgDir;
     }
     
-    if ((orgDir + 1) & 7 == desDir) {
+    if (((orgDir + 1) & 7) == desDir) {
         return desDir;
     }
     
-    if ((orgDir - 1) & 7 == desDir) {
+    if (((orgDir - 1) & 7) == desDir) {
         return desDir;
     }
     

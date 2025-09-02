@@ -149,6 +149,7 @@ SendMessages() {
                 SendMes(-12);
             break;
     }
+    return 0;
 }
 
 /* Original CheckGrowth function */
@@ -407,7 +408,7 @@ void CreateNotificationDialog(Notification* notif) {
     DialogBoxParam(GetModuleHandle(NULL), 
                    MAKEINTRESOURCE(IDD_NOTIFICATION_DIALOG),
                    hwndMain,
-                   NotificationDialogProc,
+                   (DLGPROC)NotificationDialogProc,
                    (LPARAM)notif);
 }
 
