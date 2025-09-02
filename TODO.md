@@ -5,6 +5,8 @@
 - Sound System
 - Evaluation window
 - Dynamic refresh rate based on clock speed
+- Auto Budget
+- Auto Bulldoze
 
 
 ## Bugs
@@ -32,3 +34,4 @@
 - Fire
 - Monster
 - Air crash draws square instead of tile
+- New city dialog should load previews for scenarios
