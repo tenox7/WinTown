@@ -7,6 +7,7 @@
 - Dynamic refresh rate based on clock speed
 - Auto Budget
 - Auto Bulldoze
+- Trains not working
 
 
 ## Bugs
